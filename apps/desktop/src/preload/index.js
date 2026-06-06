@@ -1,0 +1,39 @@
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("agora", {
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  getPlatform: () => ipcRenderer.invoke("get-platform"),
+  getLLMConfig: () => ipcRenderer.invoke("get-llm-config"),
+
+  // Workspace
+  workspace: {
+    openDialog: () => ipcRenderer.invoke("workspace:openDialog"),
+    init: (workspacePath) => ipcRenderer.invoke("workspace:init", workspacePath),
+    listDocs: (workspacePath) => ipcRenderer.invoke("workspace:listDocs", workspacePath),
+    readDoc: (filePath) => ipcRenderer.invoke("workspace:readDoc", filePath),
+  },
+
+  // Room Store
+  room: {
+    create: (workspaceRoot, room) =>
+      ipcRenderer.invoke("room:create", workspaceRoot, room),
+    appendMessage: (workspaceRoot, roomId, message) =>
+      ipcRenderer.invoke("room:appendMessage", workspaceRoot, roomId, message),
+    writeSummary: (workspaceRoot, roomId, summary) =>
+      ipcRenderer.invoke("room:writeSummary", workspaceRoot, roomId, summary),
+    writeMemoryCandidates: (workspaceRoot, roomId, content) =>
+      ipcRenderer.invoke("room:writeMemoryCandidates", workspaceRoot, roomId, content),
+    exportSession: (workspaceRoot, roomId, content) =>
+      ipcRenderer.invoke("room:exportSession", workspaceRoot, roomId, content),
+    readMessages: (workspaceRoot, roomId) =>
+      ipcRenderer.invoke("room:readMessages", workspaceRoot, roomId),
+    listOutputs: (workspaceRoot, roomId) =>
+      ipcRenderer.invoke("room:listOutputs", workspaceRoot, roomId),
+  },
+
+  // LLM
+  llm: {
+    chat: (params) =>
+      ipcRenderer.invoke("llm:chat", params),
+  },
+});

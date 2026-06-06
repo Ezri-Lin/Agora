@@ -1,0 +1,99 @@
+import type { RoleCallInput, RoleCallResult, RoleCard, CouncilMessage } from "@agora/shared";
+import type { LLMConfig } from "@agora/shared";
+import type { LLMProvider } from "../types/index.js";
+
+interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+interface ChatCompletionChoice {
+  message: { content: string };
+}
+
+interface ChatCompletionResponse {
+  choices: ChatCompletionChoice[];
+}
+
+export class OpenAICompatibleProvider implements LLMProvider {
+  private baseUrl: string;
+  private model: string;
+  private apiKey: string;
+
+  constructor(config: LLMConfig) {
+    this.baseUrl = (config.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "");
+    this.model = config.model;
+    const envKey = config.apiKeyEnv ?? "OPENAI_API_KEY";
+    this.apiKey = process.env[envKey] ?? "";
+    if (!this.apiKey) {
+      throw new Error(`API key not found in env: ${envKey}`);
+    }
+  }
+
+  async callRole(input: RoleCallInput): Promise<RoleCallResult> {
+    const messages: ChatMessage[] = [
+      { role: "system", content: input.sharedContext },
+      { role: "user", content: input.roomSummary },
+    ];
+
+    const content = await this.chat(messages);
+    return { roleId: input.role.id, content };
+  }
+
+  async callModerator(params: {
+    roomId: string;
+    task: "analyze" | "select_roles" | "summarize";
+    context: string;
+    messages?: CouncilMessage[];
+    availableRoles?: RoleCard[];
+  }): Promise<string> {
+    const messages: ChatMessage[] = [
+      { role: "system", content: params.context },
+    ];
+
+    if (params.task === "select_roles" && params.availableRoles) {
+      const roleList = params.availableRoles
+        .map((r) => `- ${r.id}: ${r.name} (${r.subtitle})`)
+        .join("\n");
+      messages.push({
+        role: "user",
+        content: `Available roles:\n${roleList}\n\nSelect roles for this discussion. Return JSON array of role IDs.`,
+      });
+    } else if (params.messages && params.messages.length > 0) {
+      for (const msg of params.messages.slice(-10)) {
+        const role = msg.senderType === "user" ? "user" as const : "assistant" as const;
+        messages.push({ role, content: msg.content });
+      }
+    } else {
+      messages.push({ role: "user", content: "Proceed with the task." });
+    }
+
+    return this.chat(messages);
+  }
+
+  private async chat(messages: ChatMessage[]): Promise<string> {
+    const body = {
+      model: this.model,
+      messages,
+      max_tokens: 2000,
+      temperature: 0.7,
+    };
+
+    const res = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`LLM API error ${res.status}: ${text}`);
+    }
+
+    const data = (await res.json()) as ChatCompletionResponse;
+    return data.choices?.[0]?.message?.content ?? "";
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "agora",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first, memory-aware, multi-role council room document assistant",
+  "scripts": {
+    "dev": "pnpm --filter @agora/desktop dev:vite & sleep 3 && pnpm --filter @agora/desktop dev:electron",
+    "build": "vite build apps/desktop/vite.config.ts",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "eval": "tsx packages/kernel/src/eval/cli.ts"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3"
+  }
+}

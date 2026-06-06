@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-electron/
+out/
+.vite/
+*.tsbuildinfo
+.DS_Store
+*.local
+.env
+.env.*
+.agora/
+AGENTS.md

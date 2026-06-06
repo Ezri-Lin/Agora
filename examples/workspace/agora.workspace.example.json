@@ -1,0 +1,18 @@
+{
+  "mode": "public_private_overlay",
+  "roots": [
+    {
+      "id": "public",
+      "path": "./agora",
+      "visibility": "public"
+    },
+    {
+      "id": "private",
+      "path": "./agora-private",
+      "visibility": "private"
+    }
+  ],
+  "defaultMemoryRoot": "private",
+  "defaultRoomRoot": "private",
+  "defaultWritePolicy": "docs_only"
+}
