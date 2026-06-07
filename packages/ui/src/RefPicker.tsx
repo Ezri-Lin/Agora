@@ -1,6 +1,7 @@
 import React from "react";
 import type { ScannedDoc } from "./AgoraBridge.js";
 import { colors } from "./theme/tokens.js";
+import { useI18n } from "./i18n/I18nContext.js";
 
 interface RefPickerProps {
   docs: ScannedDoc[];
@@ -9,16 +10,17 @@ interface RefPickerProps {
 }
 
 export const RefPicker: React.FC<RefPickerProps> = ({ docs, onSelect, onClose }) => {
+  const { t } = useI18n();
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
-          <span>Add Reference</span>
+          <span>{t.addReferenceTitle}</span>
           <button style={styles.closeBtn} onClick={onClose}>x</button>
         </div>
         <div style={styles.list}>
           {docs.length === 0 && (
-            <div style={styles.empty}>No documents found</div>
+            <div style={styles.empty}>{t.noDocumentsFound}</div>
           )}
           {docs.map((doc) => (
             <button

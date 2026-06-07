@@ -15,6 +15,7 @@ import { RefPicker } from "./RefPicker.js";
 import { SettingsModal } from "./Settings/SettingsModal.js";
 import { errorStyle } from "./appStyles.js";
 import { buildSessionExport } from "./sessionExport.js";
+import { I18nProvider } from "./i18n/I18nContext.js";
 
 export const App: React.FC = () => {
   const [workspace, setWorkspace] = useState<{ path: string; name: string } | null>(null);
@@ -312,12 +313,16 @@ export const App: React.FC = () => {
   }, [loadRooms, loadCustomRoles]);
 
   if (!workspace) {
-    return <EmptyState onOpen={handleOpenWorkspace} onOpenRecent={handleOpenRecent} />;
+    return (
+      <I18nProvider>
+        <EmptyState onOpen={handleOpenWorkspace} onOpenRecent={handleOpenRecent} />
+      </I18nProvider>
+    );
   }
 
   return (
-    <>
-    <AppShell
+    <I18nProvider>
+      <AppShell
       workspaceName={workspace.name}
       onOpenWorkspace={handleOpenWorkspace}
       contextGraph={<ContextGraph />}
@@ -370,6 +375,6 @@ export const App: React.FC = () => {
         onConfigChanged={handleConfigChanged}
       />
     )}
-  </>
+    </I18nProvider>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { styles } from "./composerStyles.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface SourceRef {
   path: string;
@@ -19,6 +20,7 @@ export const Composer: React.FC<ComposerProps> = ({
   references,
   onRemoveRef,
 }) => {
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const [showSettings, setShowSettings] = useState(false);
 
@@ -38,7 +40,7 @@ export const Composer: React.FC<ComposerProps> = ({
 
   return (
     <div style={styles.container}>
-      {showSettings && <SettingsPopover />}
+      {showSettings && <SettingsPopover t={t} />}
       {references.length > 0 && (
         <div style={styles.chips}>
           {references.map((ref) => (
@@ -59,7 +61,7 @@ export const Composer: React.FC<ComposerProps> = ({
         <button
           style={styles.iconBtn}
           onClick={() => setShowSettings(!showSettings)}
-          title="Settings"
+          title={t.settings}
         >
           ⚙
         </button>
@@ -68,7 +70,7 @@ export const Composer: React.FC<ComposerProps> = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Send a message to the council..."
+          placeholder={t.sendMessagePlaceholder}
           rows={1}
         />
         <button
@@ -86,24 +88,24 @@ export const Composer: React.FC<ComposerProps> = ({
   );
 };
 
-const SettingsPopover: React.FC = () => {
+const SettingsPopover: React.FC<{ t: { roles_: string; maxMsgsPerRole: string; autoDocs: string; crossExam: string; on_: string } }> = ({ t }) => {
   return (
     <div style={styles.settings}>
       <div style={styles.settingRow}>
-        <span>Roles</span>
+        <span>{t.roles_}</span>
         <span style={styles.settingValue}>3</span>
       </div>
       <div style={styles.settingRow}>
-        <span>Max msgs/role</span>
+        <span>{t.maxMsgsPerRole}</span>
         <span style={styles.settingValue}>2</span>
       </div>
       <div style={styles.settingRow}>
-        <span>Auto docs</span>
-        <span style={styles.settingValue}>On</span>
+        <span>{t.autoDocs}</span>
+        <span style={styles.settingValue}>{t.on_}</span>
       </div>
       <div style={styles.settingRow}>
-        <span>Cross exam</span>
-        <span style={styles.settingValue}>On</span>
+        <span>{t.crossExam}</span>
+        <span style={styles.settingValue}>{t.on_}</span>
       </div>
     </div>
   );

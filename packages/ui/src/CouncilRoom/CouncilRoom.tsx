@@ -2,6 +2,7 @@ import React from "react";
 import type { CouncilMessage } from "@agora/shared";
 import { RoleMessage } from "../RoleMessage/RoleMessage.js";
 import { colors } from "../theme/tokens.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface CouncilRoomProps {
   messages: CouncilMessage[];
@@ -11,6 +12,7 @@ interface CouncilRoomProps {
 }
 
 export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, loadingStatus, onStop }) => {
+  const { t } = useI18n();
   const endRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -22,7 +24,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, l
       <div style={styles.messages}>
         {messages.length === 0 && !isLoading && (
           <div style={styles.empty}>
-            Send a message to start the council discussion
+            {t.sendToStart}
           </div>
         )}
         {messages.map((msg) => (
@@ -31,10 +33,10 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, l
         {isLoading && (
           <div style={styles.loadingRow}>
             <span style={styles.loadingText}>
-              {loadingStatus || "Roles are thinking..."}
+              {loadingStatus || t.rolesAreThinking}
             </span>
             {onStop && (
-              <button style={styles.stopBtn} onClick={onStop}>Stop</button>
+              <button style={styles.stopBtn} onClick={onStop}>{t.stop}</button>
             )}
           </div>
         )}

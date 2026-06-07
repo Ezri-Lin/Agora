@@ -3,6 +3,8 @@ import type { RoleCard } from "@agora/shared";
 import { colors } from "../theme/tokens.js";
 import { styles } from "./inspectorStyles.js";
 import { getBridge } from "../AgoraBridge.js";
+import { useI18n } from "../i18n/I18nContext.js";
+import type { Translations } from "../i18n/translations.js";
 
 interface SourceRef {
   path: string;
@@ -40,6 +42,15 @@ interface InspectorProps {
 
 type TabId = "participants" | "references" | "outputs" | "context" | "memories" | "roles";
 
+const TAB_LABELS: Record<TabId, keyof Translations> = {
+  participants: "participants",
+  references: "references",
+  outputs: "outputs",
+  context: "context",
+  memories: "memories",
+  roles: "roles",
+};
+
 export const Inspector: React.FC<InspectorProps> = ({
   participants,
   references,
@@ -47,39 +58,40 @@ export const Inspector: React.FC<InspectorProps> = ({
   contextDebug,
   workspacePath,
 }) => {
+  const { t } = useI18n();
   const [tab, setTab] = useState<TabId>("participants");
 
   return (
     <div style={styles.container}>
       <div style={styles.tabs}>
-        {(["participants", "references", "outputs", "context", "memories", "roles"] as TabId[]).map((t) => (
+        {(["participants", "references", "outputs", "context", "memories", "roles"] as TabId[]).map((tabId) => (
           <button
-            key={t}
+            key={tabId}
             style={{
               ...styles.tab,
-              ...(tab === t ? styles.tabActive : {}),
+              ...(tab === tabId ? styles.tabActive : {}),
             }}
-            onClick={() => setTab(t)}
+            onClick={() => setTab(tabId)}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t[TAB_LABELS[tabId]]}
           </button>
         ))}
       </div>
       <div style={styles.content}>
-        {tab === "participants" && <ParticipantsTab roles={participants} />}
-        {tab === "references" && <ReferencesTab refs={references} />}
-        {tab === "outputs" && <OutputsTab files={outputs} />}
-        {tab === "context" && <ContextTab debug={contextDebug} />}
-        {tab === "memories" && <MemoriesTab workspacePath={workspacePath} />}
-        {tab === "roles" && <CustomRolesTab workspacePath={workspacePath} />}
+        {tab === "participants" && <ParticipantsTab roles={participants} t={t} />}
+        {tab === "references" && <ReferencesTab refs={references} t={t} />}
+        {tab === "outputs" && <OutputsTab files={outputs} t={t} />}
+        {tab === "context" && <ContextTab debug={contextDebug} t={t} />}
+        {tab === "memories" && <MemoriesTab workspacePath={workspacePath} t={t} />}
+        {tab === "roles" && <CustomRolesTab workspacePath={workspacePath} t={t} />}
       </div>
     </div>
   );
 };
 
-const ParticipantsTab: React.FC<{ roles: RoleCard[] }> = ({ roles }) => (
+const ParticipantsTab: React.FC<{ roles: RoleCard[]; t: Translations }> = ({ roles, t }) => (
   <div>
-    {roles.length === 0 && <div style={styles.empty}>No roles active</div>}
+    {roles.length === 0 && <div style={styles.empty}>{t.noRolesActive}</div>}
     {roles.map((r) => (
       <div key={r.id} style={styles.row}>
         <span style={styles.dot} />
@@ -92,9 +104,9 @@ const ParticipantsTab: React.FC<{ roles: RoleCard[] }> = ({ roles }) => (
   </div>
 );
 
-const ReferencesTab: React.FC<{ refs: SourceRef[] }> = ({ refs }) => (
+const ReferencesTab: React.FC<{ refs: SourceRef[]; t: Translations }> = ({ refs, t }) => (
   <div>
-    {refs.length === 0 && <div style={styles.empty}>No references selected</div>}
+    {refs.length === 0 && <div style={styles.empty}>{t.noReferences}</div>}
     {refs.map((r) => (
       <div key={r.path} style={styles.row}>
         <span style={styles.fileIcon}>#</span>
@@ -104,9 +116,9 @@ const ReferencesTab: React.FC<{ refs: SourceRef[] }> = ({ refs }) => (
   </div>
 );
 
-const OutputsTab: React.FC<{ files: string[] }> = ({ files }) => (
+const OutputsTab: React.FC<{ files: string[]; t: Translations }> = ({ files, t }) => (
   <div>
-    {files.length === 0 && <div style={styles.empty}>No outputs generated</div>}
+    {files.length === 0 && <div style={styles.empty}>{t.noOutputs}</div>}
     {files.map((f, i) => (
       <div key={i} style={styles.row}>
         <span style={styles.fileIcon}>📄</span>
@@ -116,59 +128,59 @@ const OutputsTab: React.FC<{ files: string[] }> = ({ files }) => (
   </div>
 );
 
-const ContextTab: React.FC<{ debug?: ContextDebug }> = ({ debug }) => {
+const ContextTab: React.FC<{ debug?: ContextDebug; t: Translations }> = ({ debug, t }) => {
   if (!debug) {
-    return <div style={styles.empty}>No context data yet. Send a message first.</div>;
+    return <div style={styles.empty}>{t.noContextData}</div>;
   }
 
-  const modStatus = debug.moderatorHasOverflow ? "OVERFLOW" : "Full";
+  const modStatus = debug.moderatorHasOverflow ? t.overflow : t.full;
   const modColor = debug.moderatorHasOverflow ? "#e74c3c" : "#2ecc71";
 
   return (
     <div style={{ fontSize: 11 }}>
-      <div style={styles.sectionHeader}>Moderator</div>
+      <div style={styles.sectionHeader}>{t.moderator}</div>
       <div style={styles.statRow}>
-        <span style={styles.statLabel}>Status</span>
+        <span style={styles.statLabel}>{t.status}</span>
         <span style={{ ...styles.statValue, color: modColor, fontWeight: 600 }}>{modStatus}</span>
       </div>
       <div style={styles.statRow}>
-        <span style={styles.statLabel}>Docs included</span>
+        <span style={styles.statLabel}>{t.docsIncluded}</span>
         <span style={styles.statValue}>{debug.moderatorIncludedDocCount}</span>
       </div>
       <div style={styles.statRow}>
-        <span style={styles.statLabel}>Total chars</span>
+        <span style={styles.statLabel}>{t.totalChars}</span>
         <span style={styles.statValue}>{debug.moderatorTotalChars.toLocaleString()}</span>
       </div>
       {debug.moderatorHasOverflow && (
         <div style={styles.overflowWarning}>
-          Overflow: {debug.moderatorOverflowDocs.join(", ")}
+          {t.overflow}: {debug.moderatorOverflowDocs.join(", ")}
         </div>
       )}
 
-      <div style={styles.sectionHeader}>Roles</div>
+      <div style={styles.sectionHeader}>{t.roles_}</div>
       <div style={styles.statRow}>
-        <span style={styles.statLabel}>Context mode</span>
+        <span style={styles.statLabel}>{t.contextMode}</span>
         <span style={styles.statValue}>{debug.roleContextMode}</span>
       </div>
       <div style={styles.statRow}>
-        <span style={styles.statLabel}>Docs included</span>
+        <span style={styles.statLabel}>{t.docsIncluded}</span>
         <span style={styles.statValue}>{debug.roleDocCount}</span>
       </div>
       <div style={styles.statRow}>
-        <span style={styles.statLabel}>Truncated docs</span>
+        <span style={styles.statLabel}>{t.truncatedDocs}</span>
         <span style={{ ...styles.statValue, color: debug.roleTruncatedDocs > 0 ? "#e67e22" : colors.text }}>
           {debug.roleTruncatedDocs}
         </span>
       </div>
       <div style={styles.statRow}>
-        <span style={styles.statLabel}>Total chars</span>
+        <span style={styles.statLabel}>{t.totalChars}</span>
         <span style={styles.statValue}>{debug.roleTotalChars.toLocaleString()}</span>
       </div>
     </div>
   );
 };
 
-const MemoriesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath }) => {
+const MemoriesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({ workspacePath, t }) => {
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -196,9 +208,9 @@ const MemoriesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath }) =>
     setMemories((prev) => prev.map((m) => m.id === id ? { ...m, status } : m));
   }, [workspacePath]);
 
-  if (!workspacePath) return <div style={styles.empty}>Open a workspace to view memories</div>;
-  if (loading) return <div style={styles.empty}>Loading...</div>;
-  if (memories.length === 0) return <div style={styles.empty}>No memories yet</div>;
+  if (!workspacePath) return <div style={styles.empty}>{t.openWorkspaceToView}</div>;
+  if (loading) return <div style={styles.empty}>{t.loading}</div>;
+  if (memories.length === 0) return <div style={styles.empty}>{t.noMemories}</div>;
 
   const candidates = memories.filter((m) => m.status === "candidate");
   const accepted = memories.filter((m) => m.status === "accepted");
@@ -208,25 +220,25 @@ const MemoriesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath }) =>
     <div>
       {candidates.length > 0 && (
         <>
-          <div style={styles.sectionHeader}>Pending ({candidates.length})</div>
+          <div style={styles.sectionHeader}>{t.pending} ({candidates.length})</div>
           {candidates.map((m) => (
-            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} onReject={() => handleStatus(m.id, "rejected")} />
+            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} onReject={() => handleStatus(m.id, "rejected")} t={t} />
           ))}
         </>
       )}
       {accepted.length > 0 && (
         <>
-          <div style={styles.sectionHeader}>Accepted ({accepted.length})</div>
+          <div style={styles.sectionHeader}>{t.accepted} ({accepted.length})</div>
           {accepted.map((m) => (
-            <MemoryCard key={m.id} memory={m} onReject={() => handleStatus(m.id, "rejected")} />
+            <MemoryCard key={m.id} memory={m} onReject={() => handleStatus(m.id, "rejected")} t={t} />
           ))}
         </>
       )}
       {rejected.length > 0 && (
         <>
-          <div style={styles.sectionHeader}>Rejected ({rejected.length})</div>
+          <div style={styles.sectionHeader}>{t.rejected} ({rejected.length})</div>
           {rejected.map((m) => (
-            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} />
+            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} t={t} />
           ))}
         </>
       )}
@@ -238,7 +250,8 @@ const MemoryCard: React.FC<{
   memory: MemoryItem;
   onAccept?: () => void;
   onReject?: () => void;
-}> = ({ memory, onAccept, onReject }) => (
+  t: Translations;
+}> = ({ memory, onAccept, onReject, t }) => (
   <div style={memoryCardStyles.card}>
     <div style={memoryCardStyles.scope}>{memory.scope}</div>
     <div style={memoryCardStyles.content}>{memory.content}</div>
@@ -249,10 +262,10 @@ const MemoryCard: React.FC<{
     </div>
     <div style={memoryCardStyles.actions}>
       {onAccept && (
-        <button style={memoryCardStyles.acceptBtn} onClick={onAccept}>Accept</button>
+        <button style={memoryCardStyles.acceptBtn} onClick={onAccept}>{t.accept}</button>
       )}
       {onReject && (
-        <button style={memoryCardStyles.rejectBtn} onClick={onReject}>Reject</button>
+        <button style={memoryCardStyles.rejectBtn} onClick={onReject}>{t.reject}</button>
       )}
     </div>
   </div>
@@ -326,7 +339,7 @@ interface CustomRole {
   tags: string[];
 }
 
-const CustomRolesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath }) => {
+const CustomRolesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({ workspacePath, t }) => {
   const [roles, setRoles] = useState<CustomRole[]>([]);
   const [editing, setEditing] = useState<CustomRole | null>(null);
   const [loading, setLoading] = useState(false);
@@ -364,45 +377,45 @@ const CustomRolesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath })
     loadRoles();
   }, [workspacePath, loadRoles]);
 
-  if (!workspacePath) return <div style={styles.empty}>Open a workspace to manage roles</div>;
-  if (loading) return <div style={styles.empty}>Loading...</div>;
+  if (!workspacePath) return <div style={styles.empty}>{t.openWorkspaceToManage}</div>;
+  if (loading) return <div style={styles.empty}>{t.loading}</div>;
 
   if (editing) {
     return (
       <div style={roleStyles.form}>
         <div style={roleStyles.formRow}>
-          <label style={roleStyles.label}>Name</label>
+          <label style={roleStyles.label}>{t.name}</label>
           <input style={roleStyles.input} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
         </div>
         <div style={roleStyles.formRow}>
-          <label style={roleStyles.label}>Name (CN)</label>
+          <label style={roleStyles.label}>{t.nameCN}</label>
           <input style={roleStyles.input} value={editing.nameCN} onChange={(e) => setEditing({ ...editing, nameCN: e.target.value })} />
         </div>
         <div style={roleStyles.formRow}>
-          <label style={roleStyles.label}>Subtitle</label>
+          <label style={roleStyles.label}>{t.subtitle}</label>
           <input style={roleStyles.input} value={editing.subtitle} onChange={(e) => setEditing({ ...editing, subtitle: e.target.value })} />
         </div>
         <div style={roleStyles.formRow}>
-          <label style={roleStyles.label}>Type</label>
+          <label style={roleStyles.label}>{t.type}</label>
           <select style={roleStyles.input} value={editing.type} onChange={(e) => setEditing({ ...editing, type: e.target.value })}>
-            <option value="critic">Critic</option>
-            <option value="historian">Historian</option>
-            <option value="strategist">Strategist</option>
-            <option value="architect">Architect</option>
-            <option value="lens">Lens</option>
+            <option value="critic">{t.critic}</option>
+            <option value="historian">{t.historian}</option>
+            <option value="strategist">{t.strategist}</option>
+            <option value="architect">{t.architect}</option>
+            <option value="lens">{t.lens}</option>
           </select>
         </div>
         <div style={roleStyles.formRow}>
-          <label style={roleStyles.label}>Tags (comma-separated)</label>
-          <input style={roleStyles.input} value={editing.tags.join(", ")} onChange={(e) => setEditing({ ...editing, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} />
+          <label style={roleStyles.label}>{t.tags}</label>
+          <input style={roleStyles.input} value={editing.tags.join(", ")} onChange={(e) => setEditing({ ...editing, tags: e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
         </div>
         <div style={roleStyles.formRow}>
-          <label style={roleStyles.label}>System Prompt</label>
+          <label style={roleStyles.label}>{t.systemPrompt}</label>
           <textarea style={roleStyles.textarea} value={editing.systemPrompt} onChange={(e) => setEditing({ ...editing, systemPrompt: e.target.value })} />
         </div>
         <div style={roleStyles.formActions}>
-          <button style={roleStyles.saveBtn} onClick={handleSave}>Save</button>
-          <button style={roleStyles.cancelBtn} onClick={() => setEditing(null)}>Cancel</button>
+          <button style={roleStyles.saveBtn} onClick={handleSave}>{t.save}</button>
+          <button style={roleStyles.cancelBtn} onClick={() => setEditing(null)}>{t.cancel}</button>
         </div>
       </div>
     );
@@ -419,9 +432,9 @@ const CustomRolesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath })
         systemPrompt: "",
         tags: [],
       })}>
-        + New Role
+        {t.newRole}
       </button>
-      {roles.length === 0 && <div style={styles.empty}>No custom roles</div>}
+      {roles.length === 0 && <div style={styles.empty}>{t.noCustomRoles}</div>}
       {roles.map((r) => (
         <div key={r.id} style={roleStyles.card}>
           <div style={roleStyles.cardHeader}>
@@ -435,8 +448,8 @@ const CustomRolesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath })
             ))}
           </div>
           <div style={roleStyles.cardActions}>
-            <button style={roleStyles.editBtn} onClick={() => setEditing(r)}>Edit</button>
-            <button style={roleStyles.deleteBtn} onClick={() => handleDelete(r.id)}>Delete</button>
+            <button style={roleStyles.editBtn} onClick={() => setEditing(r)}>{t.edit}</button>
+            <button style={roleStyles.deleteBtn} onClick={() => handleDelete(r.id)}>{t.delete}</button>
           </div>
         </div>
       ))}

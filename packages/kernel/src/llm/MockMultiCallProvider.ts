@@ -3,11 +3,13 @@ import type { LLMProvider } from "../types/index.js";
 
 const ROLE_RESPONSES: Record<string, (ctx: string) => string> = {
   skeptic_critic: (ctx) =>
-    `我对当前议题有几个关键质疑：\n\n1. **前提假设风险** — ${ctx} 中可能存在的隐含假设需要被审视。\n2. **反例** — 历史上有类似路径失败的案例。\n3. **盲区** — 我们可能忽略了二阶效应。\n\n建议在推进前先验证这些前提。`,
+    `I have several key challenges to this proposal:\n\n1. **Hidden Assumptions** — ${ctx} contains implicit assumptions that need to be examined.\n2. **Counter-examples** — Historically, similar approaches have failed.\n3. **Blind Spots** — We may be overlooking second-order effects.\n\nI recommend validating these premises before proceeding.`,
   historian: (ctx) =>
-    `从历史周期视角看：\n\n- 当前阶段类似 2010 年代早期的平台型产品窗口期。\n- ${ctx} 的路径有明确的历史先例。\n- 但需注意周期节奏：窗口期通常 18-24 个月。\n\n历史不会重复，但会押韵。`,
+    `From a historical cycle perspective:\n\n- The current phase resembles the early 2010s platform product window.\n- The path in ${ctx} has clear historical precedents.\n- But note the cycle rhythm: windows typically last 18-24 months.\n\nHistory doesn't repeat, but it rhymes.`,
   product_strategist: (ctx) =>
-    `从产品策略角度分析：\n\n- **核心价值主张**：${ctx} 的差异化在于记忆 + 多角色协作。\n- **切入点**：建议从个人知识工作者切入。\n- **护城河建设**：数据积累 + 角色模板 + 用户习惯。\n\n关键是先跑通 PMF，再谈规模化。`,
+    `From a product strategy perspective:\n\n- **Core Value Proposition**: ${ctx}'s differentiation lies in memory + multi-role collaboration.\n- **Entry Point**: Start with individual knowledge workers.\n- **Moat Building**: Data accumulation + role templates + user habits.\n\nThe key is to validate PMF first, then scale.`,
+  systems_architect: (ctx) =>
+    `From a systems architecture perspective:\n\n- **Key Components**: ${ctx} requires a modular pipeline with clear boundaries.\n- **Bottlenecks**: Context budget management and LLM latency are the primary constraints.\n- **Tradeoffs**: Local-first storage limits collaboration but improves privacy.\n\nDesign for failure — every component should degrade gracefully.`,
 };
 
 export class MockMultiCallProvider implements LLMProvider {
@@ -16,7 +18,7 @@ export class MockMultiCallProvider implements LLMProvider {
     await delay(100 + Math.random() * 200);
 
     const generator = ROLE_RESPONSES[input.role.id]
-      ?? (() => `[${input.role.name}] 关于当前议题，我的观点是需要综合考量多个维度。`);
+      ?? (() => `[${input.role.name}] Regarding this topic, I believe we need to consider multiple dimensions comprehensively.`);
 
     return {
       roleId: input.role.id,
@@ -35,14 +37,14 @@ export class MockMultiCallProvider implements LLMProvider {
 
     switch (params.task) {
       case "analyze":
-        return `**场景分析**\n\n当前议题：${params.context}\n\n我认为这是一个需要多维度审视的议题，建议召集以下角色参与讨论。`;
+        return `**Scene Analysis**\n\nCurrent topic: ${params.context}\n\nThis is a topic that requires multi-dimensional examination. I recommend convening the following roles for discussion.`;
       case "select_roles":
         return JSON.stringify(["skeptic_critic", "historian", "product_strategist"]);
       case "summarize":
-        return `**会议总结**\n\n各位角色从不同角度对议题进行了深入讨论：\n- 反驳者指出了前提假设和潜在风险\n- 历史视角提供了周期类比\n- 产品策略给出了落地建议\n\n**共识**：方向可行，但需要先验证核心假设。\n**待办**：建议下一轮讨论具体执行路径。`;
+        return `**Council Summary**\n\nThe roles examined this topic from different angles:\n- The Skeptic Critic identified hidden assumptions and potential risks\n- The Historian provided historical cycle analogies\n- The Product Strategist offered actionable recommendations\n\n**Consensus**: The direction is viable, but core assumptions need validation.\n**Next Steps**: Recommend a follow-up round on the execution path.`;
       case "extract_memories":
         return JSON.stringify([
-          { content: "多角色讨论有助于发现单视角盲区", domains: ["decision-making"], tags: ["council", "diversity"], scope: "universal" },
+          { content: "Multi-role discussion helps reveal single-perspective blind spots", domains: ["decision-making"], tags: ["council", "diversity"], scope: "universal" },
         ]);
     }
   }

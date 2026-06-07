@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { LLMSettingsView, SaveLLMSettingsInput, TestConnectionResult } from "../AgoraBridge.js";
 import { styles } from "./settingsStyles.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigChanged }) => {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState("mock");
   const [model, setModel] = useState("mock");
@@ -71,7 +73,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
     return (
       <div style={styles.overlay} onClick={onClose}>
         <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
-          <div style={styles.loading}>Loading...</div>
+          <div style={styles.loading}>{t.loading}</div>
         </div>
       </div>
     );
@@ -81,67 +83,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
-          <span>Model Settings</span>
+          <span>{t.modelSettings}</span>
           <button style={styles.closeBtn} onClick={onClose}>x</button>
         </div>
 
         <div style={styles.body}>
-          <label style={styles.label}>Provider</label>
+          <label style={styles.label}>{t.provider}</label>
           <select style={styles.select} value={provider} onChange={(e) => setProvider(e.target.value)}>
-            <option value="mock">Mock (testing)</option>
-            <option value="openai_compatible">OpenAI Compatible</option>
+            <option value="mock">{t.mockTesting}</option>
+            <option value="openai_compatible">{t.openaiCompatible}</option>
           </select>
 
-          <label style={styles.label}>Model</label>
+          <label style={styles.label}>{t.model}</label>
           <input style={styles.input} value={model} onChange={(e) => setModel(e.target.value)} placeholder="gpt-4o-mini" />
 
-          <label style={styles.label}>Base URL</label>
+          <label style={styles.label}>{t.baseUrl}</label>
           <input style={styles.input} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://api.openai.com/v1" />
 
-          <label style={styles.label}>API Key</label>
+          <label style={styles.label}>{t.apiKey}</label>
           <div style={styles.keyRow}>
             <input
               style={{ ...styles.input, flex: 1 }}
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={keyStatus.hasApiKey ? "Enter new key to replace" : "sk-..."}
+              placeholder={keyStatus.hasApiKey ? t.apiKey : "sk-..."}
             />
             {keyStatus.hasApiKey && (
-              <button style={styles.clearBtn} onClick={handleClearKey}>Clear</button>
+              <button style={styles.clearBtn} onClick={handleClearKey}>{t.clearApiKey}</button>
             )}
           </div>
           <div style={styles.keyStatus}>
-            {keyStatus.source === "missing" && <span style={styles.statusMissing}>No key configured</span>}
-            {keyStatus.source === "env" && <span style={styles.statusEnv}>Using env var ({keyStatus.maskedKey})</span>}
-            {keyStatus.source === "session" && <span style={styles.statusSaved}>Session key ({keyStatus.maskedKey})</span>}
-            {keyStatus.source === "saved" && <span style={styles.statusSaved}>Saved ({keyStatus.maskedKey})</span>}
+            {keyStatus.source === "missing" && <span style={styles.statusMissing}>{t.noKeyConfigured}</span>}
+            {keyStatus.source === "env" && <span style={styles.statusEnv}>{t.usingEnvVar} ({keyStatus.maskedKey})</span>}
+            {keyStatus.source === "session" && <span style={styles.statusSaved}>{t.sessionKey} ({keyStatus.maskedKey})</span>}
+            {keyStatus.source === "saved" && <span style={styles.statusSaved}>{t.saved_} ({keyStatus.maskedKey})</span>}
           </div>
 
           <button style={styles.advancedToggle} onClick={() => setShowAdvanced(!showAdvanced)}>
-            {showAdvanced ? "Hide" : "Show"} Advanced
+            {showAdvanced ? t.hide : t.show} {t.advanced}
           </button>
           {showAdvanced && (
             <>
-              <label style={styles.label}>Timeout (ms)</label>
+              <label style={styles.label}>{t.timeout}</label>
               <input style={styles.input} type="number" value={timeoutMs} onChange={(e) => setTimeoutMs(Number(e.target.value))} />
-              <label style={styles.label}>Max Output Tokens</label>
+              <label style={styles.label}>{t.maxOutputTokens_}</label>
               <input style={styles.input} type="number" value={maxOutputTokens} onChange={(e) => setMaxOutputTokens(Number(e.target.value))} />
             </>
           )}
 
           <div style={styles.actions}>
             <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? t.saving : t.saveSettings}
             </button>
             <button style={styles.testBtn} onClick={handleTest} disabled={testing}>
-              {testing ? "Testing..." : "Test Connection"}
+              {testing ? t.testing : t.testConnection}
             </button>
           </div>
 
           {testResult && (
             <div style={testResult.ok ? styles.testSuccess : styles.testError}>
-              {testResult.ok ? `Connected (${testResult.latencyMs}ms)` : `Failed: ${testResult.error}`}
+              {testResult.ok ? `${t.connected} (${testResult.latencyMs}ms)` : `${t.failed_} ${testResult.error}`}
             </div>
           )}
         </div>

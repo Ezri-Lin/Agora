@@ -1,6 +1,7 @@
 import React from "react";
 import { TitleBar } from "./TitleBar.js";
 import { colors, sizes } from "../theme/tokens.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface RoomEntry {
   id: string;
@@ -37,21 +38,22 @@ export const AppShell: React.FC<AppShellProps> = ({
   onSelectRoom,
   onNewRoom,
 }) => {
+  const { t } = useI18n();
   return (
     <div style={styles.root}>
       <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} />
       <div style={styles.body}>
         <div style={styles.left}>
-          <RoomList rooms={rooms} activeRoomId={activeRoomId} onSelect={onSelectRoom} onNew={onNewRoom} />
+          <RoomList rooms={rooms} activeRoomId={activeRoomId} onSelect={onSelectRoom} onNew={onNewRoom} t={t} />
           {contextGraph}
         </div>
         <div style={styles.center}>
           <div style={styles.chat}>
             <div style={styles.chatHeader}>
-              <span style={styles.chatTitle}>Council Room</span>
+              <span style={styles.chatTitle}>{t.councilRoom}</span>
               {onAddRef && (
                 <button style={styles.addRefBtn} onClick={onAddRef}>
-                  + Add Reference
+                  {t.addReference}
                 </button>
               )}
             </div>
@@ -70,17 +72,18 @@ const RoomList: React.FC<{
   activeRoomId?: string | null;
   onSelect?: (id: string) => void;
   onNew?: () => void;
-}> = ({ rooms, activeRoomId, onSelect, onNew }) => (
+  t: { rooms: string; noRooms: string };
+}> = ({ rooms, activeRoomId, onSelect, onNew, t }) => (
   <div style={styles.roomList}>
     <div style={styles.roomListHeader}>
-      <span style={styles.roomListTitle}>Rooms</span>
+      <span style={styles.roomListTitle}>{t.rooms}</span>
       {onNew && (
         <button style={styles.newRoomBtn} onClick={onNew}>+</button>
       )}
     </div>
     <div style={styles.roomListItems}>
       {rooms.length === 0 && (
-        <div style={styles.roomEmpty}>No rooms yet</div>
+        <div style={styles.roomEmpty}>{t.noRooms}</div>
       )}
       {rooms.map((r) => (
         <button

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { RecentWorkspace } from "./AgoraBridge.js";
 import { colors } from "./theme/tokens.js";
+import { useI18n } from "./i18n/I18nContext.js";
 
 interface EmptyStateProps {
   onOpen: () => void;
@@ -8,6 +9,7 @@ interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen, onOpenRecent }) => {
+  const { t } = useI18n();
   const [recent, setRecent] = useState<RecentWorkspace[]>([]);
 
   useEffect(() => {
@@ -18,17 +20,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen, onOpenRecent }) 
     <div style={styles.root}>
       <div style={styles.card}>
         <div style={styles.logo}>A</div>
-        <h1 style={styles.title}>Agora</h1>
-        <p style={styles.subtitle}>
-          Local-first, memory-aware council room
-        </p>
+        <h1 style={styles.title}>{t.appTitle}</h1>
+        <p style={styles.subtitle}>{t.appSubtitle}</p>
         <button style={styles.btn} onClick={onOpen}>
-          Open Workspace
+          {t.openWorkspace}
         </button>
 
         {recent.length > 0 && (
           <div style={styles.recentSection}>
-            <div style={styles.recentLabel}>Recent</div>
+            <div style={styles.recentLabel}>{t.recentWorkspaces}</div>
             {recent.map((ws) => (
               <button
                 key={ws.path}
