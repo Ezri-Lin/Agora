@@ -136,6 +136,16 @@ export const App: React.FC = () => {
         if (content) docContents.set(ref.path, content);
       }
 
+      // Inject accepted memories into context
+      try {
+        const memories = await bridge.room.getMemories(workspace.path);
+        for (const mem of memories) {
+          docContents.set(`memory:${mem.id}`, `[Memory — ${mem.scope}]\n${mem.content}`);
+        }
+      } catch {
+        // Memory loading failure should not block the round
+      }
+
       const roomForCouncil = {
         id: roomIdRef.current!,
         title: text.slice(0, 60),
@@ -194,6 +204,18 @@ export const App: React.FC = () => {
         await bridge.room.appendMessage(workspace.path, roomIdRef.current!, msg);
       }
       await bridge.room.writeSummary(workspace.path, roomIdRef.current!, result.summary);
+
+      // Write extracted memory candidates
+      if (result.extractedMemories.length > 0) {
+        const memLines = [
+          "# Memory Candidates",
+          "",
+          ...result.extractedMemories.map((m) =>
+            `- **[${m.scope}]** ${m.content}\n  domains: ${m.domains.join(", ")} | tags: ${m.tags.join(", ")}`,
+          ),
+        ];
+        await bridge.room.writeMemoryCandidates(workspace.path, roomIdRef.current!, memLines.join("\n"));
+      }
 
       const sessionContent = buildSessionExport(roomForCouncil, [...messages, ...allNew], result.summary);
       await bridge.room.exportSession(workspace.path, roomIdRef.current!, sessionContent);

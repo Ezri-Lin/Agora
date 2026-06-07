@@ -81,6 +81,20 @@ export function registerRoomHandlers(): void {
     return raw.trim().split("\n").map((line: string) => JSON.parse(line));
   });
 
+  ipcMain.handle("room:getMemories", async (_e: any, ws: string) => {
+    const memFile = join(ws, ".agora", "memory", "memories.jsonl");
+    if (!existsSync(memFile)) return [];
+    const raw = await readFile(memFile, "utf-8");
+    if (!raw.trim()) return [];
+    return raw
+      .trim()
+      .split("\n")
+      .map((line: string) => {
+        try { return JSON.parse(line); } catch { return null; }
+      })
+      .filter((m: any) => m !== null && m.status === "accepted");
+  });
+
   ipcMain.handle("room:listOutputs", async (_e: any, ws: string, roomId: string) => {
     const rid = assertValidRoomPath(ws, roomId);
     const dir = join(roomsRoot(ws), rid);

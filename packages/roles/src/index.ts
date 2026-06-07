@@ -3,6 +3,7 @@ export { MODERATOR } from "./cards/moderator.js";
 export { SKEPTIC_CRITIC } from "./cards/skepticCritic.js";
 export { HISTORIAN } from "./cards/historian.js";
 export { PRODUCT_STRATEGIST } from "./cards/productStrategist.js";
+export { SYSTEMS_ARCHITECT } from "./cards/systemsArchitect.js";
 
 // Persona Seed Pack
 export { JOBS_PRODUCT_TASTE_LENS } from "./cards/jobsProductTasteLens.js";

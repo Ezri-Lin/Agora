@@ -26,7 +26,7 @@ export class MockMultiCallProvider implements LLMProvider {
 
   async callModerator(params: {
     roomId: string;
-    task: "analyze" | "select_roles" | "summarize";
+    task: "analyze" | "select_roles" | "summarize" | "extract_memories";
     context: string;
     messages?: CouncilMessage[];
     availableRoles?: RoleCard[];
@@ -40,6 +40,10 @@ export class MockMultiCallProvider implements LLMProvider {
         return JSON.stringify(["skeptic_critic", "historian", "product_strategist"]);
       case "summarize":
         return `**会议总结**\n\n各位角色从不同角度对议题进行了深入讨论：\n- 反驳者指出了前提假设和潜在风险\n- 历史视角提供了周期类比\n- 产品策略给出了落地建议\n\n**共识**：方向可行，但需要先验证核心假设。\n**待办**：建议下一轮讨论具体执行路径。`;
+      case "extract_memories":
+        return JSON.stringify([
+          { content: "多角色讨论有助于发现单视角盲区", domains: ["decision-making"], tags: ["council", "diversity"], scope: "universal" },
+        ]);
     }
   }
 }

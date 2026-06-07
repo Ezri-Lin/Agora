@@ -7,7 +7,7 @@ export interface LLMProvider {
   /** Moderator call — scene analysis, role selection, summary */
   callModerator(params: {
     roomId: string;
-    task: "analyze" | "select_roles" | "summarize";
+    task: "analyze" | "select_roles" | "summarize" | "extract_memories";
     context: string;
     messages?: CouncilMessage[];
     availableRoles?: RoleCard[];

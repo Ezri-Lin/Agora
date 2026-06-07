@@ -42,7 +42,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
 
   async callModerator(params: {
     roomId: string;
-    task: "analyze" | "select_roles" | "summarize";
+    task: "analyze" | "select_roles" | "summarize" | "extract_memories";
     context: string;
     messages?: CouncilMessage[];
     availableRoles?: RoleCard[];

@@ -42,3 +42,28 @@ export function routeRoles(
 
   return selected.slice(0, count);
 }
+
+/**
+ * Auto-invite persona lenses whose tags strongly match the topic.
+ * A lens with ≥2 tag matches is guaranteed inclusion.
+ */
+export function autoInviteLenses(
+  selected: RoleCard[],
+  allRoles: RoleCard[],
+  topic: string,
+): RoleCard[] {
+  const topicLower = topic.toLowerCase();
+  const selectedIds = new Set(selected.map((r) => r.id));
+
+  const lenses = allRoles.filter((r) => r.type === "lens" && !selectedIds.has(r.id));
+
+  for (const lens of lenses) {
+    const matchCount = lens.tags.filter((t) => topicLower.includes(t.toLowerCase())).length;
+    if (matchCount >= 2) {
+      selected.push(lens);
+      selectedIds.add(lens.id);
+    }
+  }
+
+  return selected;
+}

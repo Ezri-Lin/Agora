@@ -79,6 +79,7 @@ export interface AgoraBridge {
     exportSession(workspaceRoot: string, roomId: string, content: string): Promise<void>;
     readMessages(workspaceRoot: string, roomId: string): Promise<unknown[]>;
     listOutputs(workspaceRoot: string, roomId: string): Promise<string[]>;
+    getMemories(workspaceRoot: string): Promise<Array<{ id: string; content: string; domains: string[]; tags: string[]; scope: string; status: string; createdAt: string }>>;
   };
   llm: {
     chat(params: {

@@ -10,5 +10,7 @@ export { buildModeratorPrompt, buildRolePrompt } from "./context/promptContracts
 export { estimateTokens, CONTEXT_BUDGETS, getDocBudget, type ContextBudget } from "./context/tokenBudget.js";
 export { extractRelevantExcerpt } from "./context/extractExcerpt.js";
 export { runCouncilRound, type CouncilRunResult, type ContextDebug } from "./council/CouncilRunner.js";
+export { MemoryStore } from "./memory/MemoryStore.js";
+export { extractMemories } from "./memory/MemoryExtractor.js";
 // eval module is CLI-only (uses node:fs) — import directly from "./eval/runEval.js"
 export type { LLMProvider, CouncilSession } from "./types/index.js";

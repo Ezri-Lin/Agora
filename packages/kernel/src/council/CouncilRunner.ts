@@ -3,13 +3,15 @@ import type {
   CouncilMessage,
   RoleCard,
   ProviderErrorCode,
+  MemoryCandidate,
 } from "@agora/shared";
 import type { LLMProvider } from "../types/index.js";
-import { Moderator } from "../moderator/Moderator.js";
-import { routeRoles } from "../routing/RoleRouter.js";
+import { routeRoles, autoInviteLenses } from "../routing/RoleRouter.js";
 import { buildContextPack, type ContextPack } from "../context/ContextPack.js";
 import { buildModeratorContextPack, type ModeratorContextPack } from "../context/ModeratorContextPack.js";
 import { buildRolePrompt, buildModeratorPrompt } from "../context/promptContracts.js";
+import type { MemoryStore } from "../memory/MemoryStore.js";
+import { extractMemories } from "../memory/MemoryExtractor.js";
 
 export interface ContextDebug {
   moderatorHasOverflow: boolean;
@@ -29,17 +31,20 @@ export interface CouncilRunResult {
   roleContextPack: ContextPack;
   moderatorContextPack: ModeratorContextPack;
   contextDebug: ContextDebug;
+  extractedMemories: MemoryCandidate[];
 }
 
 /**
  * Run a full council round with dual-layer context:
  *
- * 1. Build ModeratorContextPack (full selected docs) — moderator is full-context reader
- * 2. Build RoleContextPack (budgeted excerpts) — roles are budgeted-context participants
- * 3. Moderator analyzes scene (full context)
- * 4. Select roles (full context)
- * 5. Each role responds independently (budgeted context, multi-call)
- * 6. Moderator summarizes (full context + role responses)
+ * 1. Inject relevant memories into context
+ * 2. Build ModeratorContextPack (full selected docs) — moderator is full-context reader
+ * 3. Build RoleContextPack (budgeted excerpts) — roles are budgeted-context participants
+ * 4. Moderator analyzes scene (full context)
+ * 5. Select roles (full context) + auto-invite matching persona lenses
+ * 6. Each role responds independently (budgeted context, multi-call)
+ * 7. Moderator summarizes (full context + role responses)
+ * 8. Extract memory candidates from the discussion
  */
 export async function runCouncilRound(
   room: CouncilRoom,
@@ -49,10 +54,24 @@ export async function runCouncilRound(
   llm: LLMProvider,
   recentMessages: CouncilMessage[] = [],
   docContents?: Map<string, string>,
+  memoryStore?: MemoryStore,
 ): Promise<CouncilRunResult> {
+  // Step 0: Inject relevant memories into docContents
+  const effectiveDocContents = new Map(docContents ?? new Map<string, string>());
+  if (memoryStore) {
+    const topicWords = topic.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+    const memories = await memoryStore.loadByTags(topicWords);
+    for (const mem of memories) {
+      const key = `memory:${mem.id}`;
+      if (!effectiveDocContents.has(key)) {
+        effectiveDocContents.set(key, `[Memory — ${mem.scope}]\n${mem.content}`);
+      }
+    }
+  }
+
   // Step 1: Build dual context packs
-  const modPack = buildModeratorContextPack(room, topic, [...recentMessages, userMessage], docContents);
-  const rolePack = buildContextPack(room, topic, [...recentMessages, userMessage], docContents);
+  const modPack = buildModeratorContextPack(room, topic, [...recentMessages, userMessage], effectiveDocContents);
+  const rolePack = buildContextPack(room, topic, [...recentMessages, userMessage], effectiveDocContents);
 
   // Step 2: Moderator analyzes (full context)
   const analyzePrompt = buildModeratorPrompt("analyze", modPack);
@@ -86,10 +105,13 @@ export async function runCouncilRound(
       ? selectedRoles
       : routeRoles(availableRoles, topic, room.settings.roleCount);
 
+  // Step 3.5: Auto-invite persona lenses matching the topic
+  const finalRoles = autoInviteLenses(roles, availableRoles, topic);
+
   // Step 4: Each role responds independently (budgeted context, multi-call)
   const roleMessages: CouncilMessage[] = [];
   const failedRoles: string[] = [];
-  for (const role of roles) {
+  for (const role of finalRoles) {
     const rolePrompt = buildRolePrompt(role, rolePack);
     try {
       const result = await llm.callRole({
@@ -172,6 +194,27 @@ export async function runCouncilRound(
     messages: [userMessage, ...roleMessages],
   });
 
+  // Step 6: Extract memory candidates
+  let extractedMemories: MemoryCandidate[] = [];
+  if (memoryStore) {
+    try {
+      const insights = await extractMemories(llm, room.id, topic, summary);
+      for (const insight of insights) {
+        const saved = await memoryStore.save({
+          roomId: room.id,
+          scope: insight.scope,
+          domains: insight.domains,
+          tags: insight.tags,
+          content: insight.content,
+          confidence: 0.7,
+        });
+        extractedMemories.push(saved);
+      }
+    } catch {
+      // Memory extraction failure should not break the council round
+    }
+  }
+
   const contextDebug: ContextDebug = {
     moderatorHasOverflow: modPack.meta.hasOverflow,
     moderatorOverflowDocs: modPack.meta.overflowDocs,
@@ -190,5 +233,6 @@ export async function runCouncilRound(
     roleContextPack: rolePack,
     moderatorContextPack: modPack,
     contextDebug,
+    extractedMemories,
   };
 }
