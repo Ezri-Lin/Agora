@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import type { CouncilMessage, SourceRefImportance, LLMConfig } from "@agora/shared";
+import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
 import { runCouncilRound, type CouncilRunResult } from "@agora/kernel";
 import { DEFAULT_ROLES } from "@agora/roles";
@@ -30,6 +30,7 @@ export const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [llmConfig, setLlmConfig] = useState<LLMConfig>({ provider: "mock", model: "mock" });
   const [rooms, setRooms] = useState<Array<{ id: string; title: string; createdAt: string }>>([]);
+  const [customRoles, setCustomRoles] = useState<Array<{ id: string; name: string; nameCN: string; subtitle: string; type: string; systemPrompt: string; tags: string[] }>>([]);
   const roomIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -39,6 +40,17 @@ export const App: React.FC = () => {
     try {
       const list = await bridge.room.list(wsPath);
       setRooms(list);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const loadCustomRoles = useCallback(async (wsPath: string) => {
+    const bridge = getBridge();
+    if (!bridge) return;
+    try {
+      const list = await bridge.customRoles.list(wsPath);
+      setCustomRoles(list);
     } catch {
       // ignore
     }
@@ -59,11 +71,12 @@ export const App: React.FC = () => {
         const docs = await bridge.workspace.listDocs(last.path);
         setAvailableDocs(docs);
         loadRooms(last.path);
+        loadCustomRoles(last.path);
       } catch {
         // Workspace may have been deleted — ignore
       }
     });
-  }, [loadRooms]);
+  }, [loadRooms, loadCustomRoles]);
 
   const handleOpenWorkspace = useCallback(async () => {
     const bridge = getBridge();
@@ -81,7 +94,8 @@ export const App: React.FC = () => {
     setError(null);
     roomIdRef.current = null;
     loadRooms(path);
-  }, [loadRooms]);
+    loadCustomRoles(path);
+  }, [loadRooms, loadCustomRoles]);
 
   const handleSelectRoom = useCallback(async (roomId: string) => {
     if (!workspace) return;
@@ -197,11 +211,15 @@ export const App: React.FC = () => {
       setLoadingStatus(`Calling ${llmConfig.provider} (${llmConfig.model})...`);
 
       const provider = new IPCProvider(llmConfig, (status) => setLoadingStatus(status));
+      const allRoles: RoleCard[] = [
+        ...DEFAULT_ROLES,
+        ...customRoles.map((r) => ({ ...r, type: r.type as RoleCard["type"] })),
+      ];
       const result: CouncilRunResult = await runCouncilRound(
         roomForCouncil,
         text,
         userMsg,
-        DEFAULT_ROLES,
+        allRoles,
         provider,
         messages,
         docContents,
@@ -227,7 +245,7 @@ export const App: React.FC = () => {
         createdAt: nowISO(),
       };
 
-      const allNew = [userMsg, modMsg, ...result.roleMessages, summaryMsg];
+      const allNew = [userMsg, modMsg, ...result.roleMessages, ...result.crossExaminationMessages, summaryMsg];
 
       for (const msg of allNew) {
         await bridge.room.appendMessage(workspace.path, roomIdRef.current!, msg);
@@ -287,10 +305,11 @@ export const App: React.FC = () => {
       setError(null);
       roomIdRef.current = null;
       loadRooms(path);
+      loadCustomRoles(path);
     } catch {
       // Workspace may have been deleted
     }
-  }, [loadRooms]);
+  }, [loadRooms, loadCustomRoles]);
 
   if (!workspace) {
     return <EmptyState onOpen={handleOpenWorkspace} onOpenRecent={handleOpenRecent} />;

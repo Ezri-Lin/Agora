@@ -43,6 +43,16 @@ contextBridge.exposeInMainWorld("agora", {
       ipcRenderer.invoke("room:updateMemoryStatus", workspaceRoot, memoryId, status),
   },
 
+  // Custom Roles
+  customRoles: {
+    list: (workspaceRoot) =>
+      ipcRenderer.invoke("customRoles:list", workspaceRoot),
+    save: (workspaceRoot, role) =>
+      ipcRenderer.invoke("customRoles:save", workspaceRoot, role),
+    delete: (workspaceRoot, roleId) =>
+      ipcRenderer.invoke("customRoles:delete", workspaceRoot, roleId),
+  },
+
   // LLM
   llm: {
     chat: (params) =>

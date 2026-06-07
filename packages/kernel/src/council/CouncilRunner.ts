@@ -9,7 +9,7 @@ import type { LLMProvider } from "../types/index.js";
 import { routeRoles, autoInviteLenses } from "../routing/RoleRouter.js";
 import { buildContextPack, type ContextPack } from "../context/ContextPack.js";
 import { buildModeratorContextPack, type ModeratorContextPack } from "../context/ModeratorContextPack.js";
-import { buildRolePrompt, buildModeratorPrompt } from "../context/promptContracts.js";
+import { buildRolePrompt, buildModeratorPrompt, buildCrossExaminationPrompt } from "../context/promptContracts.js";
 import type { MemoryStore } from "../memory/MemoryStore.js";
 import { extractMemories } from "../memory/MemoryExtractor.js";
 
@@ -27,6 +27,7 @@ export interface ContextDebug {
 export interface CouncilRunResult {
   moderatorAnalysis: string;
   roleMessages: CouncilMessage[];
+  crossExaminationMessages: CouncilMessage[];
   summary: string;
   roleContextPack: ContextPack;
   moderatorContextPack: ModeratorContextPack;
@@ -158,6 +159,45 @@ export async function runCouncilRound(
     }
   }
 
+  // Step 4.5: Cross-examination (roles challenge each other)
+  const crossExaminationMessages: CouncilMessage[] = [];
+  if (room.settings.allowCrossExamination) {
+    const okResponsesForX = roleMessages.filter((m) => m.status !== "error");
+    if (okResponsesForX.length >= 2) {
+      for (const role of finalRoles) {
+        if (failedRoles.includes(role.id)) continue;
+        const others = okResponsesForX
+          .filter((m) => m.senderId !== role.id)
+          .map((m) => {
+            const otherRole = finalRoles.find((r) => r.id === m.senderId);
+            return { roleId: m.senderId, roleName: otherRole?.name ?? m.senderId, content: m.content };
+          });
+        if (others.length === 0) continue;
+        const xPrompt = buildCrossExaminationPrompt(role, others);
+        try {
+          const xResult = await llm.callRole({
+            roomId: room.id,
+            role,
+            sharedContext: xPrompt,
+            roomSummary: "Cross-examination phase: challenge or question other roles' responses.",
+            recentMessages: [...recentMessages, userMessage, ...roleMessages],
+          });
+          crossExaminationMessages.push({
+            id: `msg_x_${role.id}_${Date.now()}`,
+            roomId: room.id,
+            senderType: "role",
+            senderId: role.id,
+            content: xResult.content,
+            status: "ok",
+            createdAt: new Date().toISOString(),
+          });
+        } catch {
+          // Cross-examination failure is non-fatal
+        }
+      }
+    }
+  }
+
   // Step 5: Moderator summarizes (full context + all role responses)
   const okResponses = roleMessages.filter((m) => m.status !== "error");
   const errorResponses = roleMessages.filter((m) => m.status === "error");
@@ -169,6 +209,15 @@ export async function runCouncilRound(
     "",
     ...okResponses.map((m) => `### [${m.senderId}]\n${m.content}`),
   ];
+
+  if (crossExaminationMessages.length > 0) {
+    summaryLines.push(
+      "",
+      "## Cross-Examination",
+      "",
+      ...crossExaminationMessages.map((m) => `### [${m.senderId}] challenges\n${m.content}`),
+    );
+  }
 
   if (errorResponses.length > 0) {
     summaryLines.push(
@@ -229,6 +278,7 @@ export async function runCouncilRound(
   return {
     moderatorAnalysis: analysis,
     roleMessages,
+    crossExaminationMessages,
     summary,
     roleContextPack: rolePack,
     moderatorContextPack: modPack,

@@ -91,6 +91,17 @@ export interface AgoraBridge {
       config: { provider: string; model: string; apiKeyEnv?: string; baseUrl?: string };
     }): Promise<{ content: string }>;
   };
+  customRoles: {
+    list(workspaceRoot: string): Promise<Array<{
+      id: string; name: string; nameCN: string; subtitle: string;
+      type: string; systemPrompt: string; tags: string[];
+    }>>;
+    save(workspaceRoot: string, role: {
+      id: string; name: string; nameCN: string; subtitle: string;
+      type: string; systemPrompt: string; tags: string[];
+    }): Promise<Array<{ id: string; name: string }>>;
+    delete(workspaceRoot: string, roleId: string): Promise<Array<{ id: string; name: string }>>;
+  };
   settings: {
     getLLM(): Promise<LLMSettingsView>;
     saveLLM(input: SaveLLMSettingsInput): Promise<LLMSettingsView>;

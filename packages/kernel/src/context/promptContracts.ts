@@ -85,6 +85,37 @@ export function buildModeratorPrompt(
   return sections.join("\n");
 }
 
+/** Build cross-examination prompt for a role to challenge others */
+export function buildCrossExaminationPrompt(
+  role: RoleCard,
+  otherResponses: Array<{ roleId: string; roleName: string; content: string }>,
+): string {
+  const responsesText = otherResponses
+    .map((r) => `### ${r.roleName} (${r.roleId})\n${r.content}`)
+    .join("\n\n");
+
+  return [
+    `You are ${role.name} — ${role.subtitle}`,
+    "",
+    role.systemPrompt,
+    "",
+    "## Other Roles' Responses",
+    "",
+    responsesText,
+    "",
+    "## Cross-Examination Task",
+    "",
+    "Review the other roles' responses. You may:",
+    "1. Challenge a specific claim you disagree with",
+    "2. Ask a pointed question to expose a weakness",
+    "3. Acknowledge a strong point and build on it",
+    "",
+    "Pick 1-2 responses to cross-examine. Be specific and direct.",
+    "Keep each challenge under 150 words.",
+    "Respond in the same language as the discussion.",
+  ].join("\n");
+}
+
 /** Build the full prompt for a role call (uses budgeted RoleContextPack) */
 export function buildRolePrompt(
   role: RoleCard,

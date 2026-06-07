@@ -47,6 +47,7 @@ const { registerLLMConfigHandlers } = require("./handlers/llm-config.js");
 const { registerWorkspaceHandlers } = require("./handlers/workspace.js");
 const { registerRoomHandlers } = require("./handlers/room.js");
 const { registerLLMChatHandlers } = require("./handlers/llm-chat.js");
+const { registerCustomRoleHandlers } = require("./handlers/custom-roles.js");
 const { setMainWindowGetter } = require("./handlers/sender.js");
 
 setMainWindowGetter(() => mainWindow);
@@ -54,5 +55,6 @@ registerLLMConfigHandlers();
 registerWorkspaceHandlers(() => mainWindow);
 registerRoomHandlers();
 registerLLMChatHandlers();
+registerCustomRoleHandlers();
 
 console.log("[main] Agora started");
