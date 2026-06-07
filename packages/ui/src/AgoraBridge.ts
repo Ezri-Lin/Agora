@@ -80,6 +80,8 @@ export interface AgoraBridge {
     readMessages(workspaceRoot: string, roomId: string): Promise<unknown[]>;
     listOutputs(workspaceRoot: string, roomId: string): Promise<string[]>;
     getMemories(workspaceRoot: string): Promise<Array<{ id: string; content: string; domains: string[]; tags: string[]; scope: string; status: string; createdAt: string }>>;
+    getAllMemories(workspaceRoot: string): Promise<Array<{ id: string; content: string; domains: string[]; tags: string[]; scope: string; status: string; createdAt: string }>>;
+    updateMemoryStatus(workspaceRoot: string, memoryId: string, status: "accepted" | "rejected"): Promise<void>;
   };
   llm: {
     chat(params: {

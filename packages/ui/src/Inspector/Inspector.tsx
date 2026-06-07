@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import type { RoleCard } from "@agora/shared";
 import { colors } from "../theme/tokens.js";
 import { styles } from "./inspectorStyles.js";
+import { getBridge } from "../AgoraBridge.js";
 
 interface SourceRef {
   path: string;
@@ -19,27 +20,39 @@ export interface ContextDebug {
   roleDocCount: number;
 }
 
+interface MemoryItem {
+  id: string;
+  content: string;
+  domains: string[];
+  tags: string[];
+  scope: string;
+  status: string;
+  createdAt: string;
+}
+
 interface InspectorProps {
   participants: RoleCard[];
   references: SourceRef[];
   outputs: string[];
   contextDebug?: ContextDebug;
+  workspacePath?: string;
 }
 
-type TabId = "participants" | "references" | "outputs" | "context";
+type TabId = "participants" | "references" | "outputs" | "context" | "memories";
 
 export const Inspector: React.FC<InspectorProps> = ({
   participants,
   references,
   outputs,
   contextDebug,
+  workspacePath,
 }) => {
   const [tab, setTab] = useState<TabId>("participants");
 
   return (
     <div style={styles.container}>
       <div style={styles.tabs}>
-        {(["participants", "references", "outputs", "context"] as TabId[]).map((t) => (
+        {(["participants", "references", "outputs", "context", "memories"] as TabId[]).map((t) => (
           <button
             key={t}
             style={{
@@ -57,6 +70,7 @@ export const Inspector: React.FC<InspectorProps> = ({
         {tab === "references" && <ReferencesTab refs={references} />}
         {tab === "outputs" && <OutputsTab files={outputs} />}
         {tab === "context" && <ContextTab debug={contextDebug} />}
+        {tab === "memories" && <MemoriesTab workspacePath={workspacePath} />}
       </div>
     </div>
   );
@@ -151,4 +165,152 @@ const ContextTab: React.FC<{ debug?: ContextDebug }> = ({ debug }) => {
       </div>
     </div>
   );
+};
+
+const MemoriesTab: React.FC<{ workspacePath?: string }> = ({ workspacePath }) => {
+  const [memories, setMemories] = useState<MemoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadMemories = useCallback(async () => {
+    if (!workspacePath) return;
+    const bridge = getBridge();
+    if (!bridge) return;
+    setLoading(true);
+    try {
+      const all = await bridge.room.getAllMemories(workspacePath);
+      setMemories(all as MemoryItem[]);
+    } catch {
+      // ignore
+    }
+    setLoading(false);
+  }, [workspacePath]);
+
+  useEffect(() => { loadMemories(); }, [loadMemories]);
+
+  const handleStatus = useCallback(async (id: string, status: "accepted" | "rejected") => {
+    if (!workspacePath) return;
+    const bridge = getBridge();
+    if (!bridge) return;
+    await bridge.room.updateMemoryStatus(workspacePath, id, status);
+    setMemories((prev) => prev.map((m) => m.id === id ? { ...m, status } : m));
+  }, [workspacePath]);
+
+  if (!workspacePath) return <div style={styles.empty}>Open a workspace to view memories</div>;
+  if (loading) return <div style={styles.empty}>Loading...</div>;
+  if (memories.length === 0) return <div style={styles.empty}>No memories yet</div>;
+
+  const candidates = memories.filter((m) => m.status === "candidate");
+  const accepted = memories.filter((m) => m.status === "accepted");
+  const rejected = memories.filter((m) => m.status === "rejected");
+
+  return (
+    <div>
+      {candidates.length > 0 && (
+        <>
+          <div style={styles.sectionHeader}>Pending ({candidates.length})</div>
+          {candidates.map((m) => (
+            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} onReject={() => handleStatus(m.id, "rejected")} />
+          ))}
+        </>
+      )}
+      {accepted.length > 0 && (
+        <>
+          <div style={styles.sectionHeader}>Accepted ({accepted.length})</div>
+          {accepted.map((m) => (
+            <MemoryCard key={m.id} memory={m} onReject={() => handleStatus(m.id, "rejected")} />
+          ))}
+        </>
+      )}
+      {rejected.length > 0 && (
+        <>
+          <div style={styles.sectionHeader}>Rejected ({rejected.length})</div>
+          {rejected.map((m) => (
+            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+};
+
+const MemoryCard: React.FC<{
+  memory: MemoryItem;
+  onAccept?: () => void;
+  onReject?: () => void;
+}> = ({ memory, onAccept, onReject }) => (
+  <div style={memoryCardStyles.card}>
+    <div style={memoryCardStyles.scope}>{memory.scope}</div>
+    <div style={memoryCardStyles.content}>{memory.content}</div>
+    <div style={memoryCardStyles.tags}>
+      {memory.tags.map((t) => (
+        <span key={t} style={memoryCardStyles.tag}>{t}</span>
+      ))}
+    </div>
+    <div style={memoryCardStyles.actions}>
+      {onAccept && (
+        <button style={memoryCardStyles.acceptBtn} onClick={onAccept}>Accept</button>
+      )}
+      {onReject && (
+        <button style={memoryCardStyles.rejectBtn} onClick={onReject}>Reject</button>
+      )}
+    </div>
+  </div>
+);
+
+const memoryCardStyles: Record<string, React.CSSProperties> = {
+  card: {
+    background: "rgba(255,255,255,0.03)",
+    border: `1px solid ${colors.border}`,
+    borderRadius: 6,
+    padding: "8px 10px",
+    marginBottom: 8,
+  },
+  scope: {
+    fontSize: 9,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    color: colors.accent,
+    marginBottom: 4,
+  },
+  content: {
+    fontSize: 12,
+    color: colors.text,
+    lineHeight: 1.5,
+    marginBottom: 6,
+  },
+  tags: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 4,
+    marginBottom: 6,
+  },
+  tag: {
+    fontSize: 9,
+    background: "rgba(255,255,255,0.08)",
+    borderRadius: 3,
+    padding: "1px 5px",
+    color: colors.textMuted,
+  },
+  actions: {
+    display: "flex",
+    gap: 6,
+  },
+  acceptBtn: {
+    fontSize: 10,
+    padding: "3px 10px",
+    borderRadius: 4,
+    border: "none",
+    background: "#2ecc71",
+    color: "#fff",
+    cursor: "pointer",
+  },
+  rejectBtn: {
+    fontSize: 10,
+    padding: "3px 10px",
+    borderRadius: 4,
+    border: "none",
+    background: "#e74c3c",
+    color: "#fff",
+    cursor: "pointer",
+  },
 };

@@ -1,24 +1,37 @@
 # Code Map
 
 ## packages/shared/src/
-- `types.ts` — Core types: Room, CouncilMessage, RoleCard, LLMConfig, SourceRef
+- `types.ts` — Core types: Room, CouncilMessage, RoleCard, LLMConfig, SourceRef, MemoryCandidate
 - `utils.ts` — generateId, nowISO
 
 ## packages/kernel/src/
-- `index.ts` — Barrel exports (runCouncilRound, ContextPack, OpenAICompatibleProvider)
-- `council/CouncilRunner.ts` — Orchestrates multi-role council rounds
-- `context/ContextPack.ts` — Builds moderator context with doc budgeting
-- `context/ModeratorContextPack.ts` — Moderator-specific context assembly
+- `index.ts` — Barrel exports (runCouncilRound, ContextPack, MemoryStore, extractMemories)
+- `council/CouncilRunner.ts` — Orchestrates multi-role council rounds (5 steps + memory)
+- `context/ContextPack.ts` — Builds role context with doc budgeting
+- `context/ModeratorContextPack.ts` — Moderator-specific full-context assembly
 - `context/extractExcerpt.ts` — Extracts relevant excerpts from docs
 - `context/promptContracts.ts` — Prompt templates for moderator/roles
+- `context/tokenBudget.ts` — Token budget allocation per context mode
+- `routing/RoleRouter.ts` — Role scoring, routing, and auto-invite for persona lenses
+- `memory/MemoryStore.ts` — JSONL disk I/O for memory candidates
+- `memory/MemoryExtractor.ts` — LLM-based extraction of durable insights
 - `llm/OpenAICompatibleProvider.ts` — OpenAI-compatible API client
+- `llm/MockMultiCallProvider.ts` — Mock provider for dev/testing
 - `eval/runEval.ts` — CLI evaluation runner (not exported in barrel)
 - `eval/cli.ts` — CLI entry point for eval
 
 ## packages/roles/src/
 - `index.ts` — Barrel exports for all role cards + catalog
-- `roleCatalog.ts` — DEFAULT_ROLES array (8 cards)
-- `cards/*.ts` — Individual role card definitions
+- `roleCatalog.ts` — DEFAULT_ROLES array (5 core + 4 lenses)
+- `cards/moderator.ts` — Moderator role card
+- `cards/skepticCritic.ts` — Skeptic/Critic core role
+- `cards/historian.ts` — Historian core role
+- `cards/productStrategist.ts` — Product Strategist core role
+- `cards/systemsArchitect.ts` — Systems Architect core role
+- `cards/jobsProductTasteLens.ts` — Jobs persona lens
+- `cards/buffettBusinessLens.ts` — Buffett persona lens
+- `cards/mungerMentalModelsLens.ts` — Munger persona lens
+- `cards/growthMarketerLens.ts` — Growth Marketer persona lens
 
 ## packages/adapters/vault/src/
 - `index.ts` — Barrel exports
@@ -31,7 +44,7 @@
 - `index.ts` — Argus adapter (reserved, not implemented in MVP)
 
 ## packages/ui/src/
-- `App.tsx` — Root component, state management, council round orchestration
+- `App.tsx` — Root component, state management, council round orchestration, memory injection
 - `AgoraBridge.ts` — TypeScript bridge interface to Electron IPC
 - `IPCProvider.ts` — LLM provider that calls IPC instead of fetch
 - `EmptyState.tsx` — Workspace picker with recent workspaces
@@ -52,7 +65,7 @@
 - `main/handlers/llm-config.ts` — LLM config IPC (get/save/clear/test)
 - `main/handlers/llm-chat.ts` — LLM chat IPC (mock + real providers)
 - `main/handlers/workspace.ts` — Workspace IPC (open/init/listDocs/readDoc/recent)
-- `main/handlers/room.ts` — Room IPC (create/messages/summary/export)
+- `main/handlers/room.ts` — Room IPC (create/messages/summary/export/memories)
 - `main/handlers/safety.ts` — Path traversal, room ID sanitization, file type whitelist, input validation
 - `main/handlers/audit.ts` — Structured JSONL audit log
 - `main/handlers/sender.ts` — IPC sender validation (main window check)

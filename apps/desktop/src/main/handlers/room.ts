@@ -95,6 +95,41 @@ export function registerRoomHandlers(): void {
       .filter((m: any) => m !== null && m.status === "accepted");
   });
 
+  ipcMain.handle("room:getAllMemories", async (_e: any, ws: string) => {
+    const memFile = join(ws, ".agora", "memory", "memories.jsonl");
+    if (!existsSync(memFile)) return [];
+    const raw = await readFile(memFile, "utf-8");
+    if (!raw.trim()) return [];
+    return raw
+      .trim()
+      .split("\n")
+      .map((line: string) => {
+        try { return JSON.parse(line); } catch { return null; }
+      })
+      .filter((m: any) => m !== null);
+  });
+
+  ipcMain.handle("room:updateMemoryStatus", async (_e: any, ws: string, memoryId: string, status: "accepted" | "rejected") => {
+    assertSenderIsMain(_e);
+    const memFile = join(ws, ".agora", "memory", "memories.jsonl");
+    if (!existsSync(memFile)) return;
+    const raw = await readFile(memFile, "utf-8");
+    if (!raw.trim()) return;
+    const memories = raw
+      .trim()
+      .split("\n")
+      .map((line: string) => {
+        try { return JSON.parse(line); } catch { return null; }
+      })
+      .filter((m: any) => m !== null);
+    const idx = memories.findIndex((m: any) => m.id === memoryId);
+    if (idx === -1) return;
+    memories[idx].status = status;
+    const content = memories.map((m: any) => JSON.stringify(m)).join("\n") + "\n";
+    await writeFile(memFile, content);
+    auditLog("room:updateMemoryStatus", { target: ws, detail: `${memoryId} → ${status}` });
+  });
+
   ipcMain.handle("room:listOutputs", async (_e: any, ws: string, roomId: string) => {
     const rid = assertValidRoomPath(ws, roomId);
     const dir = join(roomsRoot(ws), rid);

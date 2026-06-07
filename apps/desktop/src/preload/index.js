@@ -33,6 +33,10 @@ contextBridge.exposeInMainWorld("agora", {
       ipcRenderer.invoke("room:listOutputs", workspaceRoot, roomId),
     getMemories: (workspaceRoot) =>
       ipcRenderer.invoke("room:getMemories", workspaceRoot),
+    getAllMemories: (workspaceRoot) =>
+      ipcRenderer.invoke("room:getAllMemories", workspaceRoot),
+    updateMemoryStatus: (workspaceRoot, memoryId, status) =>
+      ipcRenderer.invoke("room:updateMemoryStatus", workspaceRoot, memoryId, status),
   },
 
   // LLM

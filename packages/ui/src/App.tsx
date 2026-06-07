@@ -288,6 +288,7 @@ export const App: React.FC = () => {
           references={selectedRefs}
           outputs={outputs}
           contextDebug={contextDebug}
+          workspacePath={workspace?.path}
         />
       }
       composer={
