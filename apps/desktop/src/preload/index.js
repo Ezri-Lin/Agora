@@ -10,7 +10,7 @@ contextBridge.exposeInMainWorld("agora", {
     openDialog: () => ipcRenderer.invoke("workspace:openDialog"),
     init: (workspacePath) => ipcRenderer.invoke("workspace:init", workspacePath),
     listDocs: (workspacePath) => ipcRenderer.invoke("workspace:listDocs", workspacePath),
-    readDoc: (filePath) => ipcRenderer.invoke("workspace:readDoc", filePath),
+    readDoc: (workspaceRoot, filePath) => ipcRenderer.invoke("workspace:readDoc", workspaceRoot, filePath),
     getRecent: () => ipcRenderer.invoke("workspace:getRecent"),
     removeRecent: (path) => ipcRenderer.invoke("workspace:removeRecent", path),
   },

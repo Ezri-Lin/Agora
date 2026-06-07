@@ -43,5 +43,8 @@
 - `main/handlers/llm-chat.ts` — LLM chat IPC (mock + real providers)
 - `main/handlers/workspace.ts` — Workspace IPC (open/init/listDocs/readDoc/recent)
 - `main/handlers/room.ts` — Room IPC (create/messages/summary/export)
+- `main/handlers/safety.ts` — Path traversal, room ID sanitization, file type whitelist, input validation
+- `main/handlers/audit.ts` — Structured JSONL audit log
+- `main/handlers/sender.ts` — IPC sender validation (main window check)
 - `preload/index.js` — Context bridge exposing IPC to renderer
 - `renderer/main.tsx` — React entry point

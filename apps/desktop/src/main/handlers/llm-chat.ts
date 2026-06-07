@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 import { getSessionApiKey } from "./llm-config.js";
+import { auditLog } from "./audit.js";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -63,8 +64,10 @@ export function registerLLMChatHandlers(): void {
       const data = (await res.json()) as any;
       const content = data.choices?.[0]?.message?.content ?? "";
       if (!content) throw new Error("empty_response: API returned no content");
+      auditLog("llm:chat", { detail: `${config.provider}/${config.model}`, ok: true });
       return { content };
     } catch (err: any) {
+      auditLog("llm:chat", { detail: `${config.provider}/${config.model}`, ok: false, error: err.message });
       if (err.name === "AbortError") throw new Error("timeout: Request timed out after 60s");
       if (err.code === "ECONNREFUSED" || err.code === "ENOTFOUND") throw new Error(`network_error: ${err.message}`);
       throw err;

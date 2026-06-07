@@ -2,6 +2,9 @@ import { ipcMain, app } from "electron";
 import { join } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
+import { validateLLMInput } from "./safety.js";
+import { auditLog } from "./audit.js";
+import { assertSenderIsMain } from "./sender.js";
 
 // --- Session API key (in-memory only, never persisted) ---
 
@@ -96,6 +99,8 @@ export function registerLLMConfigHandlers(): void {
     provider: string; model: string; baseUrl?: string;
     apiKey?: string; timeoutMs?: number; maxOutputTokens?: number;
   }) => {
+    assertSenderIsMain(_e);
+    validateLLMInput(input);
     await writeSavedConfig({
       provider: input.provider,
       model: input.model,
@@ -104,13 +109,14 @@ export function registerLLMConfigHandlers(): void {
       maxOutputTokens: input.maxOutputTokens,
     });
     if (input.apiKey) sessionApiKey = input.apiKey;
-    console.log(`[settings] saved: ${input.provider}/${input.model}`);
+    auditLog("settings:saveLLM", { detail: `${input.provider}/${input.model}` });
     return buildSettingsView();
   });
 
-  ipcMain.handle("settings:clearApiKey", async () => {
+  ipcMain.handle("settings:clearApiKey", async (_e: any) => {
+    assertSenderIsMain(_e);
     sessionApiKey = null;
-    console.log("[settings] API key cleared");
+    auditLog("settings:clearApiKey");
     return buildSettingsView();
   });
 
@@ -133,8 +139,10 @@ export function registerLLMConfigHandlers(): void {
         const text = await res.text().catch(() => "");
         return { ok: false, latencyMs: Date.now() - start, error: `HTTP ${res.status}: ${text.slice(0, 200)}` };
       }
+      auditLog("settings:testConnection", { ok: true, detail: `${Date.now() - start}ms` });
       return { ok: true, latencyMs: Date.now() - start };
     } catch (err: any) {
+      auditLog("settings:testConnection", { ok: false, error: err.message });
       return { ok: false, latencyMs: Date.now() - start, error: err.message ?? "Connection failed" };
     }
   });

@@ -8,8 +8,9 @@
 - **Feature**: Auto-open last workspace + recent workspaces list
 - **Refactoring**: All files under 300 lines, extracted style modules and utility functions
 - **Ledger**: Created documentation system (constitution, maps, progress)
+- **Security**: Full write-safety layer — path traversal protection, room ID sanitization, file type whitelist, input validation, sender validation, structured audit logging
 
 ### Verification
 - `pnpm --filter @agora/ui typecheck` — passes clean
-- All source files ≤299 lines (largest: App.tsx at 299)
+- All handler files ≤160 lines
 - Settings modal functional with mock and real provider support

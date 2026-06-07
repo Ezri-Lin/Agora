@@ -1,7 +1,10 @@
 import { ipcMain, dialog, BrowserWindow } from "electron";
-import { join, extname, basename } from "node:path";
+import { join, extname, basename, resolve } from "node:path";
 import { mkdir, writeFile, readFile, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { assertInWorkspace, assertAllowedFileType, isAllowedExtension } from "./safety.js";
+import { auditLog } from "./audit.js";
+import { assertSenderIsMain } from "./sender.js";
 
 const SCAN_EXTENSIONS = new Set([".md", ".txt", ".json", ".jsonl", ".yaml", ".yml", ".toml"]);
 
@@ -43,6 +46,7 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
   ipcMain.handle("workspace:getRecent", async () => readRecent());
 
   ipcMain.handle("workspace:removeRecent", async (_e: any, workspacePath: string) => {
+    assertSenderIsMain(_e);
     await writeRecent((await readRecent()).filter((w) => w.path !== workspacePath));
   });
 
@@ -58,20 +62,23 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
   });
 
   ipcMain.handle("workspace:init", async (_e: any, workspacePath: string) => {
-    const agoraDir = join(workspacePath, ".agora");
+    assertSenderIsMain(_e);
+    const resolved = resolve(workspacePath);
+    const agoraDir = join(resolved, ".agora");
     for (const dir of [agoraDir, join(agoraDir, "rooms"), join(agoraDir, "memory")]) {
       if (!existsSync(dir)) await mkdir(dir, { recursive: true });
     }
     const bootPath = join(agoraDir, "BOOT.md");
     if (!existsSync(bootPath)) {
-      await writeFile(bootPath, `# Agora Workspace\n\nWorkspace: ${basename(workspacePath)}\n`);
+      await writeFile(bootPath, `# Agora Workspace\n\nWorkspace: ${basename(resolved)}\n`);
     }
-    console.log(`[workspace] initialized: ${workspacePath}`);
-    await recordWorkspace(workspacePath, basename(workspacePath));
-    return { path: workspacePath, name: basename(workspacePath) };
+    auditLog("workspace:init", { target: resolved });
+    await recordWorkspace(resolved, basename(resolved));
+    return { path: resolved, name: basename(resolved) };
   });
 
   ipcMain.handle("workspace:listDocs", async (_e: any, workspacePath: string) => {
+    assertInWorkspace(workspacePath, workspacePath);
     const results: Array<{ path: string; name: string; ext: string }> = [];
     async function scan(dir: string, depth: number) {
       if (depth > 3) return;
@@ -90,7 +97,9 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
     return results;
   });
 
-  ipcMain.handle("workspace:readDoc", async (_e: any, filePath: string) => {
+  ipcMain.handle("workspace:readDoc", async (_e: any, workspaceRoot: string, filePath: string) => {
+    assertInWorkspace(filePath, workspaceRoot);
+    assertAllowedFileType(filePath);
     if (!existsSync(filePath)) return null;
     return readFile(filePath, "utf-8");
   });

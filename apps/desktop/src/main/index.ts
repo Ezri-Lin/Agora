@@ -47,7 +47,9 @@ const { registerLLMConfigHandlers } = require("./handlers/llm-config.js");
 const { registerWorkspaceHandlers } = require("./handlers/workspace.js");
 const { registerRoomHandlers } = require("./handlers/room.js");
 const { registerLLMChatHandlers } = require("./handlers/llm-chat.js");
+const { setMainWindowGetter } = require("./handlers/sender.js");
 
+setMainWindowGetter(() => mainWindow);
 registerLLMConfigHandlers();
 registerWorkspaceHandlers(() => mainWindow);
 registerRoomHandlers();

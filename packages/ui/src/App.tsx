@@ -132,7 +132,7 @@ export const App: React.FC = () => {
     try {
       const docContents = new Map<string, string>();
       for (const ref of selectedRefs) {
-        const content = await bridge.workspace.readDoc(ref.path);
+        const content = await bridge.workspace.readDoc(workspace.path, ref.path);
         if (content) docContents.set(ref.path, content);
       }
 

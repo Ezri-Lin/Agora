@@ -67,7 +67,7 @@ export interface AgoraBridge {
     openDialog(): Promise<string | null>;
     init(workspacePath: string): Promise<{ path: string; name: string }>;
     listDocs(workspacePath: string): Promise<ScannedDoc[]>;
-    readDoc(filePath: string): Promise<string | null>;
+    readDoc(workspaceRoot: string, filePath: string): Promise<string | null>;
     getRecent(): Promise<RecentWorkspace[]>;
     removeRecent(path: string): Promise<void>;
   };
