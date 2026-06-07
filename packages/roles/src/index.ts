@@ -11,6 +11,13 @@ export { BUFFETT_BUSINESS_LENS } from "./cards/buffettBusinessLens.js";
 export { MUNGER_MENTAL_MODELS_LENS } from "./cards/mungerMentalModelsLens.js";
 export { GROWTH_MARKETER_LENS } from "./cards/growthMarketerLens.js";
 
+// Domain Lenses
+export { ETHICS_LENS } from "./cards/ethicsLens.js";
+export { UX_RESEARCH_LENS } from "./cards/uxResearchLens.js";
+export { LEGAL_LENS } from "./cards/legalLens.js";
+export { NARRATIVE_LENS } from "./cards/narrativeLens.js";
+export { ECONOMICS_LENS } from "./cards/economicsLens.js";
+
 // Catalog
 export { DEFAULT_ROLES } from "./roleCatalog.js";
 

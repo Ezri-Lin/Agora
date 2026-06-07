@@ -8,6 +8,11 @@ import { BUFFETT_BUSINESS_LENS } from "./cards/buffettBusinessLens.js";
 import { MUNGER_MENTAL_MODELS_LENS } from "./cards/mungerMentalModelsLens.js";
 import { GROWTH_MARKETER_LENS } from "./cards/growthMarketerLens.js";
 import { SYSTEMS_ARCHITECT } from "./cards/systemsArchitect.js";
+import { ETHICS_LENS } from "./cards/ethicsLens.js";
+import { UX_RESEARCH_LENS } from "./cards/uxResearchLens.js";
+import { LEGAL_LENS } from "./cards/legalLens.js";
+import { NARRATIVE_LENS } from "./cards/narrativeLens.js";
+import { ECONOMICS_LENS } from "./cards/economicsLens.js";
 
 export const DEFAULT_ROLES: RoleCard[] = [
   // Layer 1: Core Roles
@@ -21,4 +26,10 @@ export const DEFAULT_ROLES: RoleCard[] = [
   BUFFETT_BUSINESS_LENS,
   MUNGER_MENTAL_MODELS_LENS,
   GROWTH_MARKETER_LENS,
+  // Layer 2b: Domain Lenses
+  ETHICS_LENS,
+  UX_RESEARCH_LENS,
+  LEGAL_LENS,
+  NARRATIVE_LENS,
+  ECONOMICS_LENS,
 ];
