@@ -1,5 +1,29 @@
 /** Type-safe wrapper for the Electron IPC bridge (window.agora) */
 
+export interface LLMSettingsView {
+  provider: string;
+  model: string;
+  baseUrl: string;
+  timeoutMs: number;
+  maxOutputTokens: number;
+  keyStatus: { hasApiKey: boolean; maskedKey: string | null; source: "env" | "saved" | "session" | "missing" };
+}
+
+export interface SaveLLMSettingsInput {
+  provider: string;
+  model: string;
+  baseUrl?: string;
+  apiKey?: string;
+  timeoutMs?: number;
+  maxOutputTokens?: number;
+}
+
+export interface TestConnectionResult {
+  ok: boolean;
+  latencyMs?: number;
+  error?: string;
+}
+
 export interface ScannedDoc {
   path: string;
   name: string;
@@ -53,6 +77,12 @@ export interface AgoraBridge {
       messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
       config: { provider: string; model: string; apiKeyEnv?: string; baseUrl?: string };
     }): Promise<{ content: string }>;
+  };
+  settings: {
+    getLLM(): Promise<LLMSettingsView>;
+    saveLLM(input: SaveLLMSettingsInput): Promise<LLMSettingsView>;
+    clearApiKey(): Promise<LLMSettingsView>;
+    testConnection(): Promise<TestConnectionResult>;
   };
 }
 

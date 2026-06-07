@@ -4,9 +4,10 @@ import { colors, sizes } from "../theme/tokens.js";
 interface TitleBarProps {
   workspaceName: string;
   onOpenWorkspace: () => void;
+  onOpenSettings?: () => void;
 }
 
-export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspace }) => {
+export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspace, onOpenSettings }) => {
   return (
     <header style={styles.bar}>
       <div style={styles.left}>
@@ -21,6 +22,11 @@ export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspa
       <div style={styles.right}>
         <span style={styles.badge}>Local-first</span>
         <span style={styles.badge}>Docs-only</span>
+        {onOpenSettings && (
+          <button style={styles.settingsBtn} onClick={onOpenSettings} title="Model Settings">
+            Settings
+          </button>
+        )}
       </div>
     </header>
   );
@@ -68,5 +74,14 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 4,
     background: colors.border,
     color: colors.textMuted,
+  },
+  settingsBtn: {
+    background: "none",
+    border: `1px solid ${colors.border}`,
+    borderRadius: 4,
+    padding: "2px 8px",
+    fontSize: 10,
+    color: colors.textMuted,
+    cursor: "pointer",
   },
 };

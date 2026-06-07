@@ -10,6 +10,7 @@ interface AppShellProps {
   inspector: React.ReactNode;
   composer: React.ReactNode;
   onAddRef?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -20,10 +21,11 @@ export const AppShell: React.FC<AppShellProps> = ({
   inspector,
   composer,
   onAddRef,
+  onOpenSettings,
 }) => {
   return (
     <div style={styles.root}>
-      <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} />
+      <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} />
       <div style={styles.body}>
         <div style={styles.left}>{contextGraph}</div>
         <div style={styles.center}>

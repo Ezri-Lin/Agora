@@ -12,6 +12,7 @@ import { Composer } from "./Composer/Composer.js";
 import { Inspector, type ContextDebug } from "./Inspector/Inspector.js";
 import { EmptyState } from "./EmptyState.js";
 import { RefPicker } from "./RefPicker.js";
+import { SettingsModal } from "./Settings/SettingsModal.js";
 
 export const App: React.FC = () => {
   const [workspace, setWorkspace] = useState<{ path: string; name: string } | null>(null);
@@ -24,6 +25,7 @@ export const App: React.FC = () => {
   const [availableDocs, setAvailableDocs] = useState<ScannedDoc[]>([]);
   const [contextDebug, setContextDebug] = useState<ContextDebug | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [llmConfig, setLlmConfig] = useState<LLMConfig>({ provider: "mock", model: "mock" });
   const roomIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -203,11 +205,20 @@ export const App: React.FC = () => {
     }
   }, [workspace, messages, selectedRefs, llmConfig]);
 
+  const handleConfigChanged = useCallback(() => {
+    const bridge = getBridge();
+    if (!bridge) return;
+    bridge.getLLMConfig().then((cfg) => {
+      setLlmConfig(cfg as LLMConfig);
+    });
+  }, []);
+
   if (!workspace) {
     return <EmptyState onOpen={handleOpenWorkspace} />;
   }
 
   return (
+    <>
     <AppShell
       workspaceName={workspace.name}
       onOpenWorkspace={handleOpenWorkspace}
@@ -248,7 +259,15 @@ export const App: React.FC = () => {
         </>
       }
       onAddRef={() => setShowRefPicker(!showRefPicker)}
+      onOpenSettings={() => setShowSettings(true)}
     />
+    {showSettings && (
+      <SettingsModal
+        onClose={() => setShowSettings(false)}
+        onConfigChanged={handleConfigChanged}
+      />
+    )}
+  </>
   );
 };
 

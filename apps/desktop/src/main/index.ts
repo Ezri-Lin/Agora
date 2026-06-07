@@ -5,6 +5,80 @@ const { existsSync } = require("node:fs");
 
 let mainWindow: InstanceType<typeof BrowserWindow> | null = null;
 
+// --- LLM Settings (session-only API key, persisted config) ---
+
+let sessionApiKey: string | null = null;
+
+interface SavedLLMConfig {
+  provider?: string;
+  model?: string;
+  baseUrl?: string;
+  timeoutMs?: number;
+  maxOutputTokens?: number;
+}
+
+function getConfigPath(): string {
+  return join(app.getPath("userData"), "llm-config.json");
+}
+
+function maskKey(key: string): string {
+  if (key.length <= 8) return "****";
+  return key.slice(0, 3) + "..." + key.slice(-4);
+}
+
+async function readSavedConfig(): Promise<SavedLLMConfig> {
+  try {
+    const raw = await readFile(getConfigPath(), "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+async function writeSavedConfig(config: SavedLLMConfig): Promise<void> {
+  await writeFile(getConfigPath(), JSON.stringify(config, null, 2));
+}
+
+function resolveProvider(): string {
+  return readSavedConfigSync().provider ?? process.env.AGORA_LLM_PROVIDER ?? "mock";
+}
+
+// Synchronous read for use in IPC handlers that need it synchronously
+let savedConfigCache: SavedLLMConfig | null = null;
+function readSavedConfigSync(): SavedLLMConfig {
+  if (savedConfigCache) return savedConfigCache;
+  try {
+    const raw = require("node:fs").readFileSync(getConfigPath(), "utf-8");
+    savedConfigCache = JSON.parse(raw);
+    return savedConfigCache!;
+  } catch {
+    return {};
+  }
+}
+
+function getEffectiveConfig() {
+  const saved = readSavedConfigSync();
+  const provider = saved.provider ?? process.env.AGORA_LLM_PROVIDER ?? "mock";
+  const model = saved.model ?? process.env.AGORA_LLM_MODEL ?? (provider === "mock" ? "mock" : "gpt-4o-mini");
+  const baseUrl = saved.baseUrl ?? process.env.AGORA_LLM_BASE_URL;
+  const apiKeyEnv = process.env.AGORA_LLM_API_KEY_ENV ?? (provider === "openai_compatible" ? "OPENAI_API_KEY" : undefined);
+  const timeoutMs = saved.timeoutMs ?? 60_000;
+  const maxOutputTokens = saved.maxOutputTokens ?? 2000;
+  return { provider, model, baseUrl, apiKeyEnv, timeoutMs, maxOutputTokens };
+}
+
+function getKeyStatus(): { hasApiKey: boolean; maskedKey: string | null; source: "env" | "saved" | "session" | "missing" } {
+  if (sessionApiKey) {
+    return { hasApiKey: true, maskedKey: maskKey(sessionApiKey), source: "session" };
+  }
+  const envKey = process.env.AGORA_LLM_API_KEY_ENV ?? "OPENAI_API_KEY";
+  const envVal = process.env[envKey];
+  if (envVal) {
+    return { hasApiKey: true, maskedKey: maskKey(envVal), source: "env" };
+  }
+  return { hasApiKey: false, maskedKey: null, source: "missing" };
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -45,12 +119,93 @@ ipcMain.handle("get-app-version", () => app.getVersion());
 ipcMain.handle("get-platform", () => process.platform);
 
 ipcMain.handle("get-llm-config", () => {
-  const provider = process.env.AGORA_LLM_PROVIDER ?? "mock";
-  const model = process.env.AGORA_LLM_MODEL ?? (provider === "mock" ? "mock" : "gpt-4o-mini");
-  const apiKeyEnv = process.env.AGORA_LLM_API_KEY_ENV ?? (provider === "openai_compatible" ? "OPENAI_API_KEY" : undefined);
-  const baseUrl = process.env.AGORA_LLM_BASE_URL;
-  // Never send actual API key to renderer
-  return { provider, model, apiKeyEnv, baseUrl };
+  const cfg = getEffectiveConfig();
+  return { provider: cfg.provider, model: cfg.model, apiKeyEnv: cfg.apiKeyEnv, baseUrl: cfg.baseUrl };
+});
+
+// --- IPC: LLM Settings ---
+
+ipcMain.handle("settings:getLLM", async () => {
+  const cfg = getEffectiveConfig();
+  return {
+    provider: cfg.provider,
+    model: cfg.model,
+    baseUrl: cfg.baseUrl ?? "",
+    timeoutMs: cfg.timeoutMs,
+    maxOutputTokens: cfg.maxOutputTokens,
+    keyStatus: getKeyStatus(),
+  };
+});
+
+ipcMain.handle("settings:saveLLM", async (_e: any, input: {
+  provider: string; model: string; baseUrl?: string;
+  apiKey?: string; timeoutMs?: number; maxOutputTokens?: number;
+}) => {
+  // Save non-secret fields to disk
+  const toSave: SavedLLMConfig = {
+    provider: input.provider,
+    model: input.model,
+    baseUrl: input.baseUrl || undefined,
+    timeoutMs: input.timeoutMs,
+    maxOutputTokens: input.maxOutputTokens,
+  };
+  await writeSavedConfig(toSave);
+  savedConfigCache = toSave;
+
+  // Store API key in memory only
+  if (input.apiKey) {
+    sessionApiKey = input.apiKey;
+  }
+
+  console.log(`[settings] saved LLM config: ${input.provider}/${input.model}`);
+  const cfg = getEffectiveConfig();
+  return {
+    provider: cfg.provider,
+    model: cfg.model,
+    baseUrl: cfg.baseUrl ?? "",
+    timeoutMs: cfg.timeoutMs,
+    maxOutputTokens: cfg.maxOutputTokens,
+    keyStatus: getKeyStatus(),
+  };
+});
+
+ipcMain.handle("settings:clearApiKey", async () => {
+  sessionApiKey = null;
+  console.log("[settings] API key cleared");
+  const cfg = getEffectiveConfig();
+  return {
+    provider: cfg.provider,
+    model: cfg.model,
+    baseUrl: cfg.baseUrl ?? "",
+    timeoutMs: cfg.timeoutMs,
+    maxOutputTokens: cfg.maxOutputTokens,
+    keyStatus: getKeyStatus(),
+  };
+});
+
+ipcMain.handle("settings:testConnection", async () => {
+  const cfg = getEffectiveConfig();
+  const apiKey = sessionApiKey ?? process.env[cfg.apiKeyEnv ?? "OPENAI_API_KEY"];
+  if (!apiKey) return { ok: false, error: "No API key configured" };
+  if (cfg.provider === "mock") return { ok: true, latencyMs: 0 };
+
+  const baseUrl = (cfg.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "");
+  const start = Date.now();
+  try {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: cfg.model, messages: [{ role: "user", content: "hi" }], max_tokens: 1 }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return { ok: false, latencyMs: Date.now() - start, error: `HTTP ${res.status}: ${text.slice(0, 200)}` };
+    }
+    return { ok: true, latencyMs: Date.now() - start };
+  } catch (err: any) {
+    return { ok: false, latencyMs: Date.now() - start, error: err.message ?? "Connection failed" };
+  }
 });
 
 // --- IPC: Workspace ---
@@ -220,11 +375,11 @@ ipcMain.handle("llm:chat", async (
     return { content: `[${config.model}] Response to: ${lastMsg.slice(0, 150)}` };
   }
 
-  // Normalize error types
+  // Normalize error types — session key takes priority over env var
   const envKey = config.apiKeyEnv ?? "OPENAI_API_KEY";
-  const apiKey = process.env[envKey];
+  const apiKey = sessionApiKey ?? process.env[envKey];
   if (!apiKey) {
-    throw new Error(`missing_api_key: Environment variable ${envKey} is not set`);
+    throw new Error(`missing_api_key: No API key found (set in Settings or env var ${envKey})`);
   }
 
   const baseUrl = (config.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "");

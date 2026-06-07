@@ -36,4 +36,12 @@ contextBridge.exposeInMainWorld("agora", {
     chat: (params) =>
       ipcRenderer.invoke("llm:chat", params),
   },
+
+  // LLM Settings
+  settings: {
+    getLLM: () => ipcRenderer.invoke("settings:getLLM"),
+    saveLLM: (input) => ipcRenderer.invoke("settings:saveLLM", input),
+    clearApiKey: () => ipcRenderer.invoke("settings:clearApiKey"),
+    testConnection: () => ipcRenderer.invoke("settings:testConnection"),
+  },
 });
