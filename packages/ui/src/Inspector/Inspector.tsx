@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { RoleCard } from "@agora/shared";
 import { colors } from "../theme/tokens.js";
+import { styles } from "./inspectorStyles.js";
 
 interface SourceRef {
   path: string;
@@ -150,88 +151,4 @@ const ContextTab: React.FC<{ debug?: ContextDebug }> = ({ debug }) => {
       </div>
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: "flex",
-    flexDirection: "column",
-    height: "100%",
-    borderLeft: `1px solid ${colors.border}`,
-    background: colors.bg,
-  },
-  tabs: {
-    display: "flex",
-    borderBottom: `1px solid ${colors.border}`,
-  },
-  tab: {
-    flex: 1,
-    padding: "8px 4px",
-    background: "none",
-    border: "none",
-    borderBottom: "2px solid transparent",
-    color: colors.textMuted,
-    fontSize: 10,
-    cursor: "pointer",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  tabActive: {
-    color: colors.accent,
-    borderBottomColor: colors.accent,
-  },
-  content: {
-    flex: 1,
-    overflowY: "auto",
-    padding: 12,
-  },
-  empty: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textAlign: "center",
-    padding: 20,
-  },
-  row: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 8,
-    padding: "6px 0",
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: "50%",
-    background: colors.accent,
-    marginTop: 5,
-    flexShrink: 0,
-  },
-  rowName: { fontSize: 12, color: colors.text },
-  rowSub: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
-  fileIcon: { fontSize: 12, flexShrink: 0 },
-  sectionHeader: {
-    color: colors.accent,
-    fontSize: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 12,
-    marginBottom: 6,
-    paddingBottom: 4,
-    borderBottom: `1px solid ${colors.border}`,
-  },
-  statRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "3px 0",
-  },
-  statLabel: { color: colors.textMuted },
-  statValue: { color: colors.text },
-  overflowWarning: {
-    background: "rgba(231,76,60,0.1)",
-    border: "1px solid rgba(231,76,60,0.3)",
-    borderRadius: 4,
-    padding: "4px 8px",
-    marginTop: 6,
-    fontSize: 10,
-    color: "#e74c3c",
-  },
 };

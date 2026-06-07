@@ -13,6 +13,8 @@ import { Inspector, type ContextDebug } from "./Inspector/Inspector.js";
 import { EmptyState } from "./EmptyState.js";
 import { RefPicker } from "./RefPicker.js";
 import { SettingsModal } from "./Settings/SettingsModal.js";
+import { errorStyle } from "./appStyles.js";
+import { buildSessionExport } from "./sessionExport.js";
 
 export const App: React.FC = () => {
   const [workspace, setWorkspace] = useState<{ path: string; name: string } | null>(null);
@@ -30,14 +32,12 @@ export const App: React.FC = () => {
   const roomIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Load LLM config + auto-open last workspace on mount
   useEffect(() => {
     const bridge = getBridge();
     if (!bridge) return;
     bridge.getLLMConfig().then((cfg) => {
       setLlmConfig(cfg as LLMConfig);
     });
-    // Auto-open most recent workspace
     bridge.workspace.getRecent().then(async (recent) => {
       if (recent.length === 0) return;
       const last = recent[0]!;
@@ -84,8 +84,6 @@ export const App: React.FC = () => {
   const handleStop = useCallback(() => {
     setIsLoading(false);
     setLoadingStatus("");
-    // Note: API call may still complete in background; result will be discarded
-    // because isLoading is false when it returns.
   }, []);
 
   const handleSend = useCallback(async (text: string) => {
@@ -95,7 +93,6 @@ export const App: React.FC = () => {
 
     setError(null);
 
-    // Create room on first message
     if (!roomIdRef.current) {
       roomIdRef.current = generateId("room");
       const room = {
@@ -133,7 +130,6 @@ export const App: React.FC = () => {
     setLoadingStatus("Preparing context...");
 
     try {
-      // Load reference doc contents
       const docContents = new Map<string, string>();
       for (const ref of selectedRefs) {
         const content = await bridge.workspace.readDoc(ref.path);
@@ -194,7 +190,6 @@ export const App: React.FC = () => {
 
       const allNew = [userMsg, modMsg, ...result.roleMessages, summaryMsg];
 
-      // Persist to disk
       for (const msg of allNew) {
         await bridge.room.appendMessage(workspace.path, roomIdRef.current!, msg);
       }
@@ -302,37 +297,3 @@ export const App: React.FC = () => {
   </>
   );
 };
-
-const errorStyle: React.CSSProperties = {
-  background: "rgba(231,76,60,0.1)",
-  border: "1px solid rgba(231,76,60,0.3)",
-  borderRadius: 6,
-  padding: "8px 12px",
-  margin: "8px 16px",
-  fontSize: 12,
-  color: "#e74c3c",
-};
-
-function buildSessionExport(
-  room: { id: string; title: string; createdAt: string },
-  messages: CouncilMessage[],
-  summary: string,
-): string {
-  const lines = [
-    `# Session Export: ${room.title}`,
-    "",
-    `Room ID: ${room.id}`,
-    `Date: ${room.createdAt}`,
-    "",
-    "---",
-    "",
-    "## Messages",
-    "",
-  ];
-  for (const msg of messages) {
-    const label = msg.senderType === "user" ? "User" : msg.senderId;
-    lines.push(`### ${label}`, "", msg.content, "");
-  }
-  lines.push("---", "", "## Summary", "", summary);
-  return lines.join("\n");
-}

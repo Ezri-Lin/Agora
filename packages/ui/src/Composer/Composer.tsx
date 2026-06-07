@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { colors } from "../theme/tokens.js";
+import { styles } from "./composerStyles.js";
 
 interface SourceRef {
   path: string;
@@ -107,95 +107,4 @@ const SettingsPopover: React.FC = () => {
       </div>
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    borderTop: `1px solid ${colors.border}`,
-    background: colors.surface,
-    padding: "8px 12px",
-    position: "relative",
-  },
-  chips: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 6,
-    marginBottom: 8,
-  },
-  chip: {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "2px 8px",
-    borderRadius: 4,
-    background: colors.border,
-    color: colors.text,
-    fontSize: 11,
-  },
-  chipIcon: { color: colors.accent, fontWeight: 700 },
-  chipRemove: {
-    background: "none",
-    border: "none",
-    color: colors.textMuted,
-    cursor: "pointer",
-    fontSize: 10,
-    padding: "0 2px",
-  },
-  inputRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  iconBtn: {
-    background: "none",
-    border: "none",
-    color: colors.textMuted,
-    cursor: "pointer",
-    fontSize: 16,
-    padding: 4,
-  },
-  input: {
-    flex: 1,
-    background: colors.bg,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    padding: "8px 12px",
-    color: colors.text,
-    fontSize: 13,
-    resize: "none",
-    outline: "none",
-    fontFamily: "inherit",
-  },
-  sendBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    background: colors.accent,
-    border: "none",
-    color: "#fff",
-    cursor: "pointer",
-    fontSize: 16,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  settings: {
-    position: "absolute",
-    bottom: "100%",
-    left: 12,
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-    minWidth: 180,
-  },
-  settingRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "4px 0",
-    fontSize: 12,
-    color: colors.text,
-  },
-  settingValue: { color: colors.textMuted },
 };
