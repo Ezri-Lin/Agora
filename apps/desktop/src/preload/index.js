@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld("agora", {
 
   // Room Store
   room: {
+    list: (workspaceRoot) =>
+      ipcRenderer.invoke("room:list", workspaceRoot),
+    load: (workspaceRoot, roomId) =>
+      ipcRenderer.invoke("room:load", workspaceRoot, roomId),
     create: (workspaceRoot, room) =>
       ipcRenderer.invoke("room:create", workspaceRoot, room),
     appendMessage: (workspaceRoot, roomId, message) =>

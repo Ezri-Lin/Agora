@@ -29,8 +29,20 @@ export const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [llmConfig, setLlmConfig] = useState<LLMConfig>({ provider: "mock", model: "mock" });
+  const [rooms, setRooms] = useState<Array<{ id: string; title: string; createdAt: string }>>([]);
   const roomIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const loadRooms = useCallback(async (wsPath: string) => {
+    const bridge = getBridge();
+    if (!bridge) return;
+    try {
+      const list = await bridge.room.list(wsPath);
+      setRooms(list);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     const bridge = getBridge();
@@ -46,11 +58,12 @@ export const App: React.FC = () => {
         setWorkspace(ws);
         const docs = await bridge.workspace.listDocs(last.path);
         setAvailableDocs(docs);
+        loadRooms(last.path);
       } catch {
         // Workspace may have been deleted — ignore
       }
     });
-  }, []);
+  }, [loadRooms]);
 
   const handleOpenWorkspace = useCallback(async () => {
     const bridge = getBridge();
@@ -67,7 +80,22 @@ export const App: React.FC = () => {
     setContextDebug(undefined);
     setError(null);
     roomIdRef.current = null;
-  }, []);
+    loadRooms(path);
+  }, [loadRooms]);
+
+  const handleSelectRoom = useCallback(async (roomId: string) => {
+    if (!workspace) return;
+    const bridge = getBridge();
+    if (!bridge) return;
+    const data = await bridge.room.load(workspace.path, roomId);
+    if (!data) return;
+    roomIdRef.current = roomId;
+    setMessages(data.messages as CouncilMessage[]);
+    const outputFiles = await bridge.room.listOutputs(workspace.path, roomId);
+    setOutputs(outputFiles);
+    setContextDebug(undefined);
+    setError(null);
+  }, [workspace]);
 
   const handleAddRef = useCallback((doc: ScannedDoc) => {
     setSelectedRefs((prev) => {
@@ -114,6 +142,7 @@ export const App: React.FC = () => {
         updatedAt: nowISO(),
       };
       await bridge.room.create(workspace.path, room);
+      loadRooms(workspace.path);
     }
 
     const userMsg: CouncilMessage = {
@@ -257,10 +286,11 @@ export const App: React.FC = () => {
       setContextDebug(undefined);
       setError(null);
       roomIdRef.current = null;
+      loadRooms(path);
     } catch {
       // Workspace may have been deleted
     }
-  }, []);
+  }, [loadRooms]);
 
   if (!workspace) {
     return <EmptyState onOpen={handleOpenWorkspace} onOpenRecent={handleOpenRecent} />;
@@ -310,6 +340,10 @@ export const App: React.FC = () => {
       }
       onAddRef={() => setShowRefPicker(!showRefPicker)}
       onOpenSettings={() => setShowSettings(true)}
+      rooms={rooms}
+      activeRoomId={roomIdRef.current}
+      onSelectRoom={handleSelectRoom}
+      onNewRoom={() => { roomIdRef.current = null; setMessages([]); setOutputs([]); setContextDebug(undefined); }}
     />
     {showSettings && (
       <SettingsModal

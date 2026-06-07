@@ -2,6 +2,12 @@ import React from "react";
 import { TitleBar } from "./TitleBar.js";
 import { colors, sizes } from "../theme/tokens.js";
 
+interface RoomEntry {
+  id: string;
+  title: string;
+  createdAt: string;
+}
+
 interface AppShellProps {
   workspaceName: string;
   onOpenWorkspace: () => void;
@@ -11,6 +17,10 @@ interface AppShellProps {
   composer: React.ReactNode;
   onAddRef?: () => void;
   onOpenSettings?: () => void;
+  rooms?: RoomEntry[];
+  activeRoomId?: string | null;
+  onSelectRoom?: (roomId: string) => void;
+  onNewRoom?: () => void;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -22,12 +32,19 @@ export const AppShell: React.FC<AppShellProps> = ({
   composer,
   onAddRef,
   onOpenSettings,
+  rooms = [],
+  activeRoomId,
+  onSelectRoom,
+  onNewRoom,
 }) => {
   return (
     <div style={styles.root}>
       <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} />
       <div style={styles.body}>
-        <div style={styles.left}>{contextGraph}</div>
+        <div style={styles.left}>
+          <RoomList rooms={rooms} activeRoomId={activeRoomId} onSelect={onSelectRoom} onNew={onNewRoom} />
+          {contextGraph}
+        </div>
         <div style={styles.center}>
           <div style={styles.chat}>
             <div style={styles.chatHeader}>
@@ -48,6 +65,39 @@ export const AppShell: React.FC<AppShellProps> = ({
   );
 };
 
+const RoomList: React.FC<{
+  rooms: RoomEntry[];
+  activeRoomId?: string | null;
+  onSelect?: (id: string) => void;
+  onNew?: () => void;
+}> = ({ rooms, activeRoomId, onSelect, onNew }) => (
+  <div style={styles.roomList}>
+    <div style={styles.roomListHeader}>
+      <span style={styles.roomListTitle}>Rooms</span>
+      {onNew && (
+        <button style={styles.newRoomBtn} onClick={onNew}>+</button>
+      )}
+    </div>
+    <div style={styles.roomListItems}>
+      {rooms.length === 0 && (
+        <div style={styles.roomEmpty}>No rooms yet</div>
+      )}
+      {rooms.map((r) => (
+        <button
+          key={r.id}
+          style={{
+            ...styles.roomItem,
+            ...(r.id === activeRoomId ? styles.roomItemActive : {}),
+          }}
+          onClick={() => onSelect?.(r.id)}
+        >
+          {r.title.slice(0, 40)}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 const styles: Record<string, React.CSSProperties> = {
   root: {
     display: "flex",
@@ -64,6 +114,70 @@ const styles: Record<string, React.CSSProperties> = {
     width: sizes.contextGraph,
     flexShrink: 0,
     overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+  },
+  roomList: {
+    display: "flex",
+    flexDirection: "column",
+    borderBottom: `1px solid ${colors.border}`,
+    maxHeight: 200,
+  },
+  roomListHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "8px 12px",
+  },
+  roomListTitle: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  newRoomBtn: {
+    background: "none",
+    border: `1px solid ${colors.border}`,
+    borderRadius: 4,
+    width: 20,
+    height: 20,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: colors.accent,
+    fontSize: 14,
+    cursor: "pointer",
+    lineHeight: 1,
+  },
+  roomListItems: {
+    flex: 1,
+    overflowY: "auto",
+    padding: "0 8px 8px",
+  },
+  roomEmpty: {
+    fontSize: 11,
+    color: colors.textMuted,
+    padding: "4px 4px",
+  },
+  roomItem: {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    background: "none",
+    border: "none",
+    borderRadius: 4,
+    padding: "5px 8px",
+    fontSize: 11,
+    color: colors.text,
+    cursor: "pointer",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  },
+  roomItemActive: {
+    background: "rgba(255,255,255,0.06)",
+    color: colors.accent,
   },
   center: {
     flex: 1,

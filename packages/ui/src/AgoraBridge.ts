@@ -72,6 +72,8 @@ export interface AgoraBridge {
     removeRecent(path: string): Promise<void>;
   };
   room: {
+    list(workspaceRoot: string): Promise<Array<{ id: string; title: string; createdAt: string }>>;
+    load(workspaceRoot: string, roomId: string): Promise<{ room: unknown; messages: unknown[] } | null>;
     create(workspaceRoot: string, room: unknown): Promise<unknown>;
     appendMessage(workspaceRoot: string, roomId: string, message: unknown): Promise<void>;
     writeSummary(workspaceRoot: string, roomId: string, summary: string): Promise<void>;

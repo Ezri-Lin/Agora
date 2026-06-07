@@ -19,6 +19,46 @@ function assertValidRoomPath(ws: string, roomId: string): string {
 }
 
 export function registerRoomHandlers(): void {
+  ipcMain.handle("room:list", async (_e: any, workspaceRoot: string) => {
+    assertInWorkspace(workspaceRoot, workspaceRoot);
+    const root = roomsRoot(workspaceRoot);
+    if (!existsSync(root)) return [];
+    const entries = await readdir(root, { withFileTypes: true });
+    const rooms: Array<{ id: string; title: string; createdAt: string }> = [];
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const roomFile = join(root, entry.name, "room.json");
+      if (!existsSync(roomFile)) continue;
+      try {
+        const data = JSON.parse(await readFile(roomFile, "utf-8"));
+        rooms.push({ id: data.id, title: data.title, createdAt: data.createdAt });
+      } catch {
+        // skip corrupt room
+      }
+    }
+    rooms.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return rooms;
+  });
+
+  ipcMain.handle("room:load", async (_e: any, workspaceRoot: string, roomId: string) => {
+    const rid = assertValidRoomPath(workspaceRoot, roomId);
+    const dir = join(roomsRoot(workspaceRoot), rid);
+    const roomFile = join(dir, "room.json");
+    if (!existsSync(roomFile)) return null;
+    const room = JSON.parse(await readFile(roomFile, "utf-8"));
+    const msgFile = join(dir, "messages.jsonl");
+    let messages: any[] = [];
+    if (existsSync(msgFile)) {
+      const raw = await readFile(msgFile, "utf-8");
+      if (raw.trim()) {
+        messages = raw.trim().split("\n").map((line: string) => {
+          try { return JSON.parse(line); } catch { return null; }
+        }).filter((m: any) => m !== null);
+      }
+    }
+    return { room, messages };
+  });
+
   ipcMain.handle("room:create", async (_e: any, workspaceRoot: string, room: any) => {
     assertSenderIsMain(_e);
     const rid = assertValidRoomPath(workspaceRoot, room.id);

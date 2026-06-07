@@ -7,6 +7,12 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: resolve(__dirname, "dist/renderer"),
+    rollupOptions: {
+      external: [/^node:.*/],
+    },
+  },
+  optimizeDeps: {
+    exclude: ["@agora/kernel"],
   },
   resolve: {
     alias: {
