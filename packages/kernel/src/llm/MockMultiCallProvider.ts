@@ -10,6 +10,12 @@ const ROLE_RESPONSES: Record<string, (ctx: string) => string> = {
     `From a product strategy perspective:\n\n- **Core Value Proposition**: ${ctx}'s differentiation lies in memory + multi-role collaboration.\n- **Entry Point**: Start with individual knowledge workers.\n- **Moat Building**: Data accumulation + role templates + user habits.\n\nThe key is to validate PMF first, then scale.`,
   systems_architect: (ctx) =>
     `From a systems architecture perspective:\n\n- **Key Components**: ${ctx} requires a modular pipeline with clear boundaries.\n- **Bottlenecks**: Context budget management and LLM latency are the primary constraints.\n- **Tradeoffs**: Local-first storage limits collaboration but improves privacy.\n\nDesign for failure — every component should degrade gracefully.`,
+  security_lens: (ctx) =>
+    `From a security & threat perspective:\n\n- **Attack Surface**: ${ctx} exposes several trust boundaries that need explicit definition.\n- **Threat Model (STRIDE)**: Spoofing and tampering risks are highest at the API layer.\n- **Mitigations**: Defense-in-depth with least-privilege access and input validation at every boundary.\n\nSecurity is not a feature — it's a property of the architecture.`,
+  science_lens: (ctx) =>
+    `From a scientific methodology perspective:\n\n- **Evidence Quality**: ${ctx}'s core claims need stronger empirical backing.\n- **Falsifiability**: What experiment would disprove this hypothesis? Define it upfront.\n- **Base Rate**: Similar initiatives have a ~30% success rate — adjust confidence accordingly.\n\nCalibrate confidence to evidence strength, not enthusiasm.`,
+  psychology_lens: (ctx) =>
+    `From a psychology & behavior perspective:\n\n- **Cognitive Biases**: ${ctx} may be affected by optimism bias and planning fallacy.\n- **Motivation (SDT)**: Users need autonomy, competence, and relatedness — does this deliver?\n- **Habit Loop**: The cue-routine-reward cycle needs a clear trigger and variable reward.\n\nDesign for how people actually behave, not how you wish they would.`,
 };
 
 export class MockMultiCallProvider implements LLMProvider {

@@ -13,6 +13,9 @@ import { UX_RESEARCH_LENS } from "./cards/uxResearchLens.js";
 import { LEGAL_LENS } from "./cards/legalLens.js";
 import { NARRATIVE_LENS } from "./cards/narrativeLens.js";
 import { ECONOMICS_LENS } from "./cards/economicsLens.js";
+import { SECURITY_LENS } from "./cards/securityLens.js";
+import { SCIENCE_LENS } from "./cards/scienceLens.js";
+import { PSYCHOLOGY_LENS } from "./cards/psychologyLens.js";
 
 export const DEFAULT_ROLES: RoleCard[] = [
   // Layer 1: Core Roles
@@ -32,4 +35,7 @@ export const DEFAULT_ROLES: RoleCard[] = [
   LEGAL_LENS,
   NARRATIVE_LENS,
   ECONOMICS_LENS,
+  SECURITY_LENS,
+  SCIENCE_LENS,
+  PSYCHOLOGY_LENS,
 ];

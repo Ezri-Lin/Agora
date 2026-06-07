@@ -17,6 +17,9 @@ export { UX_RESEARCH_LENS } from "./cards/uxResearchLens.js";
 export { LEGAL_LENS } from "./cards/legalLens.js";
 export { NARRATIVE_LENS } from "./cards/narrativeLens.js";
 export { ECONOMICS_LENS } from "./cards/economicsLens.js";
+export { SECURITY_LENS } from "./cards/securityLens.js";
+export { SCIENCE_LENS } from "./cards/scienceLens.js";
+export { PSYCHOLOGY_LENS } from "./cards/psychologyLens.js";
 
 // Catalog
 export { DEFAULT_ROLES } from "./roleCatalog.js";
