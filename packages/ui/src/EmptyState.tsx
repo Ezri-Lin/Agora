@@ -1,11 +1,19 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import type { RecentWorkspace } from "./AgoraBridge.js";
 import { colors } from "./theme/tokens.js";
 
 interface EmptyStateProps {
   onOpen: () => void;
+  onOpenRecent?: (path: string) => void;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen }) => {
+export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen, onOpenRecent }) => {
+  const [recent, setRecent] = useState<RecentWorkspace[]>([]);
+
+  useEffect(() => {
+    window.agora?.workspace.getRecent().then(setRecent).catch(() => {});
+  }, []);
+
   return (
     <div style={styles.root}>
       <div style={styles.card}>
@@ -17,6 +25,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen }) => {
         <button style={styles.btn} onClick={onOpen}>
           Open Workspace
         </button>
+
+        {recent.length > 0 && (
+          <div style={styles.recentSection}>
+            <div style={styles.recentLabel}>Recent</div>
+            {recent.map((ws) => (
+              <button
+                key={ws.path}
+                style={styles.recentItem}
+                onClick={() => onOpenRecent?.(ws.path)}
+              >
+                <span style={styles.recentName}>{ws.name}</span>
+                <span style={styles.recentPath}>{ws.path}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -33,6 +57,8 @@ const styles: Record<string, React.CSSProperties> = {
   card: {
     textAlign: "center",
     padding: 48,
+    maxWidth: 480,
+    width: "100%",
   },
   logo: {
     width: 64,
@@ -68,5 +94,42 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     fontWeight: 600,
     cursor: "pointer",
+  },
+  recentSection: {
+    marginTop: 32,
+    textAlign: "left",
+  },
+  recentLabel: {
+    fontSize: 11,
+    fontWeight: 600,
+    color: colors.textMuted,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  recentItem: {
+    display: "flex",
+    flexDirection: "column" as const,
+    width: "100%",
+    padding: "8px 12px",
+    background: "none",
+    border: `1px solid ${colors.border}`,
+    borderRadius: 6,
+    marginBottom: 4,
+    cursor: "pointer",
+    textAlign: "left" as const,
+  },
+  recentName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: colors.text,
+  },
+  recentPath: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
   },
 };

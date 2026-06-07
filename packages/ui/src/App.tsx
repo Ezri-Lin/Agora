@@ -30,12 +30,25 @@ export const App: React.FC = () => {
   const roomIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Load LLM config from main process on mount
+  // Load LLM config + auto-open last workspace on mount
   useEffect(() => {
     const bridge = getBridge();
     if (!bridge) return;
     bridge.getLLMConfig().then((cfg) => {
       setLlmConfig(cfg as LLMConfig);
+    });
+    // Auto-open most recent workspace
+    bridge.workspace.getRecent().then(async (recent) => {
+      if (recent.length === 0) return;
+      const last = recent[0]!;
+      try {
+        const ws = await bridge.workspace.init(last.path);
+        setWorkspace(ws);
+        const docs = await bridge.workspace.listDocs(last.path);
+        setAvailableDocs(docs);
+      } catch {
+        // Workspace may have been deleted — ignore
+      }
     });
   }, []);
 
@@ -213,8 +226,27 @@ export const App: React.FC = () => {
     });
   }, []);
 
+  const handleOpenRecent = useCallback(async (path: string) => {
+    const bridge = getBridge();
+    if (!bridge) return;
+    try {
+      const ws = await bridge.workspace.init(path);
+      setWorkspace(ws);
+      const docs = await bridge.workspace.listDocs(path);
+      setAvailableDocs(docs);
+      setMessages([]);
+      setOutputs([]);
+      setSelectedRefs([]);
+      setContextDebug(undefined);
+      setError(null);
+      roomIdRef.current = null;
+    } catch {
+      // Workspace may have been deleted
+    }
+  }, []);
+
   if (!workspace) {
-    return <EmptyState onOpen={handleOpenWorkspace} />;
+    return <EmptyState onOpen={handleOpenWorkspace} onOpenRecent={handleOpenRecent} />;
   }
 
   return (

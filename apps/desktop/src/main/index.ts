@@ -21,6 +21,10 @@ function getConfigPath(): string {
   return join(app.getPath("userData"), "llm-config.json");
 }
 
+function getRecentWorkspacesPath(): string {
+  return join(app.getPath("userData"), "recent-workspaces.json");
+}
+
 function maskKey(key: string): string {
   if (key.length <= 8) return "****";
   return key.slice(0, 3) + "..." + key.slice(-4);
@@ -77,6 +81,34 @@ function getKeyStatus(): { hasApiKey: boolean; maskedKey: string | null; source:
     return { hasApiKey: true, maskedKey: maskKey(envVal), source: "env" };
   }
   return { hasApiKey: false, maskedKey: null, source: "missing" };
+}
+
+// --- Recent Workspaces ---
+
+interface RecentWorkspace {
+  path: string;
+  name: string;
+  lastOpened: string;
+}
+
+async function readRecentWorkspaces(): Promise<RecentWorkspace[]> {
+  try {
+    const raw = await readFile(getRecentWorkspacesPath(), "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+async function writeRecentWorkspaces(list: RecentWorkspace[]): Promise<void> {
+  await writeFile(getRecentWorkspacesPath(), JSON.stringify(list, null, 2));
+}
+
+async function recordWorkspace(path: string, name: string): Promise<void> {
+  const list = await readRecentWorkspaces();
+  const filtered = list.filter((w) => w.path !== path);
+  filtered.unshift({ path, name, lastOpened: new Date().toISOString() });
+  await writeRecentWorkspaces(filtered.slice(0, 10));
 }
 
 function createWindow(): void {
@@ -210,6 +242,15 @@ ipcMain.handle("settings:testConnection", async () => {
 
 // --- IPC: Workspace ---
 
+ipcMain.handle("workspace:getRecent", async () => {
+  return readRecentWorkspaces();
+});
+
+ipcMain.handle("workspace:removeRecent", async (_e: any, workspacePath: string) => {
+  const list = await readRecentWorkspaces();
+  await writeRecentWorkspaces(list.filter((w) => w.path !== workspacePath));
+});
+
 const SCAN_EXTENSIONS = new Set([".md", ".txt", ".json", ".jsonl", ".yaml", ".yml", ".toml"]);
 
 ipcMain.handle("workspace:openDialog", async () => {
@@ -232,6 +273,7 @@ ipcMain.handle("workspace:init", async (_e: any, workspacePath: string) => {
     await writeFile(bootPath, `# Agora Workspace\n\nWorkspace: ${basename(workspacePath)}\n`);
   }
   console.log(`[workspace] initialized: ${workspacePath}`);
+  await recordWorkspace(workspacePath, basename(workspacePath));
   return { path: workspacePath, name: basename(workspacePath) };
 });
 

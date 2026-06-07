@@ -30,6 +30,12 @@ export interface ScannedDoc {
   ext: string;
 }
 
+export interface RecentWorkspace {
+  path: string;
+  name: string;
+  lastOpened: string;
+}
+
 export interface CouncilRoundResult {
   moderatorAnalysis: string;
   roleMessages: Array<{
@@ -62,6 +68,8 @@ export interface AgoraBridge {
     init(workspacePath: string): Promise<{ path: string; name: string }>;
     listDocs(workspacePath: string): Promise<ScannedDoc[]>;
     readDoc(filePath: string): Promise<string | null>;
+    getRecent(): Promise<RecentWorkspace[]>;
+    removeRecent(path: string): Promise<void>;
   };
   room: {
     create(workspaceRoot: string, room: unknown): Promise<unknown>;

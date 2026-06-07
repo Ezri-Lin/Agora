@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld("agora", {
     init: (workspacePath) => ipcRenderer.invoke("workspace:init", workspacePath),
     listDocs: (workspacePath) => ipcRenderer.invoke("workspace:listDocs", workspacePath),
     readDoc: (filePath) => ipcRenderer.invoke("workspace:readDoc", filePath),
+    getRecent: () => ipcRenderer.invoke("workspace:getRecent"),
+    removeRecent: (path) => ipcRenderer.invoke("workspace:removeRecent", path),
   },
 
   // Room Store
