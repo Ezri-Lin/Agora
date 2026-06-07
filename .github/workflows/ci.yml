@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck shared
+        run: pnpm --filter @agora/shared typecheck
+
+      - name: Typecheck kernel
+        run: pnpm --filter @agora/kernel typecheck
+
+      - name: Typecheck roles
+        run: pnpm --filter @agora/roles typecheck
+
+      - name: Typecheck UI
+        run: pnpm --filter @agora/ui typecheck
+
+      - name: Build renderer
+        run: cd apps/desktop && npx vite build
+
+      - name: Build electron
+        run: cd apps/desktop && npx tsc -p tsconfig.electron.json

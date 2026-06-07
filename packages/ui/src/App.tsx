@@ -264,7 +264,7 @@ export const App: React.FC = () => {
         await bridge.room.writeMemoryCandidates(workspace.path, roomIdRef.current!, memLines.join("\n"));
       }
 
-      const sessionContent = buildSessionExport(roomForCouncil, [...messages, ...allNew], result.summary);
+      const sessionContent = buildSessionExport(roomForCouncil, [...messages, ...allNew], result.summary, result.contextDebug);
       await bridge.room.exportSession(workspace.path, roomIdRef.current!, sessionContent);
 
       const outputFiles = await bridge.room.listOutputs(workspace.path, roomIdRef.current!);

@@ -13,7 +13,12 @@ interface ChatCompletionChoice {
 
 interface ChatCompletionResponse {
   choices: ChatCompletionChoice[];
+  error?: { message: string; type: string };
 }
+
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
 
 export class OpenAICompatibleProvider implements LLMProvider {
   private baseUrl: string;
@@ -26,7 +31,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     const envKey = config.apiKeyEnv ?? "OPENAI_API_KEY";
     this.apiKey = process.env[envKey] ?? "";
     if (!this.apiKey) {
-      throw new Error(`API key not found in env: ${envKey}`);
+      throw new Error(`missing_api_key: API key not found in env: ${envKey}`);
     }
   }
 
@@ -79,21 +84,71 @@ export class OpenAICompatibleProvider implements LLMProvider {
       temperature: 0.7,
     };
 
-    const res = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    let lastError: Error | null = null;
 
-    if (!res.ok) {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+
+      const res = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as ChatCompletionResponse;
+        if (data.error) {
+          throw new Error(`llm_error: ${data.error.message}`);
+        }
+        const content = data.choices?.[0]?.message?.content;
+        if (!content) {
+          throw new Error("empty_response: LLM returned empty content");
+        }
+        return content;
+      }
+
       const text = await res.text().catch(() => "");
-      throw new Error(`LLM API error ${res.status}: ${text}`);
+      lastError = parseError(res.status, text);
+
+      if (!RETRYABLE_STATUS.has(res.status)) {
+        throw lastError;
+      }
     }
 
-    const data = (await res.json()) as ChatCompletionResponse;
-    return data.choices?.[0]?.message?.content ?? "";
+    throw lastError ?? new Error("unknown: LLM request failed after retries");
+  }
+}
+
+function parseError(status: number, body: string): Error {
+  let detail = "";
+  try {
+    const parsed = JSON.parse(body);
+    detail = parsed.error?.message ?? parsed.message ?? body;
+  } catch {
+    detail = body;
+  }
+
+  switch (status) {
+    case 401:
+      return new Error(`invalid_api_key: Authentication failed — check your API key`);
+    case 403:
+      return new Error(`invalid_api_key: Access denied — ${detail}`);
+    case 404:
+      return new Error(`model_not_found: Model '${detail || "unknown"}' not found — check model name`);
+    case 429:
+      return new Error(`rate_limited: Rate limited — ${detail}`);
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return new Error(`network_error: Server error (${status}) — ${detail}`);
+    default:
+      return new Error(`unknown: LLM API error ${status}: ${detail}`);
   }
 }
