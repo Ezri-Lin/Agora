@@ -20,6 +20,16 @@
 - `roleCatalog.ts` — DEFAULT_ROLES array (8 cards)
 - `cards/*.ts` — Individual role card definitions
 
+## packages/adapters/vault/src/
+- `index.ts` — Barrel exports
+- `filePolicy.ts` — Docs-only write policy (allowed/blocked extensions)
+- `writeDocSafe.ts` — Safe document writer with policy checks
+- `scanWorkspace.ts` — Workspace scanner
+- `readDoc.ts` — Document reader
+
+## packages/adapters/argus/src/
+- `index.ts` — Argus adapter (reserved, not implemented in MVP)
+
 ## packages/ui/src/
 - `App.tsx` — Root component, state management, council round orchestration
 - `AgoraBridge.ts` — TypeScript bridge interface to Electron IPC
