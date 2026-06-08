@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { TitleBar } from "./TitleBar.js";
 import { sizes } from "../theme/tokens.js";
 import { useI18n } from "../i18n/I18nContext.js";
@@ -42,30 +42,47 @@ export const AppShell: React.FC<AppShellProps> = ({
 }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
+  const [leftExpanded, setLeftExpanded] = useState(false);
   const styles = createStyles(colors);
+  const leftStyle: React.CSSProperties = leftExpanded
+    ? { ...styles.left, width: "100%", position: "relative" as const }
+    : styles.left;
   return (
     <div style={styles.root}>
       <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} />
       <div style={styles.body}>
-        <div style={styles.left}>
-          <RoomList rooms={rooms} activeRoomId={activeRoomId} onSelect={onSelectRoom} onNew={onNewRoom} t={t} colors={colors} />
+        <div style={leftStyle}>
+          <div style={styles.leftHeader}>
+            <RoomList rooms={rooms} activeRoomId={activeRoomId} onSelect={onSelectRoom} onNew={onNewRoom} t={t} colors={colors} />
+            <button
+              style={styles.expandBtn}
+              onClick={() => setLeftExpanded(!leftExpanded)}
+              title={leftExpanded ? t.collapseGraph : t.expandGraph}
+            >
+              {leftExpanded ? "⤡" : "⤢"}
+            </button>
+          </div>
           {contextGraph}
         </div>
-        <div style={styles.center}>
-          <div style={styles.chat}>
-            <div style={styles.chatHeader}>
-              <span style={styles.chatTitle}>{t.councilRoom}</span>
-              {onAddRef && (
-                <button style={styles.addRefBtn} onClick={onAddRef}>
-                  {t.addReference}
-                </button>
-              )}
+        {!leftExpanded && (
+          <>
+            <div style={styles.center}>
+              <div style={styles.chat}>
+                <div style={styles.chatHeader}>
+                  <span style={styles.chatTitle}>{t.councilRoom}</span>
+                  {onAddRef && (
+                    <button style={styles.addRefBtn} onClick={onAddRef}>
+                      {t.addReference}
+                    </button>
+                  )}
+                </div>
+                {main}
+              </div>
+              {composer}
             </div>
-            {main}
-          </div>
-          {composer}
-        </div>
-        <div style={styles.right}>{inspector}</div>
+            <div style={styles.right}>{inspector}</div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -229,5 +246,27 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     width: sizes.inspector,
     flexShrink: 0,
     overflow: "hidden",
+  },
+  leftHeader: {
+    display: "flex",
+    flexDirection: "column" as const,
+    position: "relative" as const,
+  },
+  expandBtn: {
+    position: "absolute" as const,
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    background: "none",
+    border: `1px solid ${colors.border}`,
+    borderRadius: 4,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: colors.textMuted,
+    fontSize: 12,
+    cursor: "pointer",
+    zIndex: 5,
   },
 });

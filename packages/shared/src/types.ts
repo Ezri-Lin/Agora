@@ -77,6 +77,8 @@ export interface CouncilMessage {
   targetRoleId?: string;
   /** Chain-of-thought / reasoning trace (collapsible in UI) */
   thinking?: string;
+  /** One-line summary for graph display */
+  graphSummary?: string;
 }
 
 // === Role ===

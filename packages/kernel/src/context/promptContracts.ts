@@ -141,5 +141,8 @@ export function buildRolePrompt(
     "- If context is insufficient, explicitly state what additional information you need",
     "- Keep response under 300 words",
     "- Respond in the same language as the user's message",
+    "",
+    "After your response, add a final line with your core viewpoint in one sentence (≤30 words):",
+    "<!-- summary: YOUR ONE-LINE SUMMARY HERE -->",
   ].join("\n");
 }

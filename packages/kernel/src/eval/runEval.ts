@@ -44,7 +44,7 @@ async function runBaseline(
   modContext: string,
   llm: LLMProvider,
 ): Promise<string> {
-  return llm.callModerator({
+  const result = await llm.callModerator({
     roomId: "eval_baseline",
     task: "analyze",
     context: [
@@ -60,6 +60,7 @@ async function runBaseline(
       `Question: ${topic}`,
     ].join("\n"),
   });
+  return result.content;
 }
 
 /**

@@ -5,11 +5,12 @@ export class Moderator {
   constructor(private llm: LLMProvider) {}
 
   async analyzeScene(roomId: string, topic: string): Promise<string> {
-    return this.llm.callModerator({
+    const result = await this.llm.callModerator({
       roomId,
       task: "analyze",
       context: topic,
     });
+    return result.content;
   }
 
   async selectRoles(
@@ -17,25 +18,26 @@ export class Moderator {
     topic: string,
     available: RoleCard[],
   ): Promise<string[]> {
-    const raw = await this.llm.callModerator({
+    const result = await this.llm.callModerator({
       roomId,
       task: "select_roles",
       context: topic,
       availableRoles: available,
     });
     try {
-      return JSON.parse(raw) as string[];
+      return JSON.parse(result.content) as string[];
     } catch {
       return ["skeptic_critic", "historian", "product_strategist"];
     }
   }
 
   async summarize(roomId: string, messages: CouncilMessage[]): Promise<string> {
-    return this.llm.callModerator({
+    const result = await this.llm.callModerator({
       roomId,
       task: "summarize",
       context: "",
       messages,
     });
+    return result.content;
   }
 }

@@ -20,14 +20,14 @@ export async function extractMemories(
 ): Promise<ExtractedMemory[]> {
   const context = `## Topic\n${topic}\n\n## Council Summary\n${summary}\n\nExtract 0-3 durable insights that would be valuable for future discussions on similar topics. Focus on:\n- Non-obvious conclusions or frameworks\n- Key tradeoffs discovered\n- Recurring patterns or principles\n- Actionable recommendations with lasting value\n\nDo NOT extract:\n- Obvious facts\n- Topic-specific details that won't generalize\n- Temporary status updates\n\nReturn a JSON array. Each item: {content: string, domains: string[], tags: string[], scope: "universal"|"domain"|"project"}\n\nIf no durable insights found, return: []`;
 
-  const raw = await llm.callModerator({
+  const result = await llm.callModerator({
     roomId,
     task: "extract_memories",
     context,
   });
 
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(result.content);
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((m: any) => m && typeof m.content === "string")

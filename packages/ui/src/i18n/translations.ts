@@ -145,6 +145,17 @@ export interface Translations {
   testing: string;
   connected: string;
   failed_: string;
+  expandGraph: string;
+  collapseGraph: string;
+  councilMonitor: string;
+  roleThinking: string;
+  roleStreaming: string;
+  roleDone: string;
+  roleError: string;
+  elapsed: string;
+  jumpToLatest: string;
+  expand: string;
+  collapse: string;
 }
 
 export const en: Translations = {
@@ -259,6 +270,17 @@ export const en: Translations = {
   testing: "Testing...",
   connected: "Connected",
   failed_: "Failed:",
+  expandGraph: "Expand",
+  collapseGraph: "Collapse",
+  councilMonitor: "Council Monitor",
+  roleThinking: "Thinking",
+  roleStreaming: "Generating",
+  roleDone: "Done",
+  roleError: "Error",
+  elapsed: "elapsed",
+  jumpToLatest: "Jump to latest",
+  expand: "Expand",
+  collapse: "Collapse",
 };
 
 export const zh: Translations = {
@@ -373,6 +395,17 @@ export const zh: Translations = {
   testing: "测试中...",
   connected: "已连接",
   failed_: "失败：",
+  expandGraph: "展开",
+  collapseGraph: "收起",
+  councilMonitor: "议事监控",
+  roleThinking: "思考中",
+  roleStreaming: "生成中",
+  roleDone: "完成",
+  roleError: "出错",
+  elapsed: "已用时",
+  jumpToLatest: "跳到最新",
+  expand: "展开",
+  collapse: "折叠",
 };
 
 export const translations: Record<Locale, Translations> = { en, zh };

@@ -10,6 +10,7 @@ import { ContextGraph } from "./ContextGraph/ContextGraph.js";
 import { CouncilRoom } from "./CouncilRoom/CouncilRoom.js";
 import { Composer } from "./Composer/Composer.js";
 import { Inspector, type ContextDebug } from "./Inspector/Inspector.js";
+import { CouncilMonitor, type RoleStreamState } from "./CouncilMonitor/CouncilMonitor.js";
 import { EmptyState } from "./EmptyState.js";
 import { RefPicker } from "./RefPicker.js";
 import { SettingsModal } from "./Settings/SettingsModal.js";
@@ -36,6 +37,7 @@ export const App: React.FC = () => {
   const roomIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const streamingRoleIdRef = useRef<string | null>(null);
+  const [roleStreamStates, setRoleStreamStates] = useState<Map<string, RoleStreamState>>(new Map());
 
   const loadRooms = useCallback(async (wsPath: string) => {
     const bridge = getBridge();
@@ -174,6 +176,7 @@ export const App: React.FC = () => {
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
     setLoadingStatus("Preparing context...");
+    setRoleStreamStates(new Map());
 
     try {
       const docContents = new Map<string, string>();
@@ -234,14 +237,37 @@ export const App: React.FC = () => {
               senderId: event.roleId!, content: "", thinking: "", status: "ok", createdAt: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, placeholder]);
+            setRoleStreamStates((prev) => {
+              const next = new Map(prev);
+              next.set(event.roleId!, { status: "thinking", startedAt: Date.now(), microSummary: "" });
+              return next;
+            });
             break;
           }
           case "role_chunk": {
             const msgId = streamingMsgIds.get(event.roleId!);
             if (!msgId) break;
+            const thinkingDelta = event.thinking ?? "";
             setMessages((prev) => prev.map((m) => m.id === msgId ? {
-              ...m, content: m.content + (event.delta ?? ""), thinking: (m.thinking ?? "") + (event.thinking ?? ""),
+              ...m, content: m.content + (event.delta ?? ""), thinking: (m.thinking ?? "") + thinkingDelta,
             } : m));
+            if (thinkingDelta || event.delta) {
+              setRoleStreamStates((prev) => {
+                const next = new Map(prev);
+                const existing = next.get(event.roleId!);
+                if (existing) {
+                  const summary = thinkingDelta
+                    ? thinkingDelta.slice(-60)
+                    : (event.delta ?? "").slice(-60);
+                  next.set(event.roleId!, {
+                    ...existing,
+                    status: "streaming",
+                    microSummary: summary || existing.microSummary,
+                  });
+                }
+                return next;
+              });
+            }
             break;
           }
           case "role_done": {
@@ -250,6 +276,18 @@ export const App: React.FC = () => {
             streamedMsgIds.add(msgId);
             streamingRoleIdRef.current = null;
             setMessages((prev) => prev.map((m) => m.id === msgId ? event.message! : m));
+            setRoleStreamStates((prev) => {
+              const next = new Map(prev);
+              const existing = next.get(event.roleId!);
+              if (existing) {
+                next.set(event.roleId!, {
+                  ...existing,
+                  status: "done",
+                  microSummary: event.message!.graphSummary || existing.microSummary,
+                });
+              }
+              return next;
+            });
             break;
           }
           case "moderator_done": {
@@ -327,6 +365,15 @@ export const App: React.FC = () => {
     }
   }, [workspace, messages, selectedRefs, llmConfig]);
 
+  const handleNodeClick = useCallback((msgId: string) => {
+    const el = document.getElementById(msgId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.style.outline = `2px solid ${"var(--accent, #5b8)"}`;
+      setTimeout(() => { el.style.outline = ""; }, 2000);
+    }
+  }, []);
+
   const handleConfigChanged = useCallback(() => {
     const bridge = getBridge();
     if (!bridge) return;
@@ -372,7 +419,7 @@ export const App: React.FC = () => {
       <AppShell
       workspaceName={workspace.name}
       onOpenWorkspace={handleOpenWorkspace}
-      contextGraph={<ContextGraph messages={messages} selectedRefs={selectedRefs} roles={DEFAULT_ROLES} roomId={roomIdRef.current} />}
+      contextGraph={<ContextGraph messages={messages} selectedRefs={selectedRefs} roles={DEFAULT_ROLES} roomId={roomIdRef.current} onNodeClick={handleNodeClick} />}
       main={
         <>
           {error && (
@@ -384,13 +431,15 @@ export const App: React.FC = () => {
         </>
       }
       inspector={
-        <Inspector
-          participants={DEFAULT_ROLES}
-          references={selectedRefs}
-          outputs={outputs}
-          contextDebug={contextDebug}
-          workspacePath={workspace?.path}
-        />
+        isLoading || roleStreamStates.size > 0
+          ? <CouncilMonitor roles={DEFAULT_ROLES} roleStates={roleStreamStates} />
+          : <Inspector
+              participants={DEFAULT_ROLES}
+              references={selectedRefs}
+              outputs={outputs}
+              contextDebug={contextDebug}
+              workspacePath={workspace?.path}
+            />
       }
       composer={
         <>

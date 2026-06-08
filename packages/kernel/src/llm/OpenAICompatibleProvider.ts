@@ -8,7 +8,7 @@ interface ChatMessage {
 }
 
 interface ChatCompletionChoice {
-  message: { content: string };
+  message: { content: string; reasoning_content?: string };
 }
 
 interface ChatCompletionResponse {
@@ -41,8 +41,8 @@ export class OpenAICompatibleProvider implements LLMProvider {
       { role: "user", content: input.roomSummary },
     ];
 
-    const content = await this.chat(messages);
-    return { roleId: input.role.id, content };
+    const result = await this.chat(messages);
+    return { roleId: input.role.id, content: result.content, thinking: result.thinking };
   }
 
   async callModerator(params: {
@@ -51,7 +51,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     context: string;
     messages?: CouncilMessage[];
     availableRoles?: RoleCard[];
-  }): Promise<string> {
+  }): Promise<{ content: string; thinking?: string }> {
     const messages: ChatMessage[] = [
       { role: "system", content: params.context },
     ];
@@ -73,10 +73,11 @@ export class OpenAICompatibleProvider implements LLMProvider {
       messages.push({ role: "user", content: "Proceed with the task." });
     }
 
-    return this.chat(messages);
+    const result = await this.chat(messages);
+    return { content: result.content, thinking: result.thinking };
   }
 
-  private async chat(messages: ChatMessage[]): Promise<string> {
+  private async chat(messages: ChatMessage[]): Promise<{ content: string; thinking?: string }> {
     const body = {
       model: this.model,
       messages,
@@ -107,10 +108,11 @@ export class OpenAICompatibleProvider implements LLMProvider {
           throw new Error(`llm_error: ${data.error.message}`);
         }
         const content = data.choices?.[0]?.message?.content;
+        const thinking = data.choices?.[0]?.message?.reasoning_content;
         if (!content) {
           throw new Error("empty_response: LLM returned empty content");
         }
-        return content;
+        return { content, thinking: thinking || undefined };
       }
 
       const text = await res.text().catch(() => "");

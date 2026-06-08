@@ -79,19 +79,20 @@ export async function runCouncilRound(
 
   // Step 2: Moderator analyzes (full context)
   const analyzePrompt = buildModeratorPrompt("analyze", modPack);
-  const analysis = await llm.callModerator({
+  const analysisResult = await llm.callModerator({
     roomId: room.id,
     task: "analyze",
     context: analyzePrompt,
   });
+  const analysis = analysisResult.content;
   onEvent?.({ type: "moderator_done", message: {
     id: `msg_mod_analysis_${Date.now()}`, roomId: room.id, senderType: "moderator", senderId: "moderator",
-    content: analysis, status: "ok", createdAt: new Date().toISOString(),
+    content: analysis, thinking: analysisResult.thinking, status: "ok", createdAt: new Date().toISOString(),
   }});
 
   // Step 3: Select roles (full context)
   const selectPrompt = buildModeratorPrompt("select_roles", modPack);
-  const selectedRaw = await llm.callModerator({
+  const selectResult = await llm.callModerator({
     roomId: room.id,
     task: "select_roles",
     context: selectPrompt,
@@ -99,7 +100,7 @@ export async function runCouncilRound(
   });
   let selectedIds: string[];
   try {
-    selectedIds = JSON.parse(selectedRaw);
+    selectedIds = JSON.parse(selectResult.content);
   } catch {
     selectedIds = [];
   }
@@ -136,13 +137,21 @@ export async function runCouncilRound(
           roomSummary: analysis, recentMessages: [...recentMessages, userMessage],
         });
       }
+      // Extract graph summary from <!-- summary: ... --> tag
+      const summaryMatch = result.content.match(/<!--\s*summary:\s*(.+?)\s*-->/);
+      const graphSummary = summaryMatch?.[1]?.trim();
+      const cleanContent = graphSummary
+        ? result.content.replace(/<!--\s*summary:\s*.+?\s*-->/, "").trim()
+        : result.content;
+
       const msg: CouncilMessage = {
         id: `msg_${role.id}_${Date.now()}`,
         roomId: room.id,
         senderType: "role",
         senderId: role.id,
-        content: result.content,
+        content: cleanContent,
         thinking: result.thinking,
+        graphSummary,
         status: "ok",
         createdAt: new Date().toISOString(),
       };
@@ -253,12 +262,13 @@ export async function runCouncilRound(
     sharedPrefix: summaryLines.join("\n"),
   };
   const summaryPrompt = buildModeratorPrompt("summarize", summaryModPack);
-  const summary = await llm.callModerator({
+  const summaryResult = await llm.callModerator({
     roomId: room.id,
     task: "summarize",
     context: summaryPrompt,
     messages: [userMessage, ...roleMessages],
   });
+  const summary = summaryResult.content;
   onEvent?.({ type: "summary_done", content: summary });
 
   // Step 6: Extract memory candidates

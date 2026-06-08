@@ -38,20 +38,20 @@ export class MockMultiCallProvider implements LLMProvider {
     context: string;
     messages?: CouncilMessage[];
     availableRoles?: RoleCard[];
-  }): Promise<string> {
+  }): Promise<{ content: string; thinking?: string }> {
     await delay(150);
 
     switch (params.task) {
       case "analyze":
-        return `**Scene Analysis**\n\nCurrent topic: ${params.context}\n\nThis is a topic that requires multi-dimensional examination. I recommend convening the following roles for discussion.`;
+        return { content: `**Scene Analysis**\n\nCurrent topic: ${params.context}\n\nThis is a topic that requires multi-dimensional examination. I recommend convening the following roles for discussion.` };
       case "select_roles":
-        return JSON.stringify(["skeptic_critic", "historian", "product_strategist"]);
+        return { content: JSON.stringify(["skeptic_critic", "historian", "product_strategist"]) };
       case "summarize":
-        return `**Council Summary**\n\nThe roles examined this topic from different angles:\n- The Skeptic Critic identified hidden assumptions and potential risks\n- The Historian provided historical cycle analogies\n- The Product Strategist offered actionable recommendations\n\n**Consensus**: The direction is viable, but core assumptions need validation.\n**Next Steps**: Recommend a follow-up round on the execution path.`;
+        return { content: `**Council Summary**\n\nThe roles examined this topic from different angles:\n- The Skeptic Critic identified hidden assumptions and potential risks\n- The Historian provided historical cycle analogies\n- The Product Strategist offered actionable recommendations\n\n**Consensus**: The direction is viable, but core assumptions need validation.\n**Next Steps**: Recommend a follow-up round on the execution path.` };
       case "extract_memories":
-        return JSON.stringify([
+        return { content: JSON.stringify([
           { content: "Multi-role discussion helps reveal single-perspective blind spots", domains: ["decision-making"], tags: ["council", "diversity"], scope: "universal" },
-        ]);
+        ]) };
     }
   }
 }

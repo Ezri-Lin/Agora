@@ -13,6 +13,19 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) 
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = createStyles(colors);
+  const [expanded, setExpanded] = useState<boolean>(!!streaming);
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Auto-expand when streaming, auto-collapse 3s after done
+  useEffect(() => {
+    if (streaming) {
+      setExpanded(true);
+      clearTimeout(collapseTimerRef.current);
+    } else if (expanded && message.senderType === "role" && message.content.length > 50) {
+      collapseTimerRef.current = setTimeout(() => setExpanded(false), 3000);
+    }
+    return () => clearTimeout(collapseTimerRef.current);
+  }, [streaming]);
 
   const ROLE_META: Record<string, { name: string; subtitle: string; color: string }> = {
     user: { name: "You", subtitle: "", color: colors.user },
@@ -30,7 +43,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) 
       ? (ROLE_META[message.targetRoleId]?.name ?? message.targetRoleId)
       : "Unknown";
     return (
-      <div style={styles.errorRow}>
+      <div id={message.id} style={styles.errorRow}>
         <div style={styles.errorIcon}>!</div>
         <div style={styles.errorContent}>
           <div style={styles.errorTitle}>
@@ -48,25 +61,47 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) 
     color: colors.textMuted,
   };
 
+  // User messages and moderator messages are always expanded
+  const alwaysExpand = isUser || message.senderType === "moderator";
+  const showExpanded = alwaysExpand || expanded;
+
+  // Collapsed preview: role name + graphSummary
+  const preview = message.graphSummary || truncate(message.content, 60);
+
   return (
-    <div style={{ ...styles.row, flexDirection: isUser ? "row-reverse" : "row" }}>
+    <div id={message.id} style={{ ...styles.row, flexDirection: isUser ? "row-reverse" : "row" }}>
       <div style={{ ...styles.avatar, background: meta.color }}>
         {meta.name.charAt(0)}
       </div>
       <div style={styles.content}>
-        <div style={styles.header}>
+        <div
+          style={{ ...styles.header, cursor: alwaysExpand ? "default" : "pointer" }}
+          onClick={alwaysExpand ? undefined : () => setExpanded(!expanded)}
+        >
           <span style={{ ...styles.name, color: meta.color }}>{meta.name}</span>
           {meta.subtitle && <span style={styles.subtitle}>{meta.subtitle}</span>}
-        </div>
-        {message.thinking && message.thinking.trim().length > 0 && (
-          <ThinkingBlock thinking={message.thinking} colors={colors} label={t.thinking} />
-        )}
-        <div style={{ ...styles.bubble, borderTopColor: meta.color }}>
-          {message.content}
-          {streaming && message.content.length < 10 && (
-            <PulsingDots color={meta.color} />
+          {!alwaysExpand && (
+            <span style={styles.expandToggle}>{expanded ? "▾" : "▸"}</span>
           )}
         </div>
+        {!showExpanded && !isUser && (
+          <div style={styles.preview} onClick={() => setExpanded(true)}>
+            {preview}
+          </div>
+        )}
+        {showExpanded && (
+          <>
+            {message.thinking && message.thinking.trim().length > 0 && (
+              <ThinkingBlock thinking={message.thinking} colors={colors} label={t.thinking} />
+            )}
+            <div style={{ ...styles.bubble, borderTopColor: meta.color }}>
+              {message.content}
+              {streaming && message.content.length < 10 && (
+                <PulsingDots color={meta.color} />
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -95,6 +130,16 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
   header: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 },
   name: { fontSize: 12, fontWeight: 600 },
   subtitle: { fontSize: 10, color: colors.textMuted },
+  expandToggle: {
+    fontSize: 10, color: colors.textMuted, marginLeft: "auto", cursor: "pointer",
+    userSelect: "none" as const,
+  },
+  preview: {
+    fontSize: 12, color: colors.textMuted, lineHeight: 1.4,
+    padding: "2px 0", cursor: "pointer",
+    overflow: "hidden", textOverflow: "ellipsis",
+    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+  },
   bubble: {
     background: colors.surface,
     borderRadius: "0 8px 8px 8px",

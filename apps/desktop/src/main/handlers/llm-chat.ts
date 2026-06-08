@@ -27,10 +27,10 @@ export function registerLLMChatHandlers(): void {
         return { content: JSON.stringify(["skeptic_critic", "historian", "product_strategist"]) };
       }
       if (sysMsg.includes("Summarize")) {
-        return { content: "**Summary**\n\nThe council discussed the topic from multiple angles. Key points:\n- Skeptic raised concerns about assumptions\n- Historian provided contextual parallels\n- Strategist suggested concrete next steps\n\n**Consensus**: Proceed with validation of core assumptions." };
+        return { content: "**Summary**\n\nThe council discussed the topic from multiple angles. Key points:\n- Skeptic raised concerns about assumptions\n- Historian provided contextual parallels\n- Strategist suggested concrete next steps\n\n**Consensus**: Proceed with validation of core assumptions.", thinking: "Analyzing role responses. Skeptic raised valid concerns about untested assumptions. Historian provided relevant parallels. Strategist gave actionable steps. Synthesizing..." };
       }
       if (sysMsg.includes("Scene Analysis")) {
-        return { content: `**Analysis**\n\nTopic: ${lastMsg.slice(0, 100)}\n\nThis requires multi-dimensional examination.` };
+        return { content: `**Analysis**\n\nTopic: ${lastMsg.slice(0, 100)}\n\nThis requires multi-dimensional examination.`, thinking: `Parsing topic: "${lastMsg.slice(0, 60)}". Identifying key dimensions and potential risks.` };
       }
       return { content: `[${config.model}] Response to: ${lastMsg.slice(0, 150)}` };
     }
@@ -64,9 +64,10 @@ export function registerLLMChatHandlers(): void {
 
       const data = (await res.json()) as any;
       const content = data.choices?.[0]?.message?.content ?? "";
+      const thinking = data.choices?.[0]?.message?.reasoning_content ?? "";
       if (!content) throw new Error("empty_response: API returned no content");
       auditLog("llm:chat", { detail: `${config.provider}/${config.model}`, ok: true });
-      return { content };
+      return { content, thinking: thinking || undefined };
     } catch (err: any) {
       auditLog("llm:chat", { detail: `${config.provider}/${config.model}`, ok: false, error: err.message });
       if (err.name === "AbortError") throw new Error("timeout: Request timed out after 60s");

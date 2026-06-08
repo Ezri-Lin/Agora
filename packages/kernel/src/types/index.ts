@@ -17,7 +17,7 @@ export interface LLMProvider {
     context: string;
     messages?: CouncilMessage[];
     availableRoles?: RoleCard[];
-  }): Promise<string>;
+  }): Promise<{ content: string; thinking?: string }>;
 }
 
 export interface CouncilSession {

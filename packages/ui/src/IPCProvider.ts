@@ -51,7 +51,7 @@ export class IPCProvider implements LLMProvider {
     ];
 
     const result = await bridge.llm.chat({ messages, config: this.config });
-    return { roleId: input.role.id, content: result.content };
+    return { roleId: input.role.id, content: result.content, thinking: result.thinking };
   }
 
   async callRoleStream(
@@ -108,7 +108,7 @@ export class IPCProvider implements LLMProvider {
     context: string;
     messages?: CouncilMessage[];
     availableRoles?: RoleCard[];
-  }): Promise<string> {
+  }): Promise<{ content: string; thinking?: string }> {
     const bridge = getBridge();
     if (!bridge) throw new ProviderError("unknown", "Agora bridge not available");
 
@@ -141,6 +141,6 @@ export class IPCProvider implements LLMProvider {
     }
 
     const result = await bridge.llm.chat({ messages, config: this.config });
-    return result.content;
+    return { content: result.content, thinking: result.thinking };
   }
 }

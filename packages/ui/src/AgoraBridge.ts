@@ -89,7 +89,7 @@ export interface AgoraBridge {
     chat(params: {
       messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
       config: { provider: string; model: string; apiKeyEnv?: string; baseUrl?: string };
-    }): Promise<{ content: string }>;
+    }): Promise<{ content: string; thinking?: string }>;
     chatStream(params: {
       messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
       config: { provider: string; model: string; apiKeyEnv?: string; baseUrl?: string };
