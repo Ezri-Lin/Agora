@@ -40,6 +40,7 @@ export const App: React.FC = () => {
   const [roleStreamStates, setRoleStreamStates] = useState<Map<string, RoleStreamState>>(new Map());
   const [lastRoundSnapshot, setLastRoundSnapshot] = useState<CouncilRoundSnapshot | null>(null);
   const [panelPhase, setPanelPhase] = useState<"idle" | "running" | "completed" | "error">("idle");
+  const [panelVisible, setPanelVisible] = useState(false);
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const loadRooms = useCallback(async (wsPath: string) => {
@@ -86,7 +87,7 @@ export const App: React.FC = () => {
     });
   }, [loadRooms, loadCustomRoles]);
 
-  // Auto-collapse panel 12s after round completes (unless user is interacting)
+  // Auto-reset phase 12s after round completes (panel stays visible)
   useEffect(() => {
     if (panelPhase === "completed" || panelPhase === "error") {
       collapseTimerRef.current = setTimeout(() => {
@@ -193,6 +194,7 @@ export const App: React.FC = () => {
     setRoleStreamStates(new Map());
     setLastRoundSnapshot(null);
     setPanelPhase("running");
+    setPanelVisible(true);
     clearTimeout(collapseTimerRef.current);
 
     try {
@@ -474,6 +476,7 @@ export const App: React.FC = () => {
       }
       floatingPanel={
         <FloatingCouncilPanel
+          visible={panelVisible}
           panelPhase={panelPhase}
           roleStreamStates={roleStreamStates}
           lastRoundSnapshot={lastRoundSnapshot}
@@ -484,6 +487,7 @@ export const App: React.FC = () => {
           workspacePath={workspace?.path}
           userMessage={messages.filter((m) => m.senderType === "user").slice(-1)[0]?.content}
           activeRoleIdsFromMessages={new Set(messages.filter((m) => m.senderType === "role").map((m) => m.senderId))}
+          onToggle={() => setPanelVisible((v) => !v)}
         />
       }
       composer={
@@ -509,6 +513,8 @@ export const App: React.FC = () => {
       activeRoomId={roomIdRef.current}
       onSelectRoom={handleSelectRoom}
       onNewRoom={() => { roomIdRef.current = null; setMessages([]); setOutputs([]); setContextDebug(undefined); }}
+      panelVisible={panelVisible}
+      onTogglePanel={() => setPanelVisible((v) => !v)}
     />
     {showSettings && (
       <SettingsModal

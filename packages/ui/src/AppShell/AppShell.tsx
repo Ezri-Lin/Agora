@@ -24,6 +24,8 @@ interface AppShellProps {
   activeRoomId?: string | null;
   onSelectRoom?: (roomId: string) => void;
   onNewRoom?: () => void;
+  panelVisible?: boolean;
+  onTogglePanel?: () => void;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -39,6 +41,8 @@ export const AppShell: React.FC<AppShellProps> = ({
   activeRoomId,
   onSelectRoom,
   onNewRoom,
+  panelVisible,
+  onTogglePanel,
 }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -70,11 +74,22 @@ export const AppShell: React.FC<AppShellProps> = ({
               <div style={styles.chat}>
                 <div style={styles.chatHeader}>
                   <span style={styles.chatTitle}>{t.councilRoom}</span>
-                  {onAddRef && (
-                    <button style={styles.addRefBtn} onClick={onAddRef}>
-                      {t.addReference}
-                    </button>
-                  )}
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    {onAddRef && (
+                      <button style={styles.addRefBtn} onClick={onAddRef}>
+                        {t.addReference}
+                      </button>
+                    )}
+                    {onTogglePanel && (
+                      <button
+                        style={styles.panelToggleBtn}
+                        onClick={onTogglePanel}
+                        title={panelVisible ? t.collapse : t.expand}
+                      >
+                        {panelVisible ? "▸" : "◂"}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {main}
               </div>
@@ -247,6 +262,19 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     padding: "2px 8px",
     color: colors.accent,
     fontSize: 11,
+    cursor: "pointer",
+  },
+  panelToggleBtn: {
+    background: "none",
+    border: `1px solid ${colors.border}`,
+    borderRadius: 4,
+    width: 22,
+    height: 22,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: colors.textMuted,
+    fontSize: 12,
     cursor: "pointer",
   },
   leftHeader: {

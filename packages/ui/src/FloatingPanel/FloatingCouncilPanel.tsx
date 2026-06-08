@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import type { RoleCard, CouncilRoundSnapshot, CouncilMessage } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
-import type { Translations } from "../i18n/translations.js";
 import { ProgressSection } from "./ProgressSection.js";
 import { AccordionSection } from "./AccordionSection.js";
 import { SuggestedRolesSection } from "./SuggestedRolesSection.js";
@@ -16,6 +15,7 @@ interface SourceRef {
 }
 
 interface FloatingCouncilPanelProps {
+  visible: boolean;
   panelPhase: "idle" | "running" | "completed" | "error";
   roleStreamStates: Map<string, RoleStreamState>;
   lastRoundSnapshot: CouncilRoundSnapshot | null;
@@ -26,11 +26,12 @@ interface FloatingCouncilPanelProps {
   workspacePath?: string;
   userMessage?: string;
   activeRoleIdsFromMessages?: Set<string>;
-  onCollapse?: () => void;
+  onToggle?: () => void;
   onInviteRole?: (roleId: string) => void;
 }
 
 export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
+  visible,
   panelPhase,
   roleStreamStates,
   lastRoundSnapshot,
@@ -41,29 +42,15 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
   workspacePath,
   userMessage,
   activeRoleIdsFromMessages,
-  onCollapse,
+  onToggle,
   onInviteRole,
 }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const [userExpanded, setUserExpanded] = useState(false);
   const [memoryCount, setMemoryCount] = useState(0);
 
-  const isIdle = panelPhase === "idle";
   const isRunning = panelPhase === "running";
   const isCompleted = panelPhase === "completed";
-  const isError = panelPhase === "error";
-  const showExpanded = isRunning || isCompleted || isError || userExpanded;
-
-  // Auto-expand on running
-  useEffect(() => {
-    if (isRunning) setUserExpanded(true);
-  }, [isRunning]);
-
-  // Collapse when idle
-  useEffect(() => {
-    if (isIdle) setUserExpanded(false);
-  }, [isIdle]);
 
   // Fetch memory count
   useEffect(() => {
@@ -75,19 +62,13 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
     }).catch(() => {});
   }, [workspacePath, isCompleted]);
 
-  // Role results from messages (completed roles)
+  // Role results from messages
   const roleResults = messages.filter((m) => m.senderType === "role" && m.status !== "error" && m.content.length > 0);
-
-  if (isIdle && !userExpanded) {
-    return (
-      <button style={pillStyle(colors)} onClick={() => setUserExpanded(true)}>
-        {t.councilMonitor}
-      </button>
-    );
-  }
-
   const activeRoles = roles.filter((r) => roleStreamStates.has(r.id));
   const doneCount = [...roleStreamStates.values()].filter((s) => s.status === "done").length;
+  const hasData = roleResults.length > 0 || activeRoles.length > 0 || outputs.length > 0;
+
+  if (!visible) return null;
 
   return (
     <div style={panelStyle(colors)}>
@@ -96,25 +77,23 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
         <span style={headerTitleStyle(colors)}>
           {isRunning ? `${doneCount}/${activeRoles.length}` : isCompleted ? t.roleDone : t.councilMonitor}
         </span>
-        <button style={collapseBtnStyle(colors)} onClick={() => { setUserExpanded(false); onCollapse?.(); }}>
-          ✕
-        </button>
+        <button style={collapseBtnStyle(colors)} onClick={onToggle}>✕</button>
       </div>
 
       <div style={scrollAreaStyle}>
-        {/* Progress section (during running) */}
+        {/* Progress (during running) */}
         {isRunning && activeRoles.length > 0 && (
           <ProgressSection roles={roles} roleStates={roleStreamStates} />
         )}
 
-        {/* Role results (after completion) */}
-        {isCompleted && roleResults.length > 0 && (
+        {/* Role results — always show when data exists */}
+        {roleResults.length > 0 && (
           <div style={sectionStyle}>
             <div style={sectionTitleStyle(colors)}>{t.participants} ({roleResults.length})</div>
             {roleResults.map((msg) => {
               const role = roles.find((r) => r.id === msg.senderId);
               const name = role?.name ?? msg.senderId;
-              const summary = msg.graphSummary || msg.content.slice(0, 80);
+              const summary = msg.graphSummary || msg.content.slice(0, 100);
               return (
                 <div key={msg.id} style={roleResultCardStyle(colors)}>
                   <span style={roleResultNameStyle(colors)}>{name}</span>
@@ -126,7 +105,7 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
         )}
 
         {/* Snapshot summary */}
-        {isCompleted && lastRoundSnapshot && (
+        {lastRoundSnapshot && (
           <>
             <Divider colors={colors} />
             <div style={snapshotSummaryStyle(colors)}>
@@ -136,7 +115,7 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
           </>
         )}
 
-        {/* Suggested roles */}
+        {/* Suggested roles (after completion) */}
         {isCompleted && (
           <>
             <Divider colors={colors} />
@@ -181,11 +160,6 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
           ) : (
             <div style={memoryHintStyle(colors)}>
               {memoryCount} {t.accepted}
-              <button style={memoryLinkStyle(colors)} onClick={() => {
-                // Switch to memories tab in Inspector if available
-              }}>
-                {t.expand}
-              </button>
             </div>
           )}
         </AccordionSection>
@@ -202,32 +176,14 @@ const Divider: React.FC<{ colors: ColorPalette }> = ({ colors }) => (
 
 // --- Styles ---
 
-const pillStyle = (colors: ColorPalette): React.CSSProperties => ({
-  position: "absolute",
-  bottom: 16,
-  right: 16,
-  background: colors.surface,
-  border: `1px solid ${colors.border}`,
-  borderRadius: 20,
-  padding: "6px 14px",
-  fontSize: 11,
-  fontWeight: 600,
-  color: colors.textMuted,
-  cursor: "pointer",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-  zIndex: 20,
-});
-
 const panelStyle = (colors: ColorPalette): React.CSSProperties => ({
   position: "absolute",
-  bottom: 16,
-  right: 16,
+  top: 0,
+  right: 0,
   width: 280,
-  maxHeight: "calc(100vh - 120px)",
+  height: "100%",
   background: colors.bg,
-  border: `1px solid ${colors.border}`,
-  borderRadius: 10,
-  boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+  borderLeft: `1px solid ${colors.border}`,
   zIndex: 20,
   display: "flex",
   flexDirection: "column",
@@ -337,17 +293,5 @@ const itemLabelStyle = (colors: ColorPalette): React.CSSProperties => ({
 const memoryHintStyle = (colors: ColorPalette): React.CSSProperties => ({
   fontSize: 10,
   color: colors.textMuted,
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
   padding: "4px 0",
-});
-
-const memoryLinkStyle = (colors: ColorPalette): React.CSSProperties => ({
-  background: "none",
-  border: "none",
-  color: colors.accent,
-  fontSize: 10,
-  cursor: "pointer",
-  padding: 0,
 });
