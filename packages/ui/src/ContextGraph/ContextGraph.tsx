@@ -40,6 +40,15 @@ function truncate(s: string, max: number): string {
   return clean.length > max ? clean.slice(0, max) + "..." : clean;
 }
 
+const NODE_SIZES: Record<NodeType, number> = {
+  topic: 6,
+  doc: 3,
+  analysis: 4,
+  viewpoint: 3,
+  cross: 3,
+  summary: 4,
+};
+
 function buildGraphData(
   messages: CouncilMessage[],
   selectedRefs: Array<{ path: string; label: string }>,
@@ -54,12 +63,12 @@ function buildGraphData(
   if (!userMsg) return { nodes, links };
 
   const topicId = "topic";
-  nodes.push({ id: topicId, label: truncate(userMsg.content, 30), type: "topic", content: userMsg.content, val: 5 });
+  nodes.push({ id: topicId, label: truncate(userMsg.content, 30), type: "topic", content: userMsg.content, val: NODE_SIZES.topic });
 
   // Docs
   for (const ref of selectedRefs) {
     const docId = `doc:${ref.path}`;
-    nodes.push({ id: docId, label: ref.label.replace(/\.[^.]+$/, ""), type: "doc", val: 2 });
+    nodes.push({ id: docId, label: ref.label.replace(/\.[^.]+$/, ""), type: "doc", val: NODE_SIZES.doc });
     links.push({ source: topicId, target: docId });
   }
 
@@ -67,7 +76,7 @@ function buildGraphData(
   const modMsgs = messages.filter((m) => m.senderType === "moderator");
   const analysis = modMsgs[0];
   if (analysis) {
-    nodes.push({ id: "analysis", label: "Analysis", type: "analysis", content: analysis.content, val: 3 });
+    nodes.push({ id: "analysis", label: "Analysis", type: "analysis", content: analysis.content, val: NODE_SIZES.analysis });
     links.push({ source: topicId, target: "analysis" });
   }
 
@@ -82,7 +91,7 @@ function buildGraphData(
       label: truncate(msg.content, 25),
       type: "viewpoint",
       content: msg.content,
-      val: 2,
+      val: NODE_SIZES.viewpoint,
     });
     links.push({ source: analysis ? "analysis" : topicId, target: vpId });
   }
@@ -91,7 +100,7 @@ function buildGraphData(
   const crossMsgs = messages.filter((m) => m.senderType === "role" && m.targetRoleId);
   for (const msg of crossMsgs) {
     const crossId = `cross:${msg.id}`;
-    nodes.push({ id: crossId, label: "Cross", type: "cross", content: msg.content, val: 2 });
+    nodes.push({ id: crossId, label: "Cross", type: "cross", content: msg.content, val: NODE_SIZES.cross });
     // Connect to the target role's viewpoint
     const targetVp = nodes.find((n) => n.type === "viewpoint" && n.id.includes(msg.targetRoleId!));
     if (targetVp) links.push({ source: crossId, target: targetVp.id });
@@ -101,7 +110,7 @@ function buildGraphData(
   // Summary — last moderator message (if more than one)
   const summary = modMsgs.length > 1 ? modMsgs[modMsgs.length - 1] : null;
   if (summary && summary !== analysis) {
-    nodes.push({ id: "summary", label: "Summary", type: "summary", content: summary.content, val: 3 });
+    nodes.push({ id: "summary", label: "Summary", type: "summary", content: summary.content, val: NODE_SIZES.summary });
     links.push({ source: topicId, target: "summary" });
   }
 
@@ -176,26 +185,19 @@ export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRe
             nodeVal={(n: any) => n.val}
             linkColor={() => colors.border}
             linkWidth={0.5}
-            nodeCanvasObject={(n: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+            nodeCanvasObject={(n: any, ctx: CanvasRenderingContext2D) => {
               const r = n.val;
               ctx.beginPath();
               ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
               ctx.fillStyle = TYPE_COLORS[n.type as NodeType]?.(colors) ?? colors.textMuted;
               ctx.fill();
-              // Show label only for topic/analysis/summary or when zoomed in
-              if (n.type === "topic" || n.type === "summary" || globalScale > 1.5) {
-                ctx.fillStyle = colors.textMuted;
-                ctx.font = `${Math.max(8, 10 / globalScale)}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.fillText(n.label, n.x, n.y + r + 8);
-              }
             }}
             onNodeHover={handleNodeHover}
             cooldownTicks={50}
             d3AlphaDecay={0.03}
             d3VelocityDecay={0.3}
           />
-          {hovered && hovered.content && (
+          {hovered && (
             <div
               style={{
                 ...styles.tooltip,
@@ -204,7 +206,10 @@ export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRe
               }}
             >
               <div style={styles.tooltipType}>{hovered.type}</div>
-              <div style={styles.tooltipContent}>{truncate(hovered.content, 120)}</div>
+              <div style={styles.tooltipLabel}>{hovered.label}</div>
+              {hovered.content && (
+                <div style={styles.tooltipContent}>{truncate(hovered.content, 120)}</div>
+              )}
             </div>
           )}
         </div>
@@ -263,6 +268,12 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  tooltipLabel: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: colors.text,
     marginBottom: 4,
   },
   tooltipContent: {
