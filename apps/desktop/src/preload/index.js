@@ -57,6 +57,23 @@ contextBridge.exposeInMainWorld("agora", {
   llm: {
     chat: (params) =>
       ipcRenderer.invoke("llm:chat", params),
+    chatStream: (params) =>
+      ipcRenderer.invoke("llm:chatStream", params),
+    onChunk: (callback) => {
+      const handler = (_e, data) => callback(data);
+      ipcRenderer.on("llm:chunk", handler);
+      return () => ipcRenderer.removeListener("llm:chunk", handler);
+    },
+    onDone: (callback) => {
+      const handler = (_e, data) => callback(data);
+      ipcRenderer.on("llm:done", handler);
+      return () => ipcRenderer.removeListener("llm:done", handler);
+    },
+    onStreamError: (callback) => {
+      const handler = (_e, data) => callback(data);
+      ipcRenderer.on("llm:streamError", handler);
+      return () => ipcRenderer.removeListener("llm:streamError", handler);
+    },
   },
 
   // LLM Settings

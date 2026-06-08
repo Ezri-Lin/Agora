@@ -2,8 +2,10 @@ import type {
   CouncilRoom,
   CouncilMessage,
   RoleCard,
+  RoleCallResult,
   ProviderErrorCode,
   MemoryCandidate,
+  CouncilEvent,
 } from "@agora/shared";
 import type { LLMProvider } from "../types/index.js";
 import { routeRoles, autoInviteLenses } from "../routing/RoleRouter.js";
@@ -56,6 +58,7 @@ export async function runCouncilRound(
   recentMessages: CouncilMessage[] = [],
   docContents?: Map<string, string>,
   memoryStore?: MemoryStore,
+  onEvent?: (event: CouncilEvent) => void,
 ): Promise<CouncilRunResult> {
   // Step 0: Inject relevant memories into docContents
   const effectiveDocContents = new Map(docContents ?? new Map<string, string>());
@@ -81,6 +84,10 @@ export async function runCouncilRound(
     task: "analyze",
     context: analyzePrompt,
   });
+  onEvent?.({ type: "moderator_done", message: {
+    id: `msg_mod_analysis_${Date.now()}`, roomId: room.id, senderType: "moderator", senderId: "moderator",
+    content: analysis, status: "ok", createdAt: new Date().toISOString(),
+  }});
 
   // Step 3: Select roles (full context)
   const selectPrompt = buildModeratorPrompt("select_roles", modPack);
@@ -109,28 +116,38 @@ export async function runCouncilRound(
   // Step 3.5: Auto-invite persona lenses matching the topic
   const finalRoles = autoInviteLenses(roles, availableRoles, topic);
 
-  // Step 4: Each role responds independently (budgeted context, multi-call)
+  // Step 4: Each role responds independently — all called concurrently
   const roleMessages: CouncilMessage[] = [];
   const failedRoles: string[] = [];
-  for (const role of finalRoles) {
+
+  await Promise.all(finalRoles.map(async (role) => {
     const rolePrompt = buildRolePrompt(role, rolePack);
+    onEvent?.({ type: "role_start", roleId: role.id });
     try {
-      const result = await llm.callRole({
-        roomId: room.id,
-        role,
-        sharedContext: rolePrompt,
-        roomSummary: analysis,
-        recentMessages: [...recentMessages, userMessage],
-      });
-      roleMessages.push({
+      let result: RoleCallResult;
+      if (onEvent && llm.callRoleStream) {
+        result = await llm.callRoleStream(
+          { roomId: room.id, role, sharedContext: rolePrompt, roomSummary: analysis, recentMessages: [...recentMessages, userMessage] },
+          (delta, thinkingDelta) => { onEvent({ type: "role_chunk", roleId: role.id, delta, thinking: thinkingDelta }); },
+        );
+      } else {
+        result = await llm.callRole({
+          roomId: room.id, role, sharedContext: rolePrompt,
+          roomSummary: analysis, recentMessages: [...recentMessages, userMessage],
+        });
+      }
+      const msg: CouncilMessage = {
         id: `msg_${role.id}_${Date.now()}`,
         roomId: room.id,
         senderType: "role",
         senderId: role.id,
         content: result.content,
+        thinking: result.thinking,
         status: "ok",
         createdAt: new Date().toISOString(),
-      });
+      };
+      roleMessages.push(msg);
+      onEvent?.({ type: "role_done", roleId: role.id, message: msg });
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       const code: ProviderErrorCode =
@@ -157,7 +174,7 @@ export async function runCouncilRound(
         createdAt: new Date().toISOString(),
       });
     }
-  }
+  }));
 
   // Step 4.5: Cross-examination (roles challenge each other)
   const crossExaminationMessages: CouncilMessage[] = [];
@@ -242,6 +259,7 @@ export async function runCouncilRound(
     context: summaryPrompt,
     messages: [userMessage, ...roleMessages],
   });
+  onEvent?.({ type: "summary_done", content: summary });
 
   // Step 6: Extract memory candidates
   let extractedMemories: MemoryCandidate[] = [];

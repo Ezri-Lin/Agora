@@ -75,6 +75,8 @@ export interface CouncilMessage {
   errorMessage?: string;
   /** For system/error messages targeting a specific role */
   targetRoleId?: string;
+  /** Chain-of-thought / reasoning trace (collapsible in UI) */
+  thinking?: string;
 }
 
 // === Role ===
@@ -109,6 +111,7 @@ export interface ContextRequest {
 export interface RoleCallResult {
   roleId: string;
   content: string;
+  thinking?: string;
   tokenUsage?: { input: number; output: number };
   needsMoreContext?: boolean;
   contextRequests?: ContextRequest[];
@@ -144,4 +147,27 @@ export interface MemoryCandidate {
   confidence: number;
   status: "candidate" | "accepted" | "rejected";
   createdAt: string;
+}
+
+// === Streaming Events ===
+
+export type CouncilEventType =
+  | "step"
+  | "role_start"
+  | "role_chunk"
+  | "role_done"
+  | "cross_start"
+  | "cross_chunk"
+  | "cross_done"
+  | "moderator_done"
+  | "summary_done";
+
+export interface CouncilEvent {
+  type: CouncilEventType;
+  step?: string;
+  roleId?: string;
+  delta?: string;
+  thinking?: string;
+  message?: CouncilMessage;
+  content?: string;
 }

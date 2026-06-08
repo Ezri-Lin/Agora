@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard } from "@agora/shared";
+import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
 import { runCouncilRound, type CouncilRunResult } from "@agora/kernel";
 import { DEFAULT_ROLES } from "@agora/roles";
@@ -35,6 +35,7 @@ export const App: React.FC = () => {
   const [customRoles, setCustomRoles] = useState<Array<{ id: string; name: string; nameCN: string; subtitle: string; type: string; systemPrompt: string; tags: string[] }>>([]);
   const roomIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const streamingRoleIdRef = useRef<string | null>(null);
 
   const loadRooms = useCallback(async (wsPath: string) => {
     const bridge = getBridge();
@@ -217,36 +218,77 @@ export const App: React.FC = () => {
         ...DEFAULT_ROLES,
         ...customRoles.map((r) => ({ ...r, type: r.type as RoleCard["type"] })),
       ];
+
+      // Streaming event handler — updates messages incrementally
+      const streamingMsgIds = new Map<string, string>();
+      const streamedMsgIds = new Set<string>();
+
+      const onEvent = (event: CouncilEvent) => {
+        switch (event.type) {
+          case "role_start": {
+            const msgId = `msg_${event.roleId}_${Date.now()}`;
+            streamingMsgIds.set(event.roleId!, msgId);
+            streamingRoleIdRef.current = event.roleId!;
+            const placeholder: CouncilMessage = {
+              id: msgId, roomId: roomIdRef.current!, senderType: "role",
+              senderId: event.roleId!, content: "", thinking: "", status: "ok", createdAt: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, placeholder]);
+            break;
+          }
+          case "role_chunk": {
+            const msgId = streamingMsgIds.get(event.roleId!);
+            if (!msgId) break;
+            setMessages((prev) => prev.map((m) => m.id === msgId ? {
+              ...m, content: m.content + (event.delta ?? ""), thinking: (m.thinking ?? "") + (event.thinking ?? ""),
+            } : m));
+            break;
+          }
+          case "role_done": {
+            const msgId = streamingMsgIds.get(event.roleId!);
+            if (!msgId || !event.message) break;
+            streamedMsgIds.add(msgId);
+            streamingRoleIdRef.current = null;
+            setMessages((prev) => prev.map((m) => m.id === msgId ? event.message! : m));
+            break;
+          }
+          case "moderator_done": {
+            if (event.message) {
+              streamedMsgIds.add(event.message.id);
+              setMessages((prev) => [...prev, event.message!]);
+            }
+            break;
+          }
+          case "summary_done": {
+            if (event.content) {
+              const summaryMsg: CouncilMessage = {
+                id: generateId("msg"), roomId: roomIdRef.current!, senderType: "moderator",
+                senderId: "moderator", content: event.content, createdAt: nowISO(),
+              };
+              streamedMsgIds.add(summaryMsg.id);
+              setMessages((prev) => [...prev, summaryMsg]);
+            }
+            break;
+          }
+        }
+      };
+
       const result: CouncilRunResult = await runCouncilRound(
-        roomForCouncil,
-        text,
-        userMsg,
-        allRoles,
-        provider,
-        messages,
-        docContents,
+        roomForCouncil, text, userMsg, allRoles, provider,
+        messages, docContents, undefined, onEvent,
       );
 
-      setLoadingStatus("Building messages...");
+      setLoadingStatus("Persisting...");
 
+      // Build messages for persistence (including ones already streamed to UI)
       const modMsg: CouncilMessage = {
-        id: generateId("msg"),
-        roomId: roomIdRef.current!,
-        senderType: "moderator",
-        senderId: "moderator",
-        content: result.moderatorAnalysis,
-        createdAt: nowISO(),
+        id: generateId("msg"), roomId: roomIdRef.current!, senderType: "moderator",
+        senderId: "moderator", content: result.moderatorAnalysis, createdAt: nowISO(),
       };
-
       const summaryMsg: CouncilMessage = {
-        id: generateId("msg"),
-        roomId: roomIdRef.current!,
-        senderType: "moderator",
-        senderId: "moderator",
-        content: result.summary,
-        createdAt: nowISO(),
+        id: generateId("msg"), roomId: roomIdRef.current!, senderType: "moderator",
+        senderId: "moderator", content: result.summary, createdAt: nowISO(),
       };
-
       const allNew = [userMsg, modMsg, ...result.roleMessages, ...result.crossExaminationMessages, summaryMsg];
 
       for (const msg of allNew) {
@@ -254,11 +296,9 @@ export const App: React.FC = () => {
       }
       await bridge.room.writeSummary(workspace.path, roomIdRef.current!, result.summary);
 
-      // Write extracted memory candidates
       if (result.extractedMemories.length > 0) {
         const memLines = [
-          "# Memory Candidates",
-          "",
+          "# Memory Candidates", "",
           ...result.extractedMemories.map((m) =>
             `- **[${m.scope}]** ${m.content}\n  domains: ${m.domains.join(", ")} | tags: ${m.tags.join(", ")}`,
           ),
@@ -271,7 +311,10 @@ export const App: React.FC = () => {
 
       const outputFiles = await bridge.room.listOutputs(workspace.path, roomIdRef.current!);
 
-      setMessages((prev) => [...prev, modMsg, ...result.roleMessages, summaryMsg]);
+      // Append cross-examination messages (not streamed)
+      if (result.crossExaminationMessages.length > 0) {
+        setMessages((prev) => [...prev, ...result.crossExaminationMessages]);
+      }
       setOutputs(outputFiles);
       setContextDebug(result.contextDebug);
     } catch (err: unknown) {
@@ -329,7 +372,7 @@ export const App: React.FC = () => {
       <AppShell
       workspaceName={workspace.name}
       onOpenWorkspace={handleOpenWorkspace}
-      contextGraph={<ContextGraph />}
+      contextGraph={<ContextGraph messages={messages} selectedRefs={selectedRefs} roles={DEFAULT_ROLES} roomId={roomIdRef.current} />}
       main={
         <>
           {error && (
@@ -337,7 +380,7 @@ export const App: React.FC = () => {
               Error: {error}
             </div>
           )}
-          <CouncilRoom messages={messages} isLoading={isLoading} loadingStatus={loadingStatus} onStop={handleStop} />
+          <CouncilRoom messages={messages} isLoading={isLoading} loadingStatus={loadingStatus} onStop={handleStop} streamingRoleId={streamingRoleIdRef.current} />
         </>
       }
       inspector={

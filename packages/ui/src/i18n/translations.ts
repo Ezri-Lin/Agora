@@ -125,6 +125,8 @@ export interface Translations {
   on_: string;
   sendToStart: string;
   rolesAreThinking: string;
+  thinking: string;
+  contextGraph: string;
   stop: string;
   addReferenceTitle: string;
   noDocumentsFound: string;
@@ -237,6 +239,8 @@ export const en: Translations = {
   on_: "On",
   sendToStart: "Send a message to start the council discussion",
   rolesAreThinking: "Roles are thinking...",
+  thinking: "Thinking",
+  contextGraph: "Context Graph",
   stop: "Stop",
   addReferenceTitle: "Add Reference",
   noDocumentsFound: "No documents found",
@@ -349,6 +353,8 @@ export const zh: Translations = {
   on_: "开启",
   sendToStart: "发送消息开始议事讨论",
   rolesAreThinking: "角色们正在思考...",
+  thinking: "思考过程",
+  contextGraph: "上下文图谱",
   stop: "停止",
   addReferenceTitle: "添加引用",
   noDocumentsFound: "未找到文档",

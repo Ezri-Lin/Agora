@@ -10,17 +10,23 @@ interface CouncilRoomProps {
   isLoading: boolean;
   loadingStatus?: string;
   onStop?: () => void;
+  streamingRoleId?: string | null;
 }
 
-export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, loadingStatus, onStop }) => {
+export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, loadingStatus, onStop, streamingRoleId }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const endRef = React.useRef<HTMLDivElement>(null);
+  const contentLenRef = React.useRef(0);
 
   React.useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    const totalLen = messages.reduce((sum, m) => sum + m.content.length, 0);
+    if (totalLen !== contentLenRef.current || messages.length !== contentLenRef.current) {
+      contentLenRef.current = totalLen;
+      endRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   return (
     <div style={styles.container}>
@@ -31,7 +37,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, l
           </div>
         )}
         {messages.map((msg) => (
-          <RoleMessage key={msg.id} message={msg} />
+          <RoleMessage key={msg.id} message={msg} streaming={streamingRoleId === msg.senderId && msg.content.length < 10} />
         ))}
         {isLoading && (
           <div style={styles.loadingRow}>

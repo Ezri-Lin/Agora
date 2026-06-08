@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { CouncilMessage } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
+import { useI18n } from "../i18n/I18nContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
 
 interface RoleMessageProps {
   message: CouncilMessage;
+  streaming?: boolean;
 }
 
-export const RoleMessage: React.FC<RoleMessageProps> = ({ message }) => {
+export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) => {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = createStyles(colors);
 
   const ROLE_META: Record<string, { name: string; subtitle: string; color: string }> = {
@@ -55,8 +58,14 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message }) => {
           <span style={{ ...styles.name, color: meta.color }}>{meta.name}</span>
           {meta.subtitle && <span style={styles.subtitle}>{meta.subtitle}</span>}
         </div>
+        {message.thinking && message.thinking.trim().length > 0 && (
+          <ThinkingBlock thinking={message.thinking} colors={colors} label={t.thinking} />
+        )}
         <div style={{ ...styles.bubble, borderTopColor: meta.color }}>
           {message.content}
+          {streaming && message.content.length < 10 && (
+            <PulsingDots color={meta.color} />
+          )}
         </div>
       </div>
     </div>
@@ -136,3 +145,50 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     lineHeight: 1.4,
   },
 });
+
+const ThinkingBlock: React.FC<{ thinking: string; colors: ColorPalette; label: string }> = ({ thinking, colors, label }) => {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div style={{ marginBottom: 4 }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          background: "none", border: "none", cursor: "pointer",
+          fontSize: 10, color: colors.textMuted, padding: 0,
+          display: "flex", alignItems: "center", gap: 4,
+        }}
+      >
+        <span style={{ transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "0.15s", display: "inline-block", fontSize: 8 }}>&#9654;</span>
+        {label}
+      </button>
+      {expanded && (
+        <div style={{
+          marginTop: 2, padding: "6px 10px", fontSize: 11, lineHeight: 1.5,
+          color: colors.textMuted, background: colors.surface,
+          borderLeft: `2px solid ${colors.accentDim}`, borderRadius: "0 4px 4px 0",
+          whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 200, overflowY: "auto",
+        }}>
+          {thinking}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PulsingDots: React.FC<{ color: string }> = ({ color }) => {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => (t + 1) % 3), 400);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span style={{ display: "inline-flex", gap: 3, marginLeft: 4, verticalAlign: "middle" }}>
+      {[0, 1, 2].map((i) => (
+        <span key={i} style={{
+          width: 5, height: 5, borderRadius: "50%", background: color,
+          opacity: tick === i ? 1 : 0.3, transition: "opacity 0.15s",
+        }} />
+      ))}
+    </span>
+  );
+};

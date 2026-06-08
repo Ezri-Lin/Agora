@@ -4,6 +4,12 @@ export interface LLMProvider {
   /** Single role call — one independent model invocation per role */
   callRole(input: RoleCallInput): Promise<RoleCallResult>;
 
+  /** Streaming role call — optional, tokens arrive via onChunk callback */
+  callRoleStream?(
+    input: RoleCallInput,
+    onChunk: (delta: string, thinkingDelta?: string) => void,
+  ): Promise<RoleCallResult>;
+
   /** Moderator call — scene analysis, role selection, summary */
   callModerator(params: {
     roomId: string;

@@ -54,6 +54,54 @@ export class IPCProvider implements LLMProvider {
     return { roleId: input.role.id, content: result.content };
   }
 
+  async callRoleStream(
+    input: RoleCallInput,
+    onChunk: (delta: string, thinkingDelta?: string) => void,
+  ): Promise<RoleCallResult> {
+    const bridge = getBridge();
+    if (!bridge) throw new ProviderError("unknown", "Agora bridge not available", input.role.id);
+    this.onStatus?.(`${input.role.name} responding...`);
+
+    const messages = [
+      { role: "system" as const, content: input.sharedContext },
+      { role: "user" as const, content: input.roomSummary },
+    ];
+
+    const { streamId } = await bridge.llm.chatStream({ messages, config: this.config });
+
+    return new Promise((resolve, reject) => {
+      let fullContent = "";
+      let fullThinking = "";
+
+      const unsubChunk = bridge.llm.onChunk((data) => {
+        if (data.streamId !== streamId) return;
+        if (data.delta) fullContent += data.delta;
+        if (data.thinkingDelta) fullThinking += data.thinkingDelta;
+        onChunk(data.delta ?? "", data.thinkingDelta);
+      });
+
+      const unsubDone = bridge.llm.onDone((data) => {
+        if (data.streamId !== streamId) return;
+        unsubChunk();
+        unsubDone();
+        unsubErr();
+        resolve({
+          roleId: input.role.id,
+          content: data.fullContent || fullContent,
+          thinking: data.fullThinking || fullThinking || undefined,
+        });
+      });
+
+      const unsubErr = bridge.llm.onStreamError((data) => {
+        if (data.streamId !== streamId) return;
+        unsubChunk();
+        unsubDone();
+        unsubErr();
+        reject(new ProviderError("unknown", data.error, input.role.id));
+      });
+    });
+  }
+
   async callModerator(params: {
     roomId: string;
     task: "analyze" | "select_roles" | "summarize";
