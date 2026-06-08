@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import type { RoleCard, CouncilRoundSnapshot, CouncilMessage } from "@agora/shared";
+import React, { useState, useEffect, useRef } from "react";
+import type { RoleCard, CouncilRoundSnapshot, CouncilMessage, RoleRoundHistory } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
@@ -7,6 +7,7 @@ import type { ColorPalette } from "../theme/palettes.js";
 import { ProgressSection } from "./ProgressSection.js";
 import { AccordionSection } from "./AccordionSection.js";
 import { SuggestedRolesSection } from "./SuggestedRolesSection.js";
+import { RoleCardItem } from "./RoleCardItem.js";
 import { getBridge } from "../AgoraBridge.js";
 
 interface SourceRef {
@@ -26,8 +27,12 @@ interface FloatingCouncilPanelProps {
   workspacePath?: string;
   userMessage?: string;
   activeRoleIdsFromMessages?: Set<string>;
+  roleHistories?: Map<string, RoleRoundHistory[]>;
   onToggle?: () => void;
   onInviteRole?: (roleId: string) => void;
+  onStopRole?: (roleId: string) => void;
+  onRemoveRole?: (roleId: string) => void;
+  onJumpToMessage?: (messageId: string) => void;
 }
 
 export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
@@ -42,11 +47,16 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
   workspacePath,
   userMessage,
   activeRoleIdsFromMessages,
+  roleHistories,
   onToggle,
   onInviteRole,
+  onStopRole,
+  onRemoveRole,
+  onJumpToMessage,
 }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
+  const panelRef = useRef<HTMLDivElement>(null);
   const [memoryCount, setMemoryCount] = useState(0);
 
   const isRunning = panelPhase === "running";
@@ -62,43 +72,61 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
     }).catch(() => {});
   }, [workspacePath, isCompleted]);
 
-  // Role results from messages
-  const roleResults = messages.filter((m) => m.senderType === "role" && m.status !== "error" && m.content.length > 0);
-  const activeRoles = roles.filter((r) => roleStreamStates.has(r.id));
+  // Active roles: those with stream states or recent role messages
+  const activeRoleIds = new Set(roleStreamStates.keys());
+  // Also include roles that have messages in this round
+  for (const msg of messages) {
+    if (msg.senderType === "role" && msg.status !== "error") {
+      activeRoleIds.add(msg.senderId);
+    }
+  }
+
+  const activeRoleCards = roles.filter((r) => activeRoleIds.has(r.id));
   const doneCount = [...roleStreamStates.values()].filter((s) => s.status === "done").length;
-  const hasData = roleResults.length > 0 || activeRoles.length > 0 || outputs.length > 0;
+  const totalActive = activeRoleCards.length;
 
   if (!visible) return null;
 
   return (
-    <div style={panelStyle(colors)}>
+    <div ref={panelRef} style={panelStyle(colors)}>
       {/* Header */}
       <div style={headerStyle(colors)}>
         <span style={headerTitleStyle(colors)}>
-          {isRunning ? `${doneCount}/${activeRoles.length}` : isCompleted ? t.roleDone : t.councilMonitor}
+          {isRunning
+            ? `${t.activeRoles} · ${doneCount}/${totalActive}`
+            : isCompleted ? t.roleDone : t.councilMonitor}
         </span>
         <button style={collapseBtnStyle(colors)} onClick={onToggle}>✕</button>
       </div>
 
       <div style={scrollAreaStyle}>
-        {/* Progress (during running) */}
-        {isRunning && activeRoles.length > 0 && (
+        {/* Progress indicator during running */}
+        {isRunning && totalActive > 0 && (
           <ProgressSection roles={roles} roleStates={roleStreamStates} />
         )}
 
-        {/* Role results — always show when data exists */}
-        {roleResults.length > 0 && (
+        {/* Active Roles — role-grouped cards */}
+        {activeRoleCards.length > 0 && (
           <div style={sectionStyle}>
-            <div style={sectionTitleStyle(colors)}>{t.participants} ({roleResults.length})</div>
-            {roleResults.map((msg) => {
-              const role = roles.find((r) => r.id === msg.senderId);
-              const name = role?.name ?? msg.senderId;
-              const summary = msg.graphSummary || msg.content.slice(0, 100);
+            <div style={sectionTitleStyle(colors)}>
+              {t.activeRoles} ({activeRoleCards.length})
+            </div>
+            {activeRoleCards.map((role) => {
+              const state = roleStreamStates.get(role.id);
+              const history = roleHistories?.get(role.id) ?? [];
               return (
-                <div key={msg.id} style={roleResultCardStyle(colors)}>
-                  <span style={roleResultNameStyle(colors)}>{name}</span>
-                  <span style={roleResultSummaryStyle(colors)}>{summary}</span>
-                </div>
+                <RoleCardItem
+                  key={role.id}
+                  roleId={role.id}
+                  roleName={role.name}
+                  state={state}
+                  history={history}
+                  onStopTurn={isRunning && state?.status !== "done" ? () => onStopRole?.(role.id) : undefined}
+                  onRemove={() => onRemoveRole?.(role.id)}
+                  onJumpToMessage={onJumpToMessage}
+                  colors={colors}
+                  panelRef={panelRef}
+                />
               );
             })}
           </div>
@@ -121,7 +149,7 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
             <Divider colors={colors} />
             <SuggestedRolesSection
               allRoles={roles}
-              activeRoleIds={activeRoleIdsFromMessages ?? new Set(roleStreamStates.keys())}
+              activeRoleIds={activeRoleIdsFromMessages ?? activeRoleIds}
               userMessage={userMessage}
               onInvite={onInviteRole}
             />
@@ -130,7 +158,7 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
 
         {/* Sources */}
         <Divider colors={colors} />
-        <AccordionSection title={`${t.references} (${references.length})`} defaultOpen={false}>
+        <AccordionSection title={`${t.sources} (${references.length})`} defaultOpen={false}>
           {references.length === 0 ? (
             <div style={emptyStyle(colors)}>{t.noReferences}</div>
           ) : references.map((r) => (
@@ -142,7 +170,7 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
         </AccordionSection>
 
         {/* Outputs */}
-        <AccordionSection title={`${t.outputs} (${outputs.length})`} defaultOpen={false}>
+        <AccordionSection title={`${t.outputs_} (${outputs.length})`} defaultOpen={false}>
           {outputs.length === 0 ? (
             <div style={emptyStyle(colors)}>{t.noOutputs}</div>
           ) : outputs.map((f, i) => (
@@ -154,7 +182,7 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
         </AccordionSection>
 
         {/* Memory */}
-        <AccordionSection title={`${t.memories} (${memoryCount})`} defaultOpen={false}>
+        <AccordionSection title={`${t.memory_} (${memoryCount})`} defaultOpen={false}>
           {memoryCount === 0 ? (
             <div style={emptyStyle(colors)}>{t.noMemories}</div>
           ) : (
@@ -222,7 +250,7 @@ const scrollAreaStyle: React.CSSProperties = {
 };
 
 const sectionStyle: React.CSSProperties = {
-  padding: "8px 12px",
+  padding: "8px 0",
 };
 
 const sectionTitleStyle = (colors: ColorPalette): React.CSSProperties => ({
@@ -231,36 +259,14 @@ const sectionTitleStyle = (colors: ColorPalette): React.CSSProperties => ({
   color: colors.textMuted,
   textTransform: "uppercase",
   letterSpacing: 0.5,
-  marginBottom: 6,
+  marginBottom: 4,
+  padding: "0 12px",
 });
 
 const snapshotSummaryStyle = (colors: ColorPalette): React.CSSProperties => ({
   padding: "6px 12px",
   fontSize: 10,
   color: colors.textMuted,
-});
-
-const roleResultCardStyle = (colors: ColorPalette): React.CSSProperties => ({
-  padding: "4px 0",
-  borderBottom: `1px solid ${colors.border}`,
-});
-
-const roleResultNameStyle = (colors: ColorPalette): React.CSSProperties => ({
-  fontSize: 10,
-  fontWeight: 600,
-  color: colors.text,
-  display: "block",
-  marginBottom: 2,
-});
-
-const roleResultSummaryStyle = (colors: ColorPalette): React.CSSProperties => ({
-  fontSize: 10,
-  color: colors.textMuted,
-  lineHeight: 1.4,
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
 });
 
 const emptyStyle = (colors: ColorPalette): React.CSSProperties => ({

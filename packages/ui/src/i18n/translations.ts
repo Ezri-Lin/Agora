@@ -157,6 +157,26 @@ export interface Translations {
   inviteNextRound: string;
   expand: string;
   collapse: string;
+
+  // Floating Panel — Role Selection
+  stopTurn: string;
+  removeFromRoom: string;
+  roleHistory: string;
+  activeRoles: string;
+  suggestedRoles: string;
+  sources: string;
+  outputs_: string;
+  memory_: string;
+  autoInvited: string;
+  manualInvite: string;
+  roundHistory: string;
+  noHistory: string;
+  jumpToMessage: string;
+  tagsMatched: string;
+  budgetExhausted: string;
+  belowThreshold: string;
+  roundStopped: string;
+  roundError: string;
 }
 
 export const en: Translations = {
@@ -283,6 +303,24 @@ export const en: Translations = {
   inviteNextRound: "Invite next round",
   expand: "Expand",
   collapse: "Collapse",
+  stopTurn: "Stop turn",
+  removeFromRoom: "Remove from room",
+  roleHistory: "History",
+  activeRoles: "Active roles",
+  suggestedRoles: "Suggested roles",
+  sources: "Sources",
+  outputs_: "Outputs",
+  memory_: "Memory",
+  autoInvited: "Auto-invited",
+  manualInvite: "Manual invite",
+  roundHistory: "Round history",
+  noHistory: "No history yet",
+  jumpToMessage: "Jump to message",
+  tagsMatched: "tags matched",
+  budgetExhausted: "Budget exhausted",
+  belowThreshold: "Below threshold",
+  roundStopped: "Stopped",
+  roundError: "Error",
 };
 
 export const zh: Translations = {
@@ -409,6 +447,24 @@ export const zh: Translations = {
   inviteNextRound: "邀请下轮参与",
   expand: "展开",
   collapse: "折叠",
+  stopTurn: "停止本轮",
+  removeFromRoom: "移出房间",
+  roleHistory: "历史",
+  activeRoles: "活跃角色",
+  suggestedRoles: "推荐角色",
+  sources: "资源",
+  outputs_: "输出",
+  memory_: "记忆",
+  autoInvited: "自动邀请",
+  manualInvite: "手动邀请",
+  roundHistory: "轮次历史",
+  noHistory: "暂无历史",
+  jumpToMessage: "跳转到消息",
+  tagsMatched: "标签匹配",
+  budgetExhausted: "名额已满",
+  belowThreshold: "未达门槛",
+  roundStopped: "已停止",
+  roundError: "出错",
 };
 
 export const translations: Record<Locale, Translations> = { en, zh };

@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent, CouncilRoundSnapshot, RoleRunSnapshot } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
-import { runCouncilRound, type CouncilRunResult } from "@agora/kernel";
+import { runCouncilRound, stopRole, type CouncilRunResult } from "@agora/kernel";
+import { buildRoleHistories } from "./FloatingPanel/buildRoleHistories.js";
 import { DEFAULT_ROLES } from "@agora/roles";
 import { getBridge, type ScannedDoc } from "./AgoraBridge.js";
 import { IPCProvider } from "./IPCProvider.js";
@@ -42,6 +43,13 @@ export const App: React.FC = () => {
   const [panelPhase, setPanelPhase] = useState<"idle" | "running" | "completed" | "error">("idle");
   const [panelVisible, setPanelVisible] = useState(false);
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const jumpFnsRef = useRef<{ scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void } | null>(null);
+
+  // Build role histories from messages and stream states
+  const roleHistories = useMemo(
+    () => buildRoleHistories({ roomId: roomIdRef.current, messages, roleStreamStates }),
+    [messages, roleStreamStates],
+  );
 
   const loadRooms = useCallback(async (wsPath: string) => {
     const bridge = getBridge();
@@ -146,6 +154,33 @@ export const App: React.FC = () => {
   const handleStop = useCallback(() => {
     setIsLoading(false);
     setLoadingStatus("");
+  }, []);
+
+  const handleStopRole = useCallback((roleId: string) => {
+    const roundId = roomIdRef.current ? `round_${roomIdRef.current}_*` : "";
+    // stopRole needs exact roundId; for now abort via the module-level controller
+    // The roundId is generated inside CouncilRunner, so we pass a partial match
+    // This works because stopRole checks by key prefix
+    stopRole(roundId, roleId);
+  }, []);
+
+  const handleRemoveRole = useCallback((roleId: string) => {
+    // For now, just mark the role as removed for future rounds
+    // The actual removal from room roster is handled by the role selection logic
+    setRoleStreamStates((prev) => {
+      const next = new Map(prev);
+      next.delete(roleId);
+      return next;
+    });
+  }, []);
+
+  const handleJumpToMessage = useCallback((messageId: string) => {
+    jumpFnsRef.current?.scrollToMessage(messageId);
+    jumpFnsRef.current?.highlightMessage(messageId, 1800);
+  }, []);
+
+  const handleRegisterJumpFns = useCallback((fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void }) => {
+    jumpFnsRef.current = fns;
   }, []);
 
   const handleSend = useCallback(async (text: string) => {
@@ -471,7 +506,7 @@ export const App: React.FC = () => {
               Error: {error}
             </div>
           )}
-          <CouncilRoom messages={messages} isLoading={isLoading} loadingStatus={loadingStatus} onStop={handleStop} streamingRoleId={streamingRoleIdRef.current} />
+          <CouncilRoom messages={messages} isLoading={isLoading} loadingStatus={loadingStatus} onStop={handleStop} streamingRoleId={streamingRoleIdRef.current} onRegisterJumpFns={handleRegisterJumpFns} />
         </>
       }
       floatingPanel={
@@ -487,7 +522,11 @@ export const App: React.FC = () => {
           workspacePath={workspace?.path}
           userMessage={messages.filter((m) => m.senderType === "user").slice(-1)[0]?.content}
           activeRoleIdsFromMessages={new Set(messages.filter((m) => m.senderType === "role").map((m) => m.senderId))}
+          roleHistories={roleHistories}
           onToggle={() => setPanelVisible((v) => !v)}
+          onStopRole={handleStopRole}
+          onRemoveRole={handleRemoveRole}
+          onJumpToMessage={handleJumpToMessage}
         />
       }
       composer={

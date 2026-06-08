@@ -2,12 +2,13 @@ import type { RoleCard, RoleCallInput, RoleCallResult, CouncilMessage } from "@a
 
 export interface LLMProvider {
   /** Single role call — one independent model invocation per role */
-  callRole(input: RoleCallInput): Promise<RoleCallResult>;
+  callRole(input: RoleCallInput, signal?: AbortSignal): Promise<RoleCallResult>;
 
   /** Streaming role call — optional, tokens arrive via onChunk callback */
   callRoleStream?(
     input: RoleCallInput,
     onChunk: (delta: string, thinkingDelta?: string) => void,
+    signal?: AbortSignal,
   ): Promise<RoleCallResult>;
 
   /** Moderator call — scene analysis, role selection, summary */

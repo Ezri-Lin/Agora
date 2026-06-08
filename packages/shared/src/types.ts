@@ -158,6 +158,7 @@ export type CouncilEventType =
   | "role_start"
   | "role_chunk"
   | "role_done"
+  | "role_stopped"
   | "cross_start"
   | "cross_chunk"
   | "cross_done"
@@ -168,10 +169,14 @@ export interface CouncilEvent {
   type: CouncilEventType;
   step?: string;
   roleId?: string;
+  roundId?: string;
   delta?: string;
   thinking?: string;
   message?: CouncilMessage;
   content?: string;
+  messageId?: string;
+  partialContent?: string;
+  graphSummary?: string;
 }
 
 // === Round Lifecycle ===
@@ -204,4 +209,89 @@ export interface CouncilRoundSnapshot {
   roleCount: number;
   doneCount: number;
   errorCount: number;
+}
+
+// === Role Selection Settings ===
+
+export interface CouncilRoleSettings {
+  roleCount: number;
+  maxActiveRolesPerRound: number;
+  maxAutoInviteLenses: number;
+  autoInviteLensThreshold: number;
+  allowAutoInviteLenses: boolean;
+  allowInviteDuringRunning: boolean;
+}
+
+export const DEFAULT_ROLE_SETTINGS: CouncilRoleSettings = {
+  roleCount: 3,
+  maxActiveRolesPerRound: 6,
+  maxAutoInviteLenses: 2,
+  autoInviteLensThreshold: 3,
+  allowAutoInviteLenses: true,
+  allowInviteDuringRunning: false,
+};
+
+function clampInt(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+export function normalizeCouncilRoleSettings(input?: Partial<CouncilRoleSettings>): CouncilRoleSettings {
+  const merged = { ...DEFAULT_ROLE_SETTINGS, ...input };
+  return {
+    roleCount: clampInt(merged.roleCount, 1, merged.maxActiveRolesPerRound),
+    maxActiveRolesPerRound: clampInt(merged.maxActiveRolesPerRound, 1, 12),
+    maxAutoInviteLenses: clampInt(merged.maxAutoInviteLenses, 0, merged.maxActiveRolesPerRound),
+    autoInviteLensThreshold: clampInt(merged.autoInviteLensThreshold, 1, 10),
+    allowAutoInviteLenses: Boolean(merged.allowAutoInviteLenses),
+    allowInviteDuringRunning: Boolean(merged.allowInviteDuringRunning),
+  };
+}
+
+// === Role Selection Result ===
+
+export interface SelectedRole {
+  roleId: string;
+  name: string;
+  subtitle?: string;
+  type?: string;
+  tags?: string[];
+  prompt?: string;
+  source: "base" | "auto_invited" | "manual";
+}
+
+export interface SuggestedRole {
+  roleId: string;
+  name: string;
+  subtitle?: string;
+  reason: string;
+  score: number;
+  matchedTags: string[];
+  inviteMode: "next_round" | "join_now";
+  blockedBy?: "over_limit" | "below_auto_threshold" | "manual_only" | "already_removed";
+}
+
+export interface RoleSelectionResult {
+  activeRoles: SelectedRole[];
+  suggestedRoles: SuggestedRole[];
+  skippedRoles?: Array<{
+    roleId: string;
+    reason: "over_limit" | "below_threshold" | "already_active" | "disabled" | "removed";
+    score?: number;
+  }>;
+}
+
+// === Role Round History ===
+
+export interface RoleRoundHistory {
+  roomId: string;
+  roleId: string;
+  roundId: string;
+  roundIndex: number;
+  messageId?: string;
+  topic: string;
+  summary: string;
+  preview?: string;
+  status: "done" | "stopped" | "error" | "partial";
+  source: "message" | "stream" | "snapshot";
+  timestamp: string;
 }

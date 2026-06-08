@@ -55,8 +55,8 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, ex
     color: colors.textMuted,
   };
 
-  // Collapsed preview: role name + graphSummary
-  const preview = message.graphSummary || truncate(message.content, 60);
+  // Collapsed preview: role name + graphSummary (4 lines)
+  const preview = message.graphSummary || truncate(message.content, 200);
 
   return (
     <div id={message.id} style={{ ...styles.row, flexDirection: isUser ? "row-reverse" : "row" }}>
@@ -70,17 +70,18 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, ex
         >
           <span style={{ ...styles.name, color: meta.color }}>{meta.name}</span>
           {meta.subtitle && <span style={styles.subtitle}>{meta.subtitle}</span>}
-          {onToggle && (
-            <span style={styles.expandToggle}>{expanded ? "▾" : "▸"}</span>
-          )}
         </div>
         {!expanded && !isUser && (
           <div style={styles.preview} onClick={onToggle}>
             {preview}
+            {onToggle && <span style={styles.expandIndicator}>▾</span>}
           </div>
         )}
         {expanded && (
-          <>
+          <div
+            style={styles.bubbleWrapper}
+            onClick={onToggle}
+          >
             {message.thinking && message.thinking.trim().length > 0 && (
               <ThinkingBlock thinking={message.thinking} colors={colors} label={t.thinking} />
             )}
@@ -90,7 +91,12 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, ex
                 <PulsingDots color={meta.color} />
               )}
             </div>
-          </>
+            {onToggle && (
+              <div style={styles.collapseHint}>
+                ▴
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -120,15 +126,25 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
   header: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 },
   name: { fontSize: 12, fontWeight: 600 },
   subtitle: { fontSize: 10, color: colors.textMuted },
-  expandToggle: {
-    fontSize: 10, color: colors.textMuted, marginLeft: "auto", cursor: "pointer",
-    userSelect: "none" as const,
-  },
   preview: {
-    fontSize: 12, color: colors.textMuted, lineHeight: 1.4,
-    padding: "2px 0", cursor: "pointer",
-    overflow: "hidden", textOverflow: "ellipsis",
-    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+    fontSize: 12, color: colors.textMuted, lineHeight: 1.5,
+    padding: "6px 10px", cursor: "pointer",
+    background: colors.surface, borderRadius: "0 8px 8px 8px",
+    border: `1px solid ${colors.border}`,
+    display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
+    overflow: "hidden", position: "relative",
+  },
+  expandIndicator: {
+    position: "absolute",
+    bottom: 2,
+    right: 6,
+    fontSize: 10,
+    color: colors.textMuted,
+    opacity: 0.6,
+  },
+  bubbleWrapper: {
+    cursor: "pointer",
+    position: "relative",
   },
   bubble: {
     background: colors.surface,
@@ -140,6 +156,15 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     borderTop: "2px solid",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
+  },
+  collapseHint: {
+    textAlign: "center",
+    fontSize: 10,
+    color: colors.textMuted,
+    opacity: 0.5,
+    marginTop: 4,
+    cursor: "pointer",
+    userSelect: "none" as const,
   },
   errorRow: {
     display: "flex",
@@ -186,7 +211,7 @@ const ThinkingBlock: React.FC<{ thinking: string; colors: ColorPalette; label: s
   return (
     <div style={{ marginBottom: 4 }}>
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
         style={{
           background: "none", border: "none", cursor: "pointer",
           fontSize: 10, color: colors.textMuted, padding: 0,

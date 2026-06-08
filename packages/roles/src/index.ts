@@ -25,4 +25,4 @@ export { PSYCHOLOGY_LENS } from "./cards/psychologyLens.js";
 export { DEFAULT_ROLES } from "./roleCatalog.js";
 
 // Re-exports from kernel
-export { scoreRole, routeRoles } from "@agora/kernel";
+export { scoreRole, selectRoles } from "@agora/kernel";

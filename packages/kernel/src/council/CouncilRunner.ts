@@ -6,14 +6,29 @@ import type {
   ProviderErrorCode,
   MemoryCandidate,
   CouncilEvent,
+  CouncilRoleSettings,
 } from "@agora/shared";
+import { extractGraphSummary, firstMeaningfulSentence, normalizeCouncilRoleSettings } from "@agora/shared";
 import type { LLMProvider } from "../types/index.js";
-import { routeRoles, autoInviteLenses } from "../routing/RoleRouter.js";
+import { selectRoles } from "../routing/RoleRouter.js";
 import { buildContextPack, type ContextPack } from "../context/ContextPack.js";
 import { buildModeratorContextPack, type ModeratorContextPack } from "../context/ModeratorContextPack.js";
 import { buildRolePrompt, buildModeratorPrompt, buildCrossExaminationPrompt } from "../context/promptContracts.js";
 import type { MemoryStore } from "../memory/MemoryStore.js";
 import { extractMemories } from "../memory/MemoryExtractor.js";
+
+// Module-level abort controllers — keyed by `${roundId}_${roleId}`
+const roleAbortControllers = new Map<string, AbortController>();
+
+/** Stop a running role by roundId + roleId. No-op if not found. */
+export function stopRole(roundId: string, roleId: string): void {
+  const key = `${roundId}_${roleId}`;
+  const controller = roleAbortControllers.get(key);
+  if (controller) {
+    controller.abort();
+    roleAbortControllers.delete(key);
+  }
+}
 
 export interface ContextDebug {
   moderatorHasOverflow: boolean;
@@ -59,7 +74,10 @@ export async function runCouncilRound(
   docContents?: Map<string, string>,
   memoryStore?: MemoryStore,
   onEvent?: (event: CouncilEvent) => void,
+  roleSettings?: Partial<CouncilRoleSettings>,
 ): Promise<CouncilRunResult> {
+  const effectiveSettings = normalizeCouncilRoleSettings(roleSettings);
+  const roundId = `round_${room.id}_${Date.now()}`;
   // Step 0: Inject relevant memories into docContents
   const effectiveDocContents = new Map(docContents ?? new Map<string, string>());
   if (memoryStore) {
@@ -109,38 +127,66 @@ export async function runCouncilRound(
     .map((id) => availableRoles.find((r) => r.id === id))
     .filter((r): r is RoleCard => r !== undefined);
 
-  const roles =
-    selectedRoles.length >= 2
-      ? selectedRoles
-      : routeRoles(availableRoles, topic, room.settings.roleCount);
+  // Use settings-driven role selection (selectRoles handles base + auto-invite + limits)
+  const selection = selectRoles(
+    selectedRoles.length >= 2 ? selectedRoles : availableRoles,
+    topic,
+    effectiveSettings,
+  );
+  // Map SelectedRole back to RoleCard for downstream use
+  const finalRoles = selection.activeRoles
+    .map((sr) => availableRoles.find((r) => r.id === sr.roleId))
+    .filter((r): r is RoleCard => r !== undefined);
 
-  // Step 3.5: Auto-invite persona lenses matching the topic
-  const finalRoles = autoInviteLenses(roles, availableRoles, topic);
-
-  // Step 4: Each role responds independently — all called concurrently
+  // Step 4: Each role responds independently — all called concurrently with per-role abort
   const roleMessages: CouncilMessage[] = [];
   const failedRoles: string[] = [];
 
-  await Promise.all(finalRoles.map(async (role) => {
+  // Register abort controllers for each role
+  for (const role of finalRoles) {
+    const key = `${roundId}_${role.id}`;
+    roleAbortControllers.set(key, new AbortController());
+  }
+
+  const roleResults = await Promise.allSettled(finalRoles.map(async (role) => {
+    const key = `${roundId}_${role.id}`;
+    const controller = roleAbortControllers.get(key);
+    const signal = controller?.signal;
+
     const rolePrompt = buildRolePrompt(role, rolePack);
-    onEvent?.({ type: "role_start", roleId: role.id });
+    onEvent?.({ type: "role_start", roleId: role.id, roundId });
+
+    // Track partial content for abort case
+    let partialContent = "";
+    let partialThinking = "";
+
     try {
       let result: RoleCallResult;
+      const input = {
+        roomId: room.id, role, sharedContext: rolePrompt,
+        roomSummary: analysis, recentMessages: [...recentMessages, userMessage],
+      };
+
       if (onEvent && llm.callRoleStream) {
         result = await llm.callRoleStream(
-          { roomId: room.id, role, sharedContext: rolePrompt, roomSummary: analysis, recentMessages: [...recentMessages, userMessage] },
-          (delta, thinkingDelta) => { onEvent({ type: "role_chunk", roleId: role.id, delta, thinking: thinkingDelta }); },
+          input,
+          (delta, thinkingDelta) => {
+            partialContent += delta ?? "";
+            partialThinking += thinkingDelta ?? "";
+            onEvent({ type: "role_chunk", roleId: role.id, delta, thinking: thinkingDelta });
+          },
+          signal,
         );
       } else {
-        result = await llm.callRole({
-          roomId: room.id, role, sharedContext: rolePrompt,
-          roomSummary: analysis, recentMessages: [...recentMessages, userMessage],
-        });
+        result = await llm.callRole(input, signal);
+        partialContent = result.content;
+        partialThinking = result.thinking ?? "";
       }
-      // Extract graph summary from <!-- summary: ... --> tag
-      const summaryMatch = result.content.match(/<!--\s*summary:\s*(.+?)\s*-->/);
-      const graphSummary = summaryMatch?.[1]?.trim();
-      const cleanContent = graphSummary
+
+      // Extract graph summary with shared fallback
+      const parsedSummary = extractGraphSummary(result.content);
+      const graphSummary = parsedSummary ?? firstMeaningfulSentence(result.content) ?? undefined;
+      const cleanContent = parsedSummary
         ? result.content.replace(/<!--\s*summary:\s*.+?\s*-->/, "").trim()
         : result.content;
 
@@ -156,8 +202,23 @@ export async function runCouncilRound(
         createdAt: new Date().toISOString(),
       };
       roleMessages.push(msg);
-      onEvent?.({ type: "role_done", roleId: role.id, message: msg });
+      onEvent?.({ type: "role_done", roleId: role.id, roundId, message: msg });
     } catch (err: unknown) {
+      // Handle abort — emit role_stopped, not an error
+      if (err instanceof Error && err.name === "AbortError") {
+        const partialSummary = extractGraphSummary(partialContent)
+          ?? firstMeaningfulSentence(partialContent)
+          ?? undefined;
+        onEvent?.({
+          type: "role_stopped",
+          roleId: role.id,
+          roundId,
+          partialContent,
+          graphSummary: partialSummary,
+        });
+        return;
+      }
+
       const errMsg = err instanceof Error ? err.message : String(err);
       const code: ProviderErrorCode =
         errMsg.startsWith("missing_api_key") ? "missing_api_key" :
@@ -182,6 +243,8 @@ export async function runCouncilRound(
         targetRoleId: role.id,
         createdAt: new Date().toISOString(),
       });
+    } finally {
+      roleAbortControllers.delete(key);
     }
   }));
 
