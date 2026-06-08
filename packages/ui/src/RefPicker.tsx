@@ -1,7 +1,8 @@
 import React from "react";
 import type { ScannedDoc } from "./AgoraBridge.js";
-import { colors } from "./theme/tokens.js";
 import { useI18n } from "./i18n/I18nContext.js";
+import { useTheme } from "./theme/ThemeContext.js";
+import type { ColorPalette } from "./theme/palettes.js";
 
 interface RefPickerProps {
   docs: ScannedDoc[];
@@ -11,6 +12,8 @@ interface RefPickerProps {
 
 export const RefPicker: React.FC<RefPickerProps> = ({ docs, onSelect, onClose }) => {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
@@ -38,7 +41,7 @@ export const RefPicker: React.FC<RefPickerProps> = ({ docs, onSelect, onClose })
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   overlay: {
     position: "fixed",
     inset: 0,
@@ -106,4 +109,4 @@ const styles: Record<string, React.CSSProperties> = {
     background: colors.border,
     color: colors.textMuted,
   },
-};
+});

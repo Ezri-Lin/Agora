@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import type { RecentWorkspace } from "./AgoraBridge.js";
-import { colors } from "./theme/tokens.js";
 import { useI18n } from "./i18n/I18nContext.js";
+import { useTheme } from "./theme/ThemeContext.js";
+import type { ColorPalette } from "./theme/palettes.js";
 
 interface EmptyStateProps {
   onOpen: () => void;
@@ -10,6 +11,8 @@ interface EmptyStateProps {
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen, onOpenRecent }) => {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [recent, setRecent] = useState<RecentWorkspace[]>([]);
 
   useEffect(() => {
@@ -46,7 +49,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen, onOpenRecent }) 
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   root: {
     height: "100vh",
     display: "flex",
@@ -132,4 +135,4 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: "ellipsis",
     whiteSpace: "nowrap" as const,
   },
-};
+});

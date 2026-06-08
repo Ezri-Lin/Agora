@@ -16,6 +16,7 @@ import { SettingsModal } from "./Settings/SettingsModal.js";
 import { errorStyle } from "./appStyles.js";
 import { buildSessionExport } from "./sessionExport.js";
 import { I18nProvider } from "./i18n/I18nContext.js";
+import { ThemeProvider } from "./theme/ThemeContext.js";
 
 export const App: React.FC = () => {
   const [workspace, setWorkspace] = useState<{ path: string; name: string } | null>(null);
@@ -314,13 +315,16 @@ export const App: React.FC = () => {
 
   if (!workspace) {
     return (
-      <I18nProvider>
-        <EmptyState onOpen={handleOpenWorkspace} onOpenRecent={handleOpenRecent} />
-      </I18nProvider>
+      <ThemeProvider>
+        <I18nProvider>
+          <EmptyState onOpen={handleOpenWorkspace} onOpenRecent={handleOpenRecent} />
+        </I18nProvider>
+      </ThemeProvider>
     );
   }
 
   return (
+    <ThemeProvider>
     <I18nProvider>
       <AppShell
       workspaceName={workspace.name}
@@ -376,5 +380,6 @@ export const App: React.FC = () => {
       />
     )}
     </I18nProvider>
+    </ThemeProvider>
   );
 };

@@ -113,6 +113,8 @@ export interface Translations {
 
   // Additional UI
   appSubtitle: string;
+  darkMode: string;
+  lightMode: string;
   localFirst: string;
   docsOnly: string;
   modelSettings: string;
@@ -223,6 +225,8 @@ export const en: Translations = {
   failedRoles: "Failed Roles",
   moderatorSummary: "Moderator Summary",
   appSubtitle: "Local-first, memory-aware council room",
+  darkMode: "Dark",
+  lightMode: "Light",
   localFirst: "Local-first",
   docsOnly: "Docs-only",
   modelSettings: "Model Settings",
@@ -333,6 +337,8 @@ export const zh: Translations = {
   failedRoles: "失败的角色",
   moderatorSummary: "主持人总结",
   appSubtitle: "本地优先、记忆感知的议事厅",
+  darkMode: "深色",
+  lightMode: "浅色",
   localFirst: "本地优先",
   docsOnly: "文档模式",
   modelSettings: "模型设置",

@@ -1,6 +1,8 @@
 import React from "react";
-import { colors, sizes } from "../theme/tokens.js";
+import { sizes } from "../theme/tokens.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import type { ColorPalette } from "../theme/palettes.js";
 
 interface TitleBarProps {
   workspaceName: string;
@@ -10,6 +12,8 @@ interface TitleBarProps {
 
 export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspace, onOpenSettings }) => {
   const { t, toggleLocale, locale } = useI18n();
+  const { colors, theme, toggleTheme } = useTheme();
+  const styles = createStyles(colors);
   return (
     <header style={styles.bar}>
       <div style={styles.left}>
@@ -27,6 +31,9 @@ export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspa
         <button style={styles.langBtn} onClick={toggleLocale} title="Language">
           {locale === "en" ? "中文" : "EN"}
         </button>
+        <button style={styles.langBtn} onClick={toggleTheme} title={theme === "dark" ? t.lightMode : t.darkMode}>
+          {theme === "dark" ? "☀" : "☾"}
+        </button>
         {onOpenSettings && (
           <button style={styles.settingsBtn} onClick={onOpenSettings} title={t.modelSettings}>
             {t.settings}
@@ -37,7 +44,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspa
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   bar: {
     height: sizes.titleBar,
     display: "flex",
@@ -98,4 +105,4 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.textMuted,
     cursor: "pointer",
   },
-};
+});

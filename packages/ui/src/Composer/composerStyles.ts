@@ -1,6 +1,6 @@
-import { colors } from "../theme/tokens.js";
+import type { ColorPalette } from "../theme/palettes.js";
 
-export const styles: Record<string, React.CSSProperties> = {
+export const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   container: {
     borderTop: `1px solid ${colors.border}`,
     background: colors.surface,
@@ -89,4 +89,4 @@ export const styles: Record<string, React.CSSProperties> = {
     color: colors.text,
   },
   settingValue: { color: colors.textMuted },
-};
+});

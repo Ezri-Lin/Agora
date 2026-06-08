@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import type { LLMSettingsView, SaveLLMSettingsInput, TestConnectionResult } from "../AgoraBridge.js";
-import { styles } from "./settingsStyles.js";
+import { createStyles } from "./settingsStyles.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useTheme } from "../theme/ThemeContext.js";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -10,6 +11,8 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigChanged }) => {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState("mock");
   const [model, setModel] = useState("mock");

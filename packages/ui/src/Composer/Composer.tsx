@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { styles } from "./composerStyles.js";
+import { createStyles } from "./composerStyles.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useTheme } from "../theme/ThemeContext.js";
 
 interface SourceRef {
   path: string;
@@ -21,6 +22,8 @@ export const Composer: React.FC<ComposerProps> = ({
   onRemoveRef,
 }) => {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [text, setText] = useState("");
   const [showSettings, setShowSettings] = useState(false);
 
@@ -40,7 +43,7 @@ export const Composer: React.FC<ComposerProps> = ({
 
   return (
     <div style={styles.container}>
-      {showSettings && <SettingsPopover t={t} />}
+      {showSettings && <SettingsPopover t={t} styles={styles} />}
       {references.length > 0 && (
         <div style={styles.chips}>
           {references.map((ref) => (
@@ -88,7 +91,7 @@ export const Composer: React.FC<ComposerProps> = ({
   );
 };
 
-const SettingsPopover: React.FC<{ t: { roles_: string; maxMsgsPerRole: string; autoDocs: string; crossExam: string; on_: string } }> = ({ t }) => {
+const SettingsPopover: React.FC<{ t: { roles_: string; maxMsgsPerRole: string; autoDocs: string; crossExam: string; on_: string }; styles: Record<string, React.CSSProperties> }> = ({ t, styles }) => {
   return (
     <div style={styles.settings}>
       <div style={styles.settingRow}>

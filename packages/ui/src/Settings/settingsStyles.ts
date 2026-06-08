@@ -1,6 +1,6 @@
-import { colors } from "../theme/tokens.js";
+import type { ColorPalette } from "../theme/palettes.js";
 
-export const styles: Record<string, React.CSSProperties> = {
+export const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   overlay: {
     position: "fixed",
     inset: 0,
@@ -97,9 +97,9 @@ export const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     marginTop: 2,
   },
-  statusMissing: { color: "#e74c3c" },
+  statusMissing: { color: colors.danger },
   statusEnv: { color: colors.textMuted },
-  statusSaved: { color: "#27ae60" },
+  statusSaved: { color: colors.success },
   advancedToggle: {
     background: "none",
     border: "none",
@@ -140,18 +140,18 @@ export const styles: Record<string, React.CSSProperties> = {
     marginTop: 8,
     padding: "6px 10px",
     borderRadius: 6,
-    background: "rgba(39,174,96,0.1)",
-    border: "1px solid rgba(39,174,96,0.3)",
-    color: "#27ae60",
+    background: colors.successBg,
+    border: `1px solid ${colors.successBorder}`,
+    color: colors.success,
     fontSize: 12,
   },
   testError: {
     marginTop: 8,
     padding: "6px 10px",
     borderRadius: 6,
-    background: "rgba(231,76,60,0.1)",
-    border: "1px solid rgba(231,76,60,0.3)",
-    color: "#e74c3c",
+    background: colors.dangerBg,
+    border: `1px solid ${colors.dangerBorder}`,
+    color: colors.danger,
     fontSize: 12,
   },
-};
+});

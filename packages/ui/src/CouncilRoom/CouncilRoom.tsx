@@ -1,8 +1,9 @@
 import React from "react";
 import type { CouncilMessage } from "@agora/shared";
 import { RoleMessage } from "../RoleMessage/RoleMessage.js";
-import { colors } from "../theme/tokens.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import type { ColorPalette } from "../theme/palettes.js";
 
 interface CouncilRoomProps {
   messages: CouncilMessage[];
@@ -13,6 +14,8 @@ interface CouncilRoomProps {
 
 export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, loadingStatus, onStop }) => {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const endRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -46,7 +49,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, l
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   container: {
     display: "flex",
     flexDirection: "column",
@@ -77,12 +80,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: "italic",
   },
   stopBtn: {
-    background: "rgba(231,76,60,0.1)",
-    border: "1px solid rgba(231,76,60,0.3)",
+    background: colors.dangerBg,
+    border: `1px solid ${colors.dangerBorder}`,
     borderRadius: 4,
     padding: "2px 10px",
     fontSize: 11,
-    color: "#e74c3c",
+    color: colors.danger,
     cursor: "pointer",
   },
-};
+});

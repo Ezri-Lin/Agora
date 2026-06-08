@@ -1,7 +1,9 @@
 import React from "react";
 import { TitleBar } from "./TitleBar.js";
-import { colors, sizes } from "../theme/tokens.js";
+import { sizes } from "../theme/tokens.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import type { ColorPalette } from "../theme/palettes.js";
 
 interface RoomEntry {
   id: string;
@@ -39,12 +41,14 @@ export const AppShell: React.FC<AppShellProps> = ({
   onNewRoom,
 }) => {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <div style={styles.root}>
       <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} />
       <div style={styles.body}>
         <div style={styles.left}>
-          <RoomList rooms={rooms} activeRoomId={activeRoomId} onSelect={onSelectRoom} onNew={onNewRoom} t={t} />
+          <RoomList rooms={rooms} activeRoomId={activeRoomId} onSelect={onSelectRoom} onNew={onNewRoom} t={t} colors={colors} />
           {contextGraph}
         </div>
         <div style={styles.center}>
@@ -73,7 +77,10 @@ const RoomList: React.FC<{
   onSelect?: (id: string) => void;
   onNew?: () => void;
   t: { rooms: string; noRooms: string };
-}> = ({ rooms, activeRoomId, onSelect, onNew, t }) => (
+  colors: ColorPalette;
+}> = ({ rooms, activeRoomId, onSelect, onNew, t, colors }) => {
+  const styles = createStyles(colors);
+  return (
   <div style={styles.roomList}>
     <div style={styles.roomListHeader}>
       <span style={styles.roomListTitle}>{t.rooms}</span>
@@ -99,9 +106,10 @@ const RoomList: React.FC<{
       ))}
     </div>
   </div>
-);
+  );
+};
 
-const styles: Record<string, React.CSSProperties> = {
+const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   root: {
     display: "flex",
     flexDirection: "column",
@@ -222,4 +230,4 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     overflow: "hidden",
   },
-};
+});

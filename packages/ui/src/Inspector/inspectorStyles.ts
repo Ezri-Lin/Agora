@@ -1,6 +1,6 @@
-import { colors } from "../theme/tokens.js";
+import type { ColorPalette } from "../theme/palettes.js";
 
-export const styles: Record<string, React.CSSProperties> = {
+export const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   container: {
     display: "flex",
     flexDirection: "column",
@@ -74,12 +74,12 @@ export const styles: Record<string, React.CSSProperties> = {
   statLabel: { color: colors.textMuted },
   statValue: { color: colors.text },
   overflowWarning: {
-    background: "rgba(231,76,60,0.1)",
-    border: "1px solid rgba(231,76,60,0.3)",
+    background: colors.dangerBg,
+    border: `1px solid ${colors.dangerBorder}`,
     borderRadius: 4,
     padding: "4px 8px",
     marginTop: 6,
     fontSize: 10,
-    color: "#e74c3c",
+    color: colors.danger,
   },
-};
+});

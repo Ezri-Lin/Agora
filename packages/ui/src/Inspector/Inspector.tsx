@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import type { RoleCard } from "@agora/shared";
-import { colors } from "../theme/tokens.js";
-import { styles } from "./inspectorStyles.js";
+import { createStyles } from "./inspectorStyles.js";
 import { getBridge } from "../AgoraBridge.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import type { ColorPalette } from "../theme/palettes.js";
 import type { Translations } from "../i18n/translations.js";
 
 interface SourceRef {
@@ -59,6 +60,8 @@ export const Inspector: React.FC<InspectorProps> = ({
   workspacePath,
 }) => {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [tab, setTab] = useState<TabId>("participants");
 
   return (
@@ -78,18 +81,18 @@ export const Inspector: React.FC<InspectorProps> = ({
         ))}
       </div>
       <div style={styles.content}>
-        {tab === "participants" && <ParticipantsTab roles={participants} t={t} />}
-        {tab === "references" && <ReferencesTab refs={references} t={t} />}
-        {tab === "outputs" && <OutputsTab files={outputs} t={t} />}
-        {tab === "context" && <ContextTab debug={contextDebug} t={t} />}
-        {tab === "memories" && <MemoriesTab workspacePath={workspacePath} t={t} />}
-        {tab === "roles" && <CustomRolesTab workspacePath={workspacePath} t={t} />}
+        {tab === "participants" && <ParticipantsTab roles={participants} t={t} styles={styles} />}
+        {tab === "references" && <ReferencesTab refs={references} t={t} styles={styles} />}
+        {tab === "outputs" && <OutputsTab files={outputs} t={t} styles={styles} />}
+        {tab === "context" && <ContextTab debug={contextDebug} t={t} styles={styles} colors={colors} />}
+        {tab === "memories" && <MemoriesTab workspacePath={workspacePath} t={t} styles={styles} colors={colors} />}
+        {tab === "roles" && <CustomRolesTab workspacePath={workspacePath} t={t} styles={styles} colors={colors} />}
       </div>
     </div>
   );
 };
 
-const ParticipantsTab: React.FC<{ roles: RoleCard[]; t: Translations }> = ({ roles, t }) => (
+const ParticipantsTab: React.FC<{ roles: RoleCard[]; t: Translations; styles: Record<string, React.CSSProperties> }> = ({ roles, t, styles }) => (
   <div>
     {roles.length === 0 && <div style={styles.empty}>{t.noRolesActive}</div>}
     {roles.map((r) => (
@@ -104,7 +107,7 @@ const ParticipantsTab: React.FC<{ roles: RoleCard[]; t: Translations }> = ({ rol
   </div>
 );
 
-const ReferencesTab: React.FC<{ refs: SourceRef[]; t: Translations }> = ({ refs, t }) => (
+const ReferencesTab: React.FC<{ refs: SourceRef[]; t: Translations; styles: Record<string, React.CSSProperties> }> = ({ refs, t, styles }) => (
   <div>
     {refs.length === 0 && <div style={styles.empty}>{t.noReferences}</div>}
     {refs.map((r) => (
@@ -116,7 +119,7 @@ const ReferencesTab: React.FC<{ refs: SourceRef[]; t: Translations }> = ({ refs,
   </div>
 );
 
-const OutputsTab: React.FC<{ files: string[]; t: Translations }> = ({ files, t }) => (
+const OutputsTab: React.FC<{ files: string[]; t: Translations; styles: Record<string, React.CSSProperties> }> = ({ files, t, styles }) => (
   <div>
     {files.length === 0 && <div style={styles.empty}>{t.noOutputs}</div>}
     {files.map((f, i) => (
@@ -128,7 +131,7 @@ const OutputsTab: React.FC<{ files: string[]; t: Translations }> = ({ files, t }
   </div>
 );
 
-const ContextTab: React.FC<{ debug?: ContextDebug; t: Translations }> = ({ debug, t }) => {
+const ContextTab: React.FC<{ debug?: ContextDebug; t: Translations; styles: Record<string, React.CSSProperties>; colors: ColorPalette }> = ({ debug, t, styles, colors }) => {
   if (!debug) {
     return <div style={styles.empty}>{t.noContextData}</div>;
   }
@@ -180,7 +183,7 @@ const ContextTab: React.FC<{ debug?: ContextDebug; t: Translations }> = ({ debug
   );
 };
 
-const MemoriesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({ workspacePath, t }) => {
+const MemoriesTab: React.FC<{ workspacePath?: string; t: Translations; styles: Record<string, React.CSSProperties>; colors: ColorPalette }> = ({ workspacePath, t, styles, colors }) => {
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -222,7 +225,7 @@ const MemoriesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({ wo
         <>
           <div style={styles.sectionHeader}>{t.pending} ({candidates.length})</div>
           {candidates.map((m) => (
-            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} onReject={() => handleStatus(m.id, "rejected")} t={t} />
+            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} onReject={() => handleStatus(m.id, "rejected")} t={t} colors={colors} />
           ))}
         </>
       )}
@@ -230,7 +233,7 @@ const MemoriesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({ wo
         <>
           <div style={styles.sectionHeader}>{t.accepted} ({accepted.length})</div>
           {accepted.map((m) => (
-            <MemoryCard key={m.id} memory={m} onReject={() => handleStatus(m.id, "rejected")} t={t} />
+            <MemoryCard key={m.id} memory={m} onReject={() => handleStatus(m.id, "rejected")} t={t} colors={colors} />
           ))}
         </>
       )}
@@ -238,7 +241,7 @@ const MemoriesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({ wo
         <>
           <div style={styles.sectionHeader}>{t.rejected} ({rejected.length})</div>
           {rejected.map((m) => (
-            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} t={t} />
+            <MemoryCard key={m.id} memory={m} onAccept={() => handleStatus(m.id, "accepted")} t={t} colors={colors} />
           ))}
         </>
       )}
@@ -251,7 +254,10 @@ const MemoryCard: React.FC<{
   onAccept?: () => void;
   onReject?: () => void;
   t: Translations;
-}> = ({ memory, onAccept, onReject, t }) => (
+  colors: ColorPalette;
+}> = ({ memory, onAccept, onReject, t, colors }) => {
+  const memoryCardStyles = createMemoryCardStyles(colors);
+  return (
   <div style={memoryCardStyles.card}>
     <div style={memoryCardStyles.scope}>{memory.scope}</div>
     <div style={memoryCardStyles.content}>{memory.content}</div>
@@ -269,11 +275,12 @@ const MemoryCard: React.FC<{
       )}
     </div>
   </div>
-);
+  );
+};
 
-const memoryCardStyles: Record<string, React.CSSProperties> = {
+const createMemoryCardStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   card: {
-    background: "rgba(255,255,255,0.03)",
+    background: colors.surfaceHover,
     border: `1px solid ${colors.border}`,
     borderRadius: 6,
     padding: "8px 10px",
@@ -300,7 +307,7 @@ const memoryCardStyles: Record<string, React.CSSProperties> = {
   },
   tag: {
     fontSize: 9,
-    background: "rgba(255,255,255,0.08)",
+    background: colors.border,
     borderRadius: 3,
     padding: "1px 5px",
     color: colors.textMuted,
@@ -314,8 +321,8 @@ const memoryCardStyles: Record<string, React.CSSProperties> = {
     padding: "3px 10px",
     borderRadius: 4,
     border: "none",
-    background: "#2ecc71",
-    color: "#fff",
+    background: colors.success,
+    color: colors.text,
     cursor: "pointer",
   },
   rejectBtn: {
@@ -323,11 +330,11 @@ const memoryCardStyles: Record<string, React.CSSProperties> = {
     padding: "3px 10px",
     borderRadius: 4,
     border: "none",
-    background: "#e74c3c",
-    color: "#fff",
+    background: colors.danger,
+    color: colors.text,
     cursor: "pointer",
   },
-};
+});
 
 interface CustomRole {
   id: string;
@@ -339,7 +346,8 @@ interface CustomRole {
   tags: string[];
 }
 
-const CustomRolesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({ workspacePath, t }) => {
+const CustomRolesTab: React.FC<{ workspacePath?: string; t: Translations; styles: Record<string, React.CSSProperties>; colors: ColorPalette }> = ({ workspacePath, t, styles, colors }) => {
+  const roleStyles = createRoleStyles(colors);
   const [roles, setRoles] = useState<CustomRole[]>([]);
   const [editing, setEditing] = useState<CustomRole | null>(null);
   const [loading, setLoading] = useState(false);
@@ -457,7 +465,7 @@ const CustomRolesTab: React.FC<{ workspacePath?: string; t: Translations }> = ({
   );
 };
 
-const roleStyles: Record<string, React.CSSProperties> = {
+const createRoleStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   addBtn: {
     width: "100%",
     padding: "6px 0",
@@ -470,7 +478,7 @@ const roleStyles: Record<string, React.CSSProperties> = {
     marginBottom: 8,
   },
   card: {
-    background: "rgba(255,255,255,0.03)",
+    background: colors.surfaceHover,
     border: `1px solid ${colors.border}`,
     borderRadius: 6,
     padding: "8px 10px",
@@ -488,7 +496,7 @@ const roleStyles: Record<string, React.CSSProperties> = {
   cardTags: { display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 6 },
   tag: {
     fontSize: 9,
-    background: "rgba(255,255,255,0.08)",
+    background: colors.border,
     borderRadius: 3,
     padding: "1px 4px",
     color: colors.textMuted,
@@ -496,34 +504,34 @@ const roleStyles: Record<string, React.CSSProperties> = {
   cardActions: { display: "flex", gap: 6 },
   editBtn: {
     fontSize: 10, padding: "2px 8px", borderRadius: 4,
-    border: "none", background: colors.accent, color: "#fff", cursor: "pointer",
+    border: "none", background: colors.accent, color: colors.text, cursor: "pointer",
   },
   deleteBtn: {
     fontSize: 10, padding: "2px 8px", borderRadius: 4,
-    border: "none", background: "#e74c3c", color: "#fff", cursor: "pointer",
+    border: "none", background: colors.danger, color: colors.text, cursor: "pointer",
   },
   form: { padding: "4px 0" },
   formRow: { marginBottom: 8 },
   label: { display: "block", fontSize: 10, color: colors.textMuted, marginBottom: 3 },
   input: {
     width: "100%", padding: "4px 6px", fontSize: 11,
-    background: "rgba(255,255,255,0.05)", border: `1px solid ${colors.border}`,
+    background: colors.surface, border: `1px solid ${colors.border}`,
     borderRadius: 4, color: colors.text, boxSizing: "border-box" as const,
   },
   textarea: {
     width: "100%", minHeight: 80, padding: "4px 6px", fontSize: 11,
-    background: "rgba(255,255,255,0.05)", border: `1px solid ${colors.border}`,
+    background: colors.surface, border: `1px solid ${colors.border}`,
     borderRadius: 4, color: colors.text, boxSizing: "border-box" as const,
     fontFamily: "inherit", resize: "vertical" as const,
   },
   formActions: { display: "flex", gap: 8 },
   saveBtn: {
     fontSize: 10, padding: "4px 12px", borderRadius: 4,
-    border: "none", background: "#2ecc71", color: "#fff", cursor: "pointer",
+    border: "none", background: colors.success, color: colors.text, cursor: "pointer",
   },
   cancelBtn: {
     fontSize: 10, padding: "4px 12px", borderRadius: 4,
     border: `1px solid ${colors.border}`, background: "none",
     color: colors.textMuted, cursor: "pointer",
   },
-};
+});
