@@ -1,42 +1,19 @@
-import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useRef } from "react";
 import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { useI18n } from "../i18n/I18nContext.js";
 
-function useDebouncedValue<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-  return debounced;
-}
+type NodeType = "topic" | "source" | "role" | "memory" | "output" | "summary";
 
-let ForceGraph2D: any = null;
-
-type NodeType = "topic" | "doc" | "analysis" | "viewpoint" | "cross" | "summary";
-
-interface GraphNode {
+interface CtxNode {
   id: string;
   label: string;
+  shortCode: string;
   type: NodeType;
   content?: string;
-  graphSummary?: string;
-  msgId?: string;
-  val: number;
-  x?: number;
-  y?: number;
-}
-
-interface GraphLink {
-  source: string;
-  target: string;
-}
-
-interface GraphData {
-  nodes: GraphNode[];
-  links: GraphLink[];
+  ring: number;
+  angle: number;
 }
 
 interface ContextGraphProps {
@@ -47,226 +24,214 @@ interface ContextGraphProps {
   onNodeClick?: (msgId: string) => void;
 }
 
-const NODE_SIZES: Record<NodeType, number> = {
-  topic: 6, doc: 3, analysis: 4, viewpoint: 3, cross: 3, summary: 4,
-};
-
-const NODE_COLORS: Record<NodeType, (c: ColorPalette) => string> = {
-  topic: (c) => c.text,
-  doc: (c) => c.textMuted,
-  analysis: (c) => c.textMuted,
-  viewpoint: (c) => c.text,
-  cross: (c) => c.border,
-  summary: (c) => c.accent,
-};
-
 function truncate(s: string, max: number): string {
   const clean = s.replace(/[#*_`>\-\n]+/g, " ").trim();
   return clean.length > max ? clean.slice(0, max) + "..." : clean;
 }
 
-function buildGraphData(
+function buildNodes(
   messages: CouncilMessage[],
   selectedRefs: Array<{ path: string; label: string }>,
   roles: RoleCard[],
-): GraphData {
-  const nodes: GraphNode[] = [];
-  const links: GraphLink[] = [];
+): CtxNode[] {
+  const nodes: CtxNode[] = [];
 
+  // Center: topic
   const userMsg = messages.find((m) => m.senderType === "user");
-  if (!userMsg) return { nodes, links };
+  if (!userMsg) return nodes;
+  nodes.push({
+    id: "topic", label: truncate(userMsg.content, 40), shortCode: "T",
+    type: "topic", content: userMsg.content, ring: 0, angle: 0,
+  });
 
-  const topicId = "topic";
-  nodes.push({ id: topicId, label: truncate(userMsg.content, 20), type: "topic", content: userMsg.content, val: NODE_SIZES.topic });
+  // Ring 1: sources + roles + memories
+  const ring1: CtxNode[] = [];
 
   for (const ref of selectedRefs) {
-    const docId = `doc:${ref.path}`;
-    nodes.push({ id: docId, label: ref.label.replace(/\.[^.]+$/, ""), type: "doc", val: NODE_SIZES.doc });
-    links.push({ source: topicId, target: docId });
-  }
-
-  const modMsgs = messages.filter((m) => m.senderType === "moderator");
-  const analysis = modMsgs[0];
-  if (analysis) {
-    nodes.push({ id: "analysis", label: "Analysis", type: "analysis", content: analysis.content, val: NODE_SIZES.analysis });
-    links.push({ source: topicId, target: "analysis" });
+    ring1.push({
+      id: `source:${ref.path}`, label: ref.label, shortCode: ref.label.replace(/\.[^.]+$/, "").slice(0, 2).toUpperCase(),
+      type: "source", ring: 1, angle: 0,
+    });
   }
 
   const roleMsgs = messages.filter((m) => m.senderType === "role" && m.status !== "error");
+  const seenRoles = new Set<string>();
   for (const msg of roleMsgs) {
+    if (seenRoles.has(msg.senderId)) continue;
+    seenRoles.add(msg.senderId);
     const roleDef = roles.find((r) => r.id === msg.senderId);
-    const roleName = roleDef?.name ?? msg.senderId;
-    const vpId = `vp:${msg.id}`;
-    nodes.push({
-      id: vpId,
-      label: roleName,
-      type: "viewpoint",
-      content: msg.content,
-      graphSummary: msg.graphSummary,
-      msgId: msg.id,
-      val: NODE_SIZES.viewpoint,
+    const name = roleDef?.name ?? msg.senderId;
+    ring1.push({
+      id: `role:${msg.senderId}`, label: name,
+      shortCode: name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+      type: "role", content: msg.graphSummary || truncate(msg.content, 80), ring: 1, angle: 0,
     });
-    links.push({ source: analysis ? "analysis" : topicId, target: vpId });
   }
 
-  const crossMsgs = messages.filter((m) => m.senderType === "role" && m.targetRoleId);
-  for (const msg of crossMsgs) {
-    const crossId = `cross:${msg.id}`;
-    const roleDef = roles.find((r) => r.id === msg.senderId);
-    nodes.push({
-      id: crossId,
-      label: roleDef?.name ?? "Cross",
-      type: "cross",
-      content: msg.content,
-      msgId: msg.id,
-      val: NODE_SIZES.cross,
-    });
-    const targetVp = nodes.find((n) => n.type === "viewpoint" && n.msgId?.includes(msg.targetRoleId!));
-    if (targetVp) links.push({ source: crossId, target: targetVp.id });
-    links.push({ source: topicId, target: crossId });
-  }
+  // Ring 2: outputs, summary
+  const ring2: CtxNode[] = [];
 
+  const modMsgs = messages.filter((m) => m.senderType === "moderator");
   const summary = modMsgs.length > 1 ? modMsgs[modMsgs.length - 1] : null;
-  if (summary && summary !== analysis) {
-    nodes.push({ id: "summary", label: "Summary", type: "summary", content: summary.content, val: NODE_SIZES.summary });
-    links.push({ source: topicId, target: "summary" });
+  if (summary) {
+    ring2.push({
+      id: "summary", label: "Summary", shortCode: "SM",
+      type: "summary", content: truncate(summary.content, 100), ring: 2, angle: 0,
+    });
   }
 
-  return { nodes, links };
+  // Distribute angles evenly within each ring
+  for (let i = 0; i < ring1.length; i++) {
+    ring1[i].angle = (i / ring1.length) * Math.PI * 2 - Math.PI / 2;
+  }
+  for (let i = 0; i < ring2.length; i++) {
+    ring2[i].angle = (i / ring2.length) * Math.PI * 2 - Math.PI / 2;
+  }
+
+  nodes.push(...ring1, ...ring2);
+  return nodes;
 }
 
-export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRefs, roles, roomId, onNodeClick }) => {
+const TYPE_COLORS: Record<NodeType, (c: ColorPalette) => string> = {
+  topic: (c) => c.accent,
+  source: (c) => c.textMuted,
+  role: (c) => c.text,
+  memory: (c) => c.accentDim ?? c.textMuted,
+  output: (c) => c.border,
+  summary: (c) => c.accent,
+};
+
+const TYPE_RADIUS: Record<NodeType, number> = {
+  topic: 22, source: 10, role: 12, memory: 9, output: 9, summary: 11,
+};
+
+export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRefs, roles, onNodeClick }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = createStyles(colors);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ w: 200, h: 300 });
-  const [fgLoaded, setFgLoaded] = useState(false);
-  const [hovered, setHovered] = useState<GraphNode | null>(null);
+  const [hovered, setHovered] = useState<CtxNode | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [showTooltip, setShowTooltip] = useState(false);
 
-  useEffect(() => {
-    import("react-force-graph-2d").then((mod) => {
-      ForceGraph2D = mod.default;
-      setFgLoaded(true);
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const ro = new ResizeObserver(([entry]) => {
-      setDims({ w: entry.contentRect.width, h: entry.contentRect.height });
-    });
-    ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  const rawGraphData = useMemo<GraphData>(() => {
-    if (!messages || messages.length === 0) return { nodes: [], links: [] };
-    return buildGraphData(messages, selectedRefs ?? [], roles ?? []);
+  const nodes = useMemo(() => {
+    if (!messages || messages.length === 0) return [];
+    return buildNodes(messages, selectedRefs ?? [], roles ?? []);
   }, [messages, selectedRefs, roles]);
-
-  // Debounce graph updates to prevent jumping during streaming
-  const graphData = useDebouncedValue(rawGraphData, 800);
-
-  const handleNodeHover = useCallback((node: any) => {
-    clearTimeout(hoverTimeoutRef.current);
-    if (node) {
-      setHovered(node);
-      setShowTooltip(true);
-    } else {
-      // Delay hiding so mouse can move to tooltip
-      hoverTimeoutRef.current = setTimeout(() => setShowTooltip(false), 300);
-    }
-  }, []);
-
-  const handleTooltipEnter = useCallback(() => {
-    clearTimeout(hoverTimeoutRef.current);
-  }, []);
-
-  const handleTooltipLeave = useCallback(() => {
-    setShowTooltip(false);
-  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
-    if (rect) {
-      setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    }
+    if (rect) setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   }, []);
 
-  const handleNodeClick = useCallback((node: any) => {
-    if (node?.msgId && onNodeClick) {
-      onNodeClick(node.msgId);
+  const handleNodeEnter = useCallback((node: CtxNode) => {
+    clearTimeout(hoverTimeout.current);
+    setHovered(node);
+    setShowTooltip(true);
+  }, []);
+
+  const handleNodeLeave = useCallback(() => {
+    hoverTimeout.current = setTimeout(() => setShowTooltip(false), 200);
+  }, []);
+
+  const handleTooltipEnter = useCallback(() => clearTimeout(hoverTimeout.current), []);
+  const handleTooltipLeave = useCallback(() => setShowTooltip(false), []);
+
+  const handleClick = useCallback((node: CtxNode) => {
+    if (node.type === "role" && onNodeClick) {
+      const msgId = node.id.replace("role:", "msg_");
+      onNodeClick(msgId);
     }
   }, [onNodeClick]);
 
-  const FG = ForceGraph2D;
-  const displayLabel = hovered?.graphSummary || hovered?.label || "";
+  if (nodes.length === 0) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>{t.contextGraph}</div>
+        <div style={styles.empty}>Send a message to build the map</div>
+      </div>
+    );
+  }
+
+  // Layout: compute positions in SVG space
+  const cx = 140, cy = 140;
+  const ringRadii = [0, 70, 120];
+
+  const positioned = nodes.map((n) => {
+    const r = ringRadii[n.ring] ?? 0;
+    return {
+      ...n,
+      x: cx + Math.cos(n.angle) * r,
+      y: cy + Math.sin(n.angle) * r,
+    };
+  });
+
+  const edges = positioned
+    .filter((n) => n.ring > 0)
+    .map((n) => {
+      const parent = positioned.find((p) => p.ring === n.ring - 1) ?? positioned[0];
+      return { x1: parent.x, y1: parent.y, x2: n.x, y2: n.y };
+    });
 
   return (
     <div ref={containerRef} style={styles.container} onMouseMove={handleMouseMove}>
       <div style={styles.header}>{t.contextGraph}</div>
-      {fgLoaded && FG && graphData.nodes.length > 0 ? (
-        <div style={{ position: "relative", flex: 1 }}>
-          <FG
-            graphData={graphData}
-            width={dims.w}
-            height={dims.h - 28}
-            backgroundColor="transparent"
-            nodeLabel={() => ""}
-            nodeColor={(n: any) => NODE_COLORS[n.type as NodeType]?.(colors) ?? colors.textMuted}
-            nodeVal={(n: any) => n.val}
-            linkColor={() => colors.border}
-            linkWidth={0.5}
-            nodeCanvasObject={(n: any, ctx: CanvasRenderingContext2D) => {
-              const r = n.val;
-              ctx.beginPath();
-              ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
-              ctx.fillStyle = NODE_COLORS[n.type as NodeType]?.(colors) ?? colors.textMuted;
-              ctx.fill();
-              // Role name label
-              if (n.type === "viewpoint" || n.type === "cross") {
-                ctx.fillStyle = colors.textMuted;
-                ctx.font = "8px sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText(n.label, n.x, n.y + r + 9);
-              }
+      <div style={styles.svgWrap}>
+        <svg width="100%" height="100%" viewBox="0 0 280 280">
+          {/* Ring guides */}
+          {[70, 120].map((r, i) => (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={colors.border} strokeWidth={0.5} strokeDasharray="3,3" opacity={0.4} />
+          ))}
+          {/* Edges */}
+          {edges.map((e, i) => (
+            <line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+              stroke={colors.border} strokeWidth={0.8} opacity={0.5} />
+          ))}
+          {/* Nodes */}
+          {positioned.map((n) => {
+            const r = TYPE_RADIUS[n.type];
+            const fill = TYPE_COLORS[n.type](colors);
+            const isHovered = hovered?.id === n.id;
+            return (
+              <g key={n.id}
+                onMouseEnter={() => handleNodeEnter(n)}
+                onMouseLeave={handleNodeLeave}
+                onClick={() => handleClick(n)}
+                style={{ cursor: n.type === "role" ? "pointer" : "default" }}
+              >
+                <circle cx={n.x} cy={n.y} r={r} fill={fill}
+                  opacity={isHovered ? 1 : 0.75}
+                  stroke={isHovered ? colors.accent : "none"} strokeWidth={isHovered ? 2 : 0} />
+                <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central"
+                  fill={n.type === "topic" ? colors.bg : colors.bg}
+                  fontSize={n.type === "topic" ? 10 : 8} fontWeight={700}>
+                  {n.shortCode}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        {/* Tooltip */}
+        {showTooltip && hovered && (
+          <div
+            style={{
+              ...styles.tooltip,
+              left: Math.min(mousePos.x + 14, 260),
+              top: Math.min(mousePos.y + 14, 260),
             }}
-            onNodeHover={handleNodeHover}
-            onNodeClick={handleNodeClick}
-            cooldownTicks={50}
-            d3AlphaDecay={0.03}
-            d3VelocityDecay={0.3}
-          />
-          {showTooltip && hovered && (
-            <div
-              style={{
-                ...styles.tooltip,
-                left: Math.min(mousePos.x + 14, dims.w - 240),
-                top: Math.min(mousePos.y + 14, dims.h - 200),
-              }}
-              onMouseEnter={handleTooltipEnter}
-              onMouseLeave={handleTooltipLeave}
-            >
-              <div style={styles.tooltipType}>{hovered.type}</div>
-              <div style={styles.tooltipLabel}>{hovered.label}</div>
-              {hovered.graphSummary && (
-                <div style={styles.tooltipSummary}>{hovered.graphSummary}</div>
-              )}
-              {hovered.content && (
-                <div style={styles.tooltipContent}>{truncate(hovered.content, 200)}</div>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={styles.empty}>
-          {graphData.nodes.length === 0 ? "Send a message to build the graph" : "Loading..."}
-        </div>
-      )}
+            onMouseEnter={handleTooltipEnter}
+            onMouseLeave={handleTooltipLeave}
+          >
+            <div style={styles.tooltipType}>{hovered.type}</div>
+            <div style={styles.tooltipLabel}>{hovered.label}</div>
+            {hovered.content && (
+              <div style={styles.tooltipContent}>{hovered.content}</div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -284,22 +249,21 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 11, color: colors.textMuted, textAlign: "center", padding: 16,
   },
+  svgWrap: {
+    flex: 1, position: "relative", overflow: "hidden",
+  },
   tooltip: {
-    position: "absolute", maxWidth: 230, maxHeight: 280, overflowY: "auto",
-    padding: "10px 12px", background: colors.surface,
-    border: `1px solid ${colors.border}`, borderRadius: 8,
-    boxShadow: "0 4px 16px rgba(0,0,0,0.2)", pointerEvents: "auto", zIndex: 10,
+    position: "absolute", maxWidth: 220, maxHeight: 240, overflowY: "auto",
+    padding: "8px 10px", background: colors.surface,
+    border: `1px solid ${colors.border}`, borderRadius: 6,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)", pointerEvents: "auto", zIndex: 10,
   },
   tooltipType: {
     fontSize: 9, fontWeight: 600, color: colors.textMuted,
     textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2,
   },
   tooltipLabel: {
-    fontSize: 13, fontWeight: 600, color: colors.text, marginBottom: 6,
-  },
-  tooltipSummary: {
-    fontSize: 11, lineHeight: 1.5, color: colors.accent, marginBottom: 6,
-    fontStyle: "italic",
+    fontSize: 12, fontWeight: 600, color: colors.text, marginBottom: 4,
   },
   tooltipContent: {
     fontSize: 11, lineHeight: 1.5, color: colors.textMuted,

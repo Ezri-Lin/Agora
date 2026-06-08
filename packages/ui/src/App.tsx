@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent } from "@agora/shared";
+import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent, CouncilRoundSnapshot, RoleRunSnapshot } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
 import { runCouncilRound, type CouncilRunResult } from "@agora/kernel";
 import { DEFAULT_ROLES } from "@agora/roles";
@@ -35,9 +35,11 @@ export const App: React.FC = () => {
   const [rooms, setRooms] = useState<Array<{ id: string; title: string; createdAt: string }>>([]);
   const [customRoles, setCustomRoles] = useState<Array<{ id: string; name: string; nameCN: string; subtitle: string; type: string; systemPrompt: string; tags: string[] }>>([]);
   const roomIdRef = useRef<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
   const streamingRoleIdRef = useRef<string | null>(null);
   const [roleStreamStates, setRoleStreamStates] = useState<Map<string, RoleStreamState>>(new Map());
+  const [lastRoundSnapshot, setLastRoundSnapshot] = useState<CouncilRoundSnapshot | null>(null);
+  const [panelPhase, setPanelPhase] = useState<"idle" | "running" | "completed" | "error">("idle");
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const loadRooms = useCallback(async (wsPath: string) => {
     const bridge = getBridge();
@@ -82,6 +84,17 @@ export const App: React.FC = () => {
       }
     });
   }, [loadRooms, loadCustomRoles]);
+
+  // Auto-collapse panel 12s after round completes (unless user is interacting)
+  useEffect(() => {
+    if (panelPhase === "completed" || panelPhase === "error") {
+      collapseTimerRef.current = setTimeout(() => {
+        setPanelPhase("idle");
+        setRoleStreamStates(new Map());
+      }, 12_000);
+      return () => clearTimeout(collapseTimerRef.current);
+    }
+  }, [panelPhase]);
 
   const handleOpenWorkspace = useCallback(async () => {
     const bridge = getBridge();
@@ -177,6 +190,9 @@ export const App: React.FC = () => {
     setIsLoading(true);
     setLoadingStatus("Preparing context...");
     setRoleStreamStates(new Map());
+    setLastRoundSnapshot(null);
+    setPanelPhase("running");
+    clearTimeout(collapseTimerRef.current);
 
     try {
       const docContents = new Map<string, string>();
@@ -359,9 +375,36 @@ export const App: React.FC = () => {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("Council round failed:", msg);
       setError(msg);
+      setPanelPhase("error");
     } finally {
       setIsLoading(false);
       setLoadingStatus("");
+      // Build round snapshot from live states
+      setRoleStreamStates((prev) => {
+        const snapshots: RoleRunSnapshot[] = [];
+        const now = Date.now();
+        prev.forEach((state, roleId) => {
+          snapshots.push({
+            roleId,
+            status: state.status === "error" ? "error" : "done",
+            startedAt: state.startedAt,
+            endedAt: now,
+            microSummary: state.microSummary,
+          });
+        });
+        if (snapshots.length > 0) {
+          setLastRoundSnapshot({
+            roundId: roomIdRef.current ?? "unknown",
+            completedAt: now,
+            roleSnapshots: snapshots,
+            roleCount: snapshots.length,
+            doneCount: snapshots.filter((s) => s.status === "done").length,
+            errorCount: snapshots.filter((s) => s.status === "error").length,
+          });
+          setPanelPhase((phase) => phase === "error" ? "error" : "completed");
+        }
+        return prev; // keep live states until snapshot is built
+      });
     }
   }, [workspace, messages, selectedRefs, llmConfig]);
 
@@ -431,7 +474,7 @@ export const App: React.FC = () => {
         </>
       }
       inspector={
-        isLoading || roleStreamStates.size > 0
+        panelPhase !== "idle"
           ? <CouncilMonitor roles={DEFAULT_ROLES} roleStates={roleStreamStates} />
           : <Inspector
               participants={DEFAULT_ROLES}

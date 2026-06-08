@@ -5,6 +5,9 @@ import { resolve } from "node:path";
 export default defineConfig({
   root: resolve(__dirname, "src/renderer"),
   plugins: [react()],
+  server: {
+    port: 5200,
+  },
   build: {
     outDir: resolve(__dirname, "dist/renderer"),
     rollupOptions: {

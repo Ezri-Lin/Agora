@@ -173,3 +173,35 @@ export interface CouncilEvent {
   message?: CouncilMessage;
   content?: string;
 }
+
+// === Round Lifecycle ===
+
+/** Overall state of a council round */
+export type CouncilRoundStatus = "idle" | "running" | "completed" | "failed" | "cancelled";
+
+/** Panel display phase — derived from round status + user interaction */
+export type CouncilPanelPhase = "idle" | "running" | "completed" | "error";
+
+/** Panel visibility — controls floating panel state */
+export type CouncilPanelVisibility = "hidden" | "collapsed_pill" | "open";
+
+/** Snapshot of a single role's run result (retained after round completes) */
+export interface RoleRunSnapshot {
+  roleId: string;
+  status: "done" | "error";
+  startedAt: number;
+  endedAt: number;
+  microSummary: string;
+  errorMessage?: string;
+}
+
+/** Snapshot of an entire completed round (used by floating panel post-completion) */
+export interface CouncilRoundSnapshot {
+  roundId: string;
+  completedAt: number;
+  roleSnapshots: RoleRunSnapshot[];
+  summary?: string;
+  roleCount: number;
+  doneCount: number;
+  errorCount: number;
+}

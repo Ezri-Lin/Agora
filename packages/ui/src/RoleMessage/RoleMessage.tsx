@@ -9,6 +9,11 @@ interface RoleMessageProps {
   streaming?: boolean;
 }
 
+function truncate(s: string, max: number): string {
+  const clean = s.replace(/[#*_`>\-\n]+/g, " ").trim();
+  return clean.length > max ? clean.slice(0, max) + "..." : clean;
+}
+
 export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
