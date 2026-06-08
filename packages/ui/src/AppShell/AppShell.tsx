@@ -7,7 +7,6 @@ import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { RoomModeTabs } from "../RoomMode/RoomModeTabs.js";
 import { TerminalPanel } from "../Terminal/TerminalPanel.js";
-import { TerminalToggle } from "../Terminal/TerminalToggle.js";
 
 interface RoomEntry {
   id: string;
@@ -67,7 +66,7 @@ export const AppShell: React.FC<AppShellProps> = ({
     : styles.left;
   return (
     <div style={styles.root}>
-      <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} />
+      <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} terminalVisible={terminalVisible} onToggleTerminal={onToggleTerminal} />
       <div style={styles.body}>
         <div style={leftStyle}>
           <div style={styles.leftHeader}>
@@ -122,16 +121,6 @@ export const AppShell: React.FC<AppShellProps> = ({
               {floatingPanel}
             </div>
             {composer}
-            {onToggleTerminal && (
-              <div style={styles.terminalBar}>
-                <TerminalToggle
-                  visible={terminalVisible ?? false}
-                  onToggle={onToggleTerminal}
-                  colors={colors}
-                  label={t.terminal}
-                />
-              </div>
-            )}
             {terminalVisible && (
               <TerminalPanel
                 visible={terminalVisible}
@@ -344,12 +333,5 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     fontSize: 12,
     cursor: "pointer",
     zIndex: 5,
-  },
-  terminalBar: {
-    display: "flex",
-    justifyContent: "flex-start",
-    padding: "4px 16px",
-    borderTop: `1px solid ${colors.border}`,
-    background: colors.bg,
   },
 });

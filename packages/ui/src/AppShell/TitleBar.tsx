@@ -8,9 +8,11 @@ interface TitleBarProps {
   workspaceName: string;
   onOpenWorkspace: () => void;
   onOpenSettings?: () => void;
+  terminalVisible?: boolean;
+  onToggleTerminal?: () => void;
 }
 
-export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspace, onOpenSettings }) => {
+export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspace, onOpenSettings, terminalVisible, onToggleTerminal }) => {
   const { t, toggleLocale, locale } = useI18n();
   const { colors, theme, toggleTheme } = useTheme();
   const styles = createStyles(colors);
@@ -34,6 +36,15 @@ export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspa
         <button style={styles.langBtn} onClick={toggleTheme} title={theme === "dark" ? t.lightMode : t.darkMode}>
           {theme === "dark" ? "☀" : "☾"}
         </button>
+        {onToggleTerminal && (
+          <button
+            style={{ ...styles.langBtn, borderColor: terminalVisible ? colors.accent : undefined, color: terminalVisible ? colors.accent : undefined }}
+            onClick={onToggleTerminal}
+            title={t.terminal}
+          >
+            {">_"}
+          </button>
+        )}
         {onOpenSettings && (
           <button style={styles.settingsBtn} onClick={onOpenSettings} title={t.modelSettings}>
             {t.settings}

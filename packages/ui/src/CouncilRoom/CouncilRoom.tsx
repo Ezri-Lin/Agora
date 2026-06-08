@@ -120,9 +120,8 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, l
         {messages.map((msg) => {
           const isStreaming = streamingRoleId === msg.senderId;
           const isUser = msg.senderType === "user";
-          const isModerator = msg.senderType === "moderator";
-          // User and moderator always expanded
-          const alwaysExpand = isUser || isModerator;
+          // Only user messages always expanded; moderator and role messages are collapsible
+          const alwaysExpand = isUser;
           const isExpanded = alwaysExpand || expandedIds.has(msg.id);
           return (
             <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>

@@ -22,42 +22,52 @@ export function registerTerminalHandlers(): void {
     const ptyId = `pty_${++ptyCounter}_${Date.now()}`;
     const webContentsId = event.sender.id;
 
-    const ptyProcess = pty.spawn(shell, [], {
-      name: "xterm-256color",
-      cols: 80,
-      rows: 24,
-      cwd,
-      env: process.env as Record<string, string>,
-    });
+    console.log(`[terminal] Creating PTY: shell=${shell}, cwd=${cwd}`);
 
-    sessions.set(ptyId, { pty: ptyProcess, webContentsId });
+    try {
+      const ptyProcess = pty.spawn(shell, [], {
+        name: "xterm-256color",
+        cols: 80,
+        rows: 24,
+        cwd,
+        env: process.env as Record<string, string>,
+      });
 
-    ptyProcess.onData((data) => {
-      const win = BrowserWindow.fromWebContents(event.sender);
-      if (win && !win.isDestroyed()) {
-        event.sender.send("terminal:data", { ptyId, data });
-      }
-    });
+      sessions.set(ptyId, { pty: ptyProcess, webContentsId });
 
-    ptyProcess.onExit(({ exitCode }) => {
-      sessions.delete(ptyId);
-      const win = BrowserWindow.fromWebContents(event.sender);
-      if (win && !win.isDestroyed()) {
-        event.sender.send("terminal:exit", { ptyId, exitCode });
-      }
-    });
+      ptyProcess.onData((data) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (win && !win.isDestroyed()) {
+          event.sender.send("terminal:data", { ptyId, data });
+        }
+      });
 
-    return ptyId;
+      ptyProcess.onExit(({ exitCode }) => {
+        console.log(`[terminal] PTY exited: ptyId=${ptyId}, exitCode=${exitCode}`);
+        sessions.delete(ptyId);
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (win && !win.isDestroyed()) {
+          event.sender.send("terminal:exit", { ptyId, exitCode });
+        }
+      });
+
+      console.log(`[terminal] PTY created: ptyId=${ptyId}`);
+      return ptyId;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[terminal] Failed to create PTY:`, msg);
+      throw new Error(`Failed to create terminal: ${msg}`);
+    }
   });
 
-  ipcMain.on("terminal:input", (event, { ptyId, data }: { ptyId: string; data: string }) => {
+  ipcMain.on("terminal:input", (_event, { ptyId, data }: { ptyId: string; data: string }) => {
     const session = sessions.get(ptyId);
     if (session) {
       session.pty.write(data);
     }
   });
 
-  ipcMain.on("terminal:resize", (event, { ptyId, cols, rows }: { ptyId: string; cols: number; rows: number }) => {
+  ipcMain.on("terminal:resize", (_event, { ptyId, cols, rows }: { ptyId: string; cols: number; rows: number }) => {
     const session = sessions.get(ptyId);
     if (session) {
       session.pty.resize(cols, rows);
@@ -72,7 +82,6 @@ export function registerTerminalHandlers(): void {
     }
   });
 
-  // Cleanup all PTYs for a destroyed webContents
   ipcMain.on("terminal:cleanup", (event) => {
     const webContentsId = event.sender.id;
     for (const [ptyId, session] of sessions) {
@@ -84,7 +93,6 @@ export function registerTerminalHandlers(): void {
   });
 }
 
-// Called when app is quitting
 export function killAllTerminals(): void {
   for (const [ptyId, session] of sessions) {
     try {

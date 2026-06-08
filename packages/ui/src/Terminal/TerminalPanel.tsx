@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -18,35 +18,17 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ visible, workspace
   const { colors } = useTheme();
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
-  const terminalRef = useRef<Terminal | null>(null);
+  const termRef = useRef<Terminal | null>(null);
   const ptyIdRef = useRef<string | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const cleanupRef = useRef<(() => void)[]>([]);
-
-  const cleanup = useCallback(() => {
-    for (const fn of cleanupRef.current) {
-      try { fn(); } catch { /* ignore */ }
-    }
-    cleanupRef.current = [];
-    if (terminalRef.current) {
-      terminalRef.current.dispose();
-      terminalRef.current = null;
-    }
-    if (ptyIdRef.current) {
-      const bridge = getBridge();
-      if (bridge) bridge.terminal.kill(ptyIdRef.current);
-      ptyIdRef.current = null;
-    }
-  }, []);
+  const disposablesRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
-    if (!visible || !containerRef.current) {
-      cleanup();
-      return;
-    }
+    if (!visible || !containerRef.current) return;
 
     const bridge = getBridge();
     if (!bridge) return;
+
+    const container = containerRef.current;
 
     const term = new Terminal({
       theme: {
@@ -65,23 +47,38 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ visible, workspace
     const webLinksAddon = new WebLinksAddon();
     term.loadAddon(fitAddon);
     term.loadAddon(webLinksAddon);
-    term.open(containerRef.current);
+    term.open(container);
     fitAddon.fit();
 
-    terminalRef.current = term;
-    fitAddonRef.current = fitAddon;
+    termRef.current = term;
+
+    // Terminal keyboard → PTY
+    const onKey = term.onData((data: string) => {
+      if (ptyIdRef.current) {
+        bridge.terminal.input(ptyIdRef.current, data);
+      }
+    });
+    disposablesRef.current.push(() => onKey.dispose());
+
+    // Resize
+    const resizeObs = new ResizeObserver(() => {
+      fitAddon.fit();
+      if (ptyIdRef.current) {
+        bridge.terminal.resize(ptyIdRef.current, term.cols, term.rows);
+      }
+    });
+    resizeObs.observe(container);
+    disposablesRef.current.push(() => resizeObs.disconnect());
 
     // Create PTY
     bridge.terminal.create({ cwd: workspacePath }).then((ptyId) => {
       ptyIdRef.current = ptyId;
 
-      // PTY → Terminal
+      // PTY output → Terminal
       const offData = bridge.terminal.onData(({ ptyId: id, data }) => {
-        if (id === ptyId) {
-          term.write(data);
-        }
+        if (id === ptyId) term.write(data);
       });
-      cleanupRef.current.push(offData);
+      disposablesRef.current.push(offData);
 
       const offExit = bridge.terminal.onExit(({ ptyId: id }) => {
         if (id === ptyId) {
@@ -89,32 +86,32 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ visible, workspace
           ptyIdRef.current = null;
         }
       });
-      cleanupRef.current.push(offExit);
-
-      // Terminal → PTY
-      const onKey = term.onData((data: string) => {
-        if (ptyIdRef.current) {
-          bridge.terminal.input(ptyIdRef.current, data);
-        }
-      });
-      cleanupRef.current.push(() => onKey.dispose());
-
-      // Resize
-      const resizeObserver = new ResizeObserver(() => {
-        fitAddon.fit();
-        if (ptyIdRef.current) {
-          bridge.terminal.resize(ptyIdRef.current, term.cols, term.rows);
-        }
-      });
-      resizeObserver.observe(containerRef.current!);
-      cleanupRef.current.push(() => resizeObserver.disconnect());
+      disposablesRef.current.push(offExit);
 
       // Initial resize
       bridge.terminal.resize(ptyId, term.cols, term.rows);
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[TerminalPanel] Failed to create PTY:", msg);
+      term.write(`\r\n\x1b[31mFailed to start terminal: ${msg}\x1b[0m\r\n`);
+      term.write(`\x1b[33mCheck that node-pty is installed correctly.\x1b[0m\r\n`);
     });
 
-    return cleanup;
-  }, [visible, workspacePath, colors, cleanup]);
+    return () => {
+      // Cleanup
+      for (const fn of disposablesRef.current) {
+        try { fn(); } catch { /* ignore */ }
+      }
+      disposablesRef.current = [];
+
+      if (ptyIdRef.current) {
+        bridge.terminal.kill(ptyIdRef.current);
+        ptyIdRef.current = null;
+      }
+      term.dispose();
+      termRef.current = null;
+    };
+  }, [visible, workspacePath, colors]);
 
   if (!visible) return null;
 
