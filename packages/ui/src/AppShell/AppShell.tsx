@@ -16,7 +16,7 @@ interface AppShellProps {
   onOpenWorkspace: () => void;
   contextGraph: React.ReactNode;
   main: React.ReactNode;
-  inspector: React.ReactNode;
+  floatingPanel?: React.ReactNode;
   composer: React.ReactNode;
   onAddRef?: () => void;
   onOpenSettings?: () => void;
@@ -31,7 +31,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onOpenWorkspace,
   contextGraph,
   main,
-  inspector,
+  floatingPanel,
   composer,
   onAddRef,
   onOpenSettings,
@@ -65,8 +65,8 @@ export const AppShell: React.FC<AppShellProps> = ({
           {contextGraph}
         </div>
         {!leftExpanded && (
-          <>
-            <div style={styles.center}>
+          <div style={styles.center}>
+            <div style={styles.chatArea}>
               <div style={styles.chat}>
                 <div style={styles.chatHeader}>
                   <span style={styles.chatTitle}>{t.councilRoom}</span>
@@ -78,10 +78,10 @@ export const AppShell: React.FC<AppShellProps> = ({
                 </div>
                 {main}
               </div>
-              {composer}
+              {floatingPanel}
             </div>
-            <div style={styles.right}>{inspector}</div>
-          </>
+            {composer}
+          </div>
         )}
       </div>
     </div>
@@ -213,6 +213,13 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     flexDirection: "column",
     overflow: "hidden",
   },
+  chatArea: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    position: "relative" as const,
+    overflow: "hidden",
+  },
   chat: {
     flex: 1,
     overflow: "hidden",
@@ -241,11 +248,6 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     color: colors.accent,
     fontSize: 11,
     cursor: "pointer",
-  },
-  right: {
-    width: sizes.inspector,
-    flexShrink: 0,
-    overflow: "hidden",
   },
   leftHeader: {
     display: "flex",

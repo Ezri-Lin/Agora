@@ -9,8 +9,9 @@ import { AppShell } from "./AppShell/AppShell.js";
 import { ContextGraph } from "./ContextGraph/ContextGraph.js";
 import { CouncilRoom } from "./CouncilRoom/CouncilRoom.js";
 import { Composer } from "./Composer/Composer.js";
-import { Inspector, type ContextDebug } from "./Inspector/Inspector.js";
-import { CouncilMonitor, type RoleStreamState } from "./CouncilMonitor/CouncilMonitor.js";
+import type { ContextDebug } from "./Inspector/Inspector.js";
+import type { RoleStreamState } from "./CouncilMonitor/CouncilMonitor.js";
+import { FloatingCouncilPanel } from "./FloatingPanel/FloatingCouncilPanel.js";
 import { EmptyState } from "./EmptyState.js";
 import { RefPicker } from "./RefPicker.js";
 import { SettingsModal } from "./Settings/SettingsModal.js";
@@ -412,8 +413,6 @@ export const App: React.FC = () => {
     const el = document.getElementById(msgId);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.style.outline = `2px solid ${"var(--accent, #5b8)"}`;
-      setTimeout(() => { el.style.outline = ""; }, 2000);
     }
   }, []);
 
@@ -473,16 +472,15 @@ export const App: React.FC = () => {
           <CouncilRoom messages={messages} isLoading={isLoading} loadingStatus={loadingStatus} onStop={handleStop} streamingRoleId={streamingRoleIdRef.current} />
         </>
       }
-      inspector={
-        panelPhase !== "idle"
-          ? <CouncilMonitor roles={DEFAULT_ROLES} roleStates={roleStreamStates} />
-          : <Inspector
-              participants={DEFAULT_ROLES}
-              references={selectedRefs}
-              outputs={outputs}
-              contextDebug={contextDebug}
-              workspacePath={workspace?.path}
-            />
+      floatingPanel={
+        <FloatingCouncilPanel
+          panelPhase={panelPhase}
+          roleStreamStates={roleStreamStates}
+          lastRoundSnapshot={lastRoundSnapshot}
+          roles={DEFAULT_ROLES}
+          outputs={outputs}
+          references={selectedRefs}
+        />
       }
       composer={
         <>

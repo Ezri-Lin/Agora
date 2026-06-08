@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import type { CouncilMessage } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
@@ -7,6 +7,8 @@ import type { ColorPalette } from "../theme/palettes.js";
 interface RoleMessageProps {
   message: CouncilMessage;
   streaming?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
 function truncate(s: string, max: number): string {
@@ -14,23 +16,10 @@ function truncate(s: string, max: number): string {
   return clean.length > max ? clean.slice(0, max) + "..." : clean;
 }
 
-export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) => {
+export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, expanded = true, onToggle }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = createStyles(colors);
-  const [expanded, setExpanded] = useState<boolean>(!!streaming);
-  const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
-
-  // Auto-expand when streaming, auto-collapse 3s after done
-  useEffect(() => {
-    if (streaming) {
-      setExpanded(true);
-      clearTimeout(collapseTimerRef.current);
-    } else if (expanded && message.senderType === "role" && message.content.length > 50) {
-      collapseTimerRef.current = setTimeout(() => setExpanded(false), 3000);
-    }
-    return () => clearTimeout(collapseTimerRef.current);
-  }, [streaming]);
 
   const ROLE_META: Record<string, { name: string; subtitle: string; color: string }> = {
     user: { name: "You", subtitle: "", color: colors.user },
@@ -66,10 +55,6 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) 
     color: colors.textMuted,
   };
 
-  // User messages and moderator messages are always expanded
-  const alwaysExpand = isUser || message.senderType === "moderator";
-  const showExpanded = alwaysExpand || expanded;
-
   // Collapsed preview: role name + graphSummary
   const preview = message.graphSummary || truncate(message.content, 60);
 
@@ -80,21 +65,21 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming }) 
       </div>
       <div style={styles.content}>
         <div
-          style={{ ...styles.header, cursor: alwaysExpand ? "default" : "pointer" }}
-          onClick={alwaysExpand ? undefined : () => setExpanded(!expanded)}
+          style={{ ...styles.header, cursor: onToggle ? "pointer" : "default" }}
+          onClick={onToggle}
         >
           <span style={{ ...styles.name, color: meta.color }}>{meta.name}</span>
           {meta.subtitle && <span style={styles.subtitle}>{meta.subtitle}</span>}
-          {!alwaysExpand && (
+          {onToggle && (
             <span style={styles.expandToggle}>{expanded ? "▾" : "▸"}</span>
           )}
         </div>
-        {!showExpanded && !isUser && (
-          <div style={styles.preview} onClick={() => setExpanded(true)}>
+        {!expanded && !isUser && (
+          <div style={styles.preview} onClick={onToggle}>
             {preview}
           </div>
         )}
-        {showExpanded && (
+        {expanded && (
           <>
             {message.thinking && message.thinking.trim().length > 0 && (
               <ThinkingBlock thinking={message.thinking} colors={colors} label={t.thinking} />
@@ -227,7 +212,7 @@ const ThinkingBlock: React.FC<{ thinking: string; colors: ColorPalette; label: s
 
 const PulsingDots: React.FC<{ color: string }> = ({ color }) => {
   const [tick, setTick] = useState(0);
-  useEffect(() => {
+  React.useEffect(() => {
     const id = setInterval(() => setTick((t) => (t + 1) % 3), 400);
     return () => clearInterval(id);
   }, []);

@@ -36,7 +36,6 @@ function buildNodes(
 ): CtxNode[] {
   const nodes: CtxNode[] = [];
 
-  // Center: topic
   const userMsg = messages.find((m) => m.senderType === "user");
   if (!userMsg) return nodes;
   nodes.push({
@@ -44,7 +43,6 @@ function buildNodes(
     type: "topic", content: userMsg.content, ring: 0, angle: 0,
   });
 
-  // Ring 1: sources + roles + memories
   const ring1: CtxNode[] = [];
 
   for (const ref of selectedRefs) {
@@ -68,7 +66,6 @@ function buildNodes(
     });
   }
 
-  // Ring 2: outputs, summary
   const ring2: CtxNode[] = [];
 
   const modMsgs = messages.filter((m) => m.senderType === "moderator");
@@ -80,7 +77,6 @@ function buildNodes(
     });
   }
 
-  // Distribute angles evenly within each ring
   for (let i = 0; i < ring1.length; i++) {
     ring1[i].angle = (i / ring1.length) * Math.PI * 2 - Math.PI / 2;
   }
@@ -105,6 +101,29 @@ const TYPE_RADIUS: Record<NodeType, number> = {
   topic: 22, source: 10, role: 12, memory: 9, output: 9, summary: 11,
 };
 
+function getRelatedIds(nodeId: string, nodes: CtxNode[]): Set<string> {
+  const related = new Set<string>();
+  related.add(nodeId);
+  const node = nodes.find((n) => n.id === nodeId);
+  if (!node) return related;
+
+  // Same ring neighbors
+  for (const n of nodes) {
+    if (n.id !== nodeId && n.ring === node.ring) {
+      related.add(n.id);
+    }
+  }
+
+  // Parent (ring - 1) and children (ring + 1)
+  for (const n of nodes) {
+    if (n.ring === node.ring - 1 || n.ring === node.ring + 1) {
+      related.add(n.id);
+    }
+  }
+
+  return related;
+}
+
 export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRefs, roles, onNodeClick }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -114,11 +133,17 @@ export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRe
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const hoverTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [showTooltip, setShowTooltip] = useState(false);
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
   const nodes = useMemo(() => {
     if (!messages || messages.length === 0) return [];
     return buildNodes(messages, selectedRefs ?? [], roles ?? []);
   }, [messages, selectedRefs, roles]);
+
+  const relatedIds = useMemo(() => {
+    if (!focusedNodeId) return null;
+    return getRelatedIds(focusedNodeId, nodes);
+  }, [focusedNodeId, nodes]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -139,11 +164,21 @@ export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRe
   const handleTooltipLeave = useCallback(() => setShowTooltip(false), []);
 
   const handleClick = useCallback((node: CtxNode) => {
+    if (focusedNodeId === node.id) {
+      // Click again to unfocus
+      setFocusedNodeId(null);
+    } else {
+      setFocusedNodeId(node.id);
+    }
     if (node.type === "role" && onNodeClick) {
       const msgId = node.id.replace("role:", "msg_");
       onNodeClick(msgId);
     }
-  }, [onNodeClick]);
+  }, [focusedNodeId, onNodeClick]);
+
+  const handleBackgroundClick = useCallback(() => {
+    setFocusedNodeId(null);
+  }, []);
 
   if (nodes.length === 0) {
     return (
@@ -154,7 +189,6 @@ export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRe
     );
   }
 
-  // Layout: compute positions in SVG space
   const cx = 140, cy = 140;
   const ringRadii = [0, 70, 120];
 
@@ -177,43 +211,53 @@ export const ContextGraph: React.FC<ContextGraphProps> = ({ messages, selectedRe
   return (
     <div ref={containerRef} style={styles.container} onMouseMove={handleMouseMove}>
       <div style={styles.header}>{t.contextGraph}</div>
-      <div style={styles.svgWrap}>
+      <div style={styles.svgWrap} onClick={handleBackgroundClick}>
         <svg width="100%" height="100%" viewBox="0 0 280 280">
-          {/* Ring guides */}
           {[70, 120].map((r, i) => (
             <circle key={i} cx={cx} cy={cy} r={r} fill="none"
               stroke={colors.border} strokeWidth={0.5} strokeDasharray="3,3" opacity={0.4} />
           ))}
-          {/* Edges */}
           {edges.map((e, i) => (
             <line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
               stroke={colors.border} strokeWidth={0.8} opacity={0.5} />
           ))}
-          {/* Nodes */}
           {positioned.map((n) => {
             const r = TYPE_RADIUS[n.type];
             const fill = TYPE_COLORS[n.type](colors);
             const isHovered = hovered?.id === n.id;
+            const isFocused = focusedNodeId === n.id;
+            const isRelated = relatedIds ? relatedIds.has(n.id) : true;
+            const opacity = focusedNodeId
+              ? (isFocused ? 1 : isRelated ? 0.85 : 0.2)
+              : (isHovered ? 1 : 0.75);
+            const showLabel = isFocused || isHovered || (!focusedNodeId && n.type === "topic");
             return (
               <g key={n.id}
                 onMouseEnter={() => handleNodeEnter(n)}
                 onMouseLeave={handleNodeLeave}
-                onClick={() => handleClick(n)}
-                style={{ cursor: n.type === "role" ? "pointer" : "default" }}
+                onClick={(e) => { e.stopPropagation(); handleClick(n); }}
+                style={{ cursor: "pointer" }}
               >
                 <circle cx={n.x} cy={n.y} r={r} fill={fill}
-                  opacity={isHovered ? 1 : 0.75}
-                  stroke={isHovered ? colors.accent : "none"} strokeWidth={isHovered ? 2 : 0} />
+                  opacity={opacity}
+                  stroke={isFocused ? colors.accent : isHovered ? colors.accent : "none"}
+                  strokeWidth={isFocused ? 2.5 : isHovered ? 2 : 0} />
                 <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central"
                   fill={n.type === "topic" ? colors.bg : colors.bg}
-                  fontSize={n.type === "topic" ? 10 : 8} fontWeight={700}>
+                  fontSize={n.type === "topic" ? 10 : 8} fontWeight={700}
+                  opacity={opacity}>
                   {n.shortCode}
                 </text>
+                {showLabel && (
+                  <text x={n.x} y={n.y + r + 10} textAnchor="middle"
+                    fill={colors.textMuted} fontSize={8} opacity={0.9}>
+                    {n.label.length > 16 ? n.label.slice(0, 16) + "…" : n.label}
+                  </text>
+                )}
               </g>
             );
           })}
         </svg>
-        {/* Tooltip */}
         {showTooltip && hovered && (
           <div
             style={{
