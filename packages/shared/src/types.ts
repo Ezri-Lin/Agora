@@ -16,6 +16,8 @@ export interface WorkspaceConfig {
 
 // === Room ===
 
+export type RoomMode = "single" | "council";
+
 export interface RoomSettings {
   roleCount: number;
   maxMessagesPerRoleBeforeUserReply: number;

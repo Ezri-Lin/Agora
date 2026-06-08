@@ -1,9 +1,13 @@
 import React, { useState } from "react";
+import type { RoomMode } from "@agora/shared";
 import { TitleBar } from "./TitleBar.js";
 import { sizes } from "../theme/tokens.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
+import { RoomModeTabs } from "../RoomMode/RoomModeTabs.js";
+import { TerminalPanel } from "../Terminal/TerminalPanel.js";
+import { TerminalToggle } from "../Terminal/TerminalToggle.js";
 
 interface RoomEntry {
   id: string;
@@ -26,6 +30,11 @@ interface AppShellProps {
   onNewRoom?: () => void;
   panelVisible?: boolean;
   onTogglePanel?: () => void;
+  roomMode?: RoomMode;
+  onRoomModeChange?: (mode: RoomMode) => void;
+  terminalVisible?: boolean;
+  onToggleTerminal?: () => void;
+  workspacePath?: string;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -43,6 +52,11 @@ export const AppShell: React.FC<AppShellProps> = ({
   onNewRoom,
   panelVisible,
   onTogglePanel,
+  roomMode,
+  onRoomModeChange,
+  terminalVisible,
+  onToggleTerminal,
+  workspacePath,
 }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -73,7 +87,19 @@ export const AppShell: React.FC<AppShellProps> = ({
             <div style={styles.chatArea}>
               <div style={styles.chat}>
                 <div style={styles.chatHeader}>
-                  <span style={styles.chatTitle}>{t.councilRoom}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {roomMode && onRoomModeChange && (
+                      <RoomModeTabs
+                        mode={roomMode}
+                        onChange={onRoomModeChange}
+                        colors={colors}
+                        labelSingle={t.singleMode}
+                        labelCouncil={t.councilMode}
+                        tooltip={t.modeOnlyAffectsNext}
+                      />
+                    )}
+                    <span style={styles.chatTitle}>{t.councilRoom}</span>
+                  </div>
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     {onAddRef && (
                       <button style={styles.addRefBtn} onClick={onAddRef}>
@@ -96,6 +122,23 @@ export const AppShell: React.FC<AppShellProps> = ({
               {floatingPanel}
             </div>
             {composer}
+            {onToggleTerminal && (
+              <div style={styles.terminalBar}>
+                <TerminalToggle
+                  visible={terminalVisible ?? false}
+                  onToggle={onToggleTerminal}
+                  colors={colors}
+                  label={t.terminal}
+                />
+              </div>
+            )}
+            {terminalVisible && (
+              <TerminalPanel
+                visible={terminalVisible}
+                workspacePath={workspacePath}
+                onClose={onToggleTerminal ?? (() => {})}
+              />
+            )}
           </div>
         )}
       </div>
@@ -301,5 +344,12 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     fontSize: 12,
     cursor: "pointer",
     zIndex: 5,
+  },
+  terminalBar: {
+    display: "flex",
+    justifyContent: "flex-start",
+    padding: "4px 16px",
+    borderTop: `1px solid ${colors.border}`,
+    background: colors.bg,
   },
 });

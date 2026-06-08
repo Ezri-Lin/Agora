@@ -48,6 +48,7 @@ const { registerWorkspaceHandlers } = require("./handlers/workspace.js");
 const { registerRoomHandlers } = require("./handlers/room.js");
 const { registerLLMChatHandlers } = require("./handlers/llm-chat.js");
 const { registerCustomRoleHandlers } = require("./handlers/custom-roles.js");
+const { registerTerminalHandlers, killAllTerminals } = require("./handlers/terminal.js");
 const { setMainWindowGetter } = require("./handlers/sender.js");
 
 setMainWindowGetter(() => mainWindow);
@@ -56,5 +57,11 @@ registerWorkspaceHandlers(() => mainWindow);
 registerRoomHandlers();
 registerLLMChatHandlers();
 registerCustomRoleHandlers();
+registerTerminalHandlers();
+
+// Cleanup terminals on quit
+app.on("will-quit", () => {
+  killAllTerminals();
+});
 
 console.log("[main] Agora started");

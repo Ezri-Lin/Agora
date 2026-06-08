@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent, CouncilRoundSnapshot, RoleRunSnapshot } from "@agora/shared";
+import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent, CouncilRoundSnapshot, RoleRunSnapshot, RoomMode } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
 import { runCouncilRound, stopRole, type CouncilRunResult } from "@agora/kernel";
 import { buildRoleHistories } from "./FloatingPanel/buildRoleHistories.js";
@@ -42,6 +42,8 @@ export const App: React.FC = () => {
   const [lastRoundSnapshot, setLastRoundSnapshot] = useState<CouncilRoundSnapshot | null>(null);
   const [panelPhase, setPanelPhase] = useState<"idle" | "running" | "completed" | "error">("idle");
   const [panelVisible, setPanelVisible] = useState(false);
+  const [roomMode, setRoomMode] = useState<RoomMode>("council");
+  const [terminalVisible, setTerminalVisible] = useState(false);
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const jumpFnsRef = useRef<{ scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void } | null>(null);
 
@@ -256,10 +258,10 @@ export const App: React.FC = () => {
         sourceRefs: selectedRefs,
         participants: [],
         settings: {
-          roleCount: 3,
+          roleCount: roomMode === "single" ? 1 : 3,
           maxMessagesPerRoleBeforeUserReply: 2,
           allowAutoDocs: true,
-          allowCrossExamination: true,
+          allowCrossExamination: roomMode !== "single",
           generationMode: "multi_call_cached" as const,
           contextMode: "standard" as const,
         },
@@ -365,9 +367,13 @@ export const App: React.FC = () => {
         }
       };
 
+      const roleSettings = roomMode === "single"
+        ? { roleCount: 1, maxAutoInviteLenses: 0, allowAutoInviteLenses: false }
+        : undefined;
+
       const result: CouncilRunResult = await runCouncilRound(
         roomForCouncil, text, userMsg, allRoles, provider,
-        messages, docContents, undefined, onEvent,
+        messages, docContents, undefined, onEvent, roleSettings,
       );
 
       setLoadingStatus("Persisting...");
@@ -444,7 +450,7 @@ export const App: React.FC = () => {
         return prev; // keep live states until snapshot is built
       });
     }
-  }, [workspace, messages, selectedRefs, llmConfig]);
+  }, [workspace, messages, selectedRefs, llmConfig, roomMode]);
 
   const handleNodeClick = useCallback((msgId: string) => {
     const el = document.getElementById(msgId);
@@ -554,6 +560,11 @@ export const App: React.FC = () => {
       onNewRoom={() => { roomIdRef.current = null; setMessages([]); setOutputs([]); setContextDebug(undefined); }}
       panelVisible={panelVisible}
       onTogglePanel={() => setPanelVisible((v) => !v)}
+      roomMode={roomMode}
+      onRoomModeChange={setRoomMode}
+      terminalVisible={terminalVisible}
+      onToggleTerminal={() => setTerminalVisible((v) => !v)}
+      workspacePath={workspace?.path}
     />
     {showSettings && (
       <SettingsModal

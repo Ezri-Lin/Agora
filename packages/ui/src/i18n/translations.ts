@@ -177,6 +177,15 @@ export interface Translations {
   belowThreshold: string;
   roundStopped: string;
   roundError: string;
+
+  // Room Mode
+  singleMode: string;
+  councilMode: string;
+  modeOnlyAffectsNext: string;
+
+  // Terminal
+  terminal: string;
+  closeTerminal: string;
 }
 
 export const en: Translations = {
@@ -321,6 +330,11 @@ export const en: Translations = {
   belowThreshold: "Below threshold",
   roundStopped: "Stopped",
   roundError: "Error",
+  singleMode: "Single",
+  councilMode: "Council",
+  modeOnlyAffectsNext: "Only affects next reply",
+  terminal: "Terminal",
+  closeTerminal: "Close terminal",
 };
 
 export const zh: Translations = {
@@ -465,6 +479,11 @@ export const zh: Translations = {
   belowThreshold: "未达门槛",
   roundStopped: "已停止",
   roundError: "出错",
+  singleMode: "单角色",
+  councilMode: "议会",
+  modeOnlyAffectsNext: "仅影响下一轮",
+  terminal: "终端",
+  closeTerminal: "关闭终端",
 };
 
 export const translations: Record<Locale, Translations> = { en, zh };

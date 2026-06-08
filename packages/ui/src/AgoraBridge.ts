@@ -115,6 +115,15 @@ export interface AgoraBridge {
     clearApiKey(): Promise<LLMSettingsView>;
     testConnection(): Promise<TestConnectionResult>;
   };
+  terminal: {
+    create(options: { cwd?: string }): Promise<string>;
+    input(ptyId: string, data: string): void;
+    resize(ptyId: string, cols: number, rows: number): void;
+    kill(ptyId: string): void;
+    cleanup(): void;
+    onData(callback: (d: { ptyId: string; data: string }) => void): () => void;
+    onExit(callback: (d: { ptyId: string; exitCode: number }) => void): () => void;
+  };
 }
 
 declare global {

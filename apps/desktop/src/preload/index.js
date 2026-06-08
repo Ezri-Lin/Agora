@@ -83,4 +83,23 @@ contextBridge.exposeInMainWorld("agora", {
     clearApiKey: () => ipcRenderer.invoke("settings:clearApiKey"),
     testConnection: () => ipcRenderer.invoke("settings:testConnection"),
   },
+
+  // Terminal
+  terminal: {
+    create: (options) => ipcRenderer.invoke("terminal:create", options),
+    input: (ptyId, data) => ipcRenderer.send("terminal:input", { ptyId, data }),
+    resize: (ptyId, cols, rows) => ipcRenderer.send("terminal:resize", { ptyId, cols, rows }),
+    kill: (ptyId) => ipcRenderer.send("terminal:kill", { ptyId }),
+    cleanup: () => ipcRenderer.send("terminal:cleanup"),
+    onData: (callback) => {
+      const listener = (_e, d) => callback(d);
+      ipcRenderer.on("terminal:data", listener);
+      return () => ipcRenderer.removeListener("terminal:data", listener);
+    },
+    onExit: (callback) => {
+      const listener = (_e, d) => callback(d);
+      ipcRenderer.on("terminal:exit", listener);
+      return () => ipcRenderer.removeListener("terminal:exit", listener);
+    },
+  },
 });

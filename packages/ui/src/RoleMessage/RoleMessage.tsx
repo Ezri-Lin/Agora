@@ -3,6 +3,8 @@ import type { CouncilMessage } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
+import { MessageContent } from "../ChatBubble/MessageContent.js";
+import { CopyButton } from "../ChatBubble/CopyButton.js";
 
 interface RoleMessageProps {
   message: CouncilMessage;
@@ -86,9 +88,14 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, ex
               <ThinkingBlock thinking={message.thinking} colors={colors} label={t.thinking} />
             )}
             <div style={{ ...styles.bubble, borderTopColor: meta.color }}>
-              {message.content}
+              <MessageContent content={message.content} colors={colors} />
               {streaming && message.content.length < 10 && (
                 <PulsingDots color={meta.color} />
+              )}
+              {!streaming && message.content.length > 0 && (
+                <div style={styles.actionRow}>
+                  <CopyButton text={message.content} colors={colors} size="medium" />
+                </div>
               )}
             </div>
             {onToggle && (
@@ -165,6 +172,13 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     marginTop: 4,
     cursor: "pointer",
     userSelect: "none" as const,
+  },
+  actionRow: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: 6,
+    paddingTop: 4,
+    borderTop: `1px solid ${colors.border}`,
   },
   errorRow: {
     display: "flex",
