@@ -478,8 +478,10 @@ export const App: React.FC = () => {
           roleStreamStates={roleStreamStates}
           lastRoundSnapshot={lastRoundSnapshot}
           roles={[...DEFAULT_ROLES, ...customRoles.map((r) => ({ ...r, type: r.type as RoleCard["type"] }))]}
+          messages={messages}
           outputs={outputs}
           references={selectedRefs}
+          workspacePath={workspace?.path}
           userMessage={messages.filter((m) => m.senderType === "user").slice(-1)[0]?.content}
           activeRoleIdsFromMessages={new Set(messages.filter((m) => m.senderType === "role").map((m) => m.senderId))}
         />
