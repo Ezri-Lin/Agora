@@ -154,6 +154,7 @@ export interface Translations {
   roleError: string;
   elapsed: string;
   jumpToLatest: string;
+  inviteNextRound: string;
   expand: string;
   collapse: string;
 }
@@ -279,6 +280,7 @@ export const en: Translations = {
   roleError: "Error",
   elapsed: "elapsed",
   jumpToLatest: "Jump to latest",
+  inviteNextRound: "Invite next round",
   expand: "Expand",
   collapse: "Collapse",
 };
@@ -404,6 +406,7 @@ export const zh: Translations = {
   roleError: "出错",
   elapsed: "已用时",
   jumpToLatest: "跳到最新",
+  inviteNextRound: "邀请下轮参与",
   expand: "展开",
   collapse: "折叠",
 };

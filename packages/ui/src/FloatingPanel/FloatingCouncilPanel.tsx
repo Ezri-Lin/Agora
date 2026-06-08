@@ -7,6 +7,7 @@ import type { ColorPalette } from "../theme/palettes.js";
 import type { Translations } from "../i18n/translations.js";
 import { ProgressSection } from "./ProgressSection.js";
 import { AccordionSection } from "./AccordionSection.js";
+import { SuggestedRolesSection } from "./SuggestedRolesSection.js";
 
 interface SourceRef {
   path: string;
@@ -20,7 +21,10 @@ interface FloatingCouncilPanelProps {
   roles: RoleCard[];
   outputs: string[];
   references: SourceRef[];
+  userMessage?: string;
+  activeRoleIdsFromMessages?: Set<string>;
   onCollapse?: () => void;
+  onInviteRole?: (roleId: string) => void;
 }
 
 export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
@@ -30,7 +34,10 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
   roles,
   outputs,
   references,
+  userMessage,
+  activeRoleIdsFromMessages,
   onCollapse,
+  onInviteRole,
 }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -85,6 +92,16 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
         <div style={snapshotSummaryStyle(colors)}>
           {lastRoundSnapshot.doneCount} {t.roleDone} · {lastRoundSnapshot.errorCount > 0 ? `${lastRoundSnapshot.errorCount} ${t.roleError}` : ""}
         </div>
+      )}
+
+      {/* Suggested roles */}
+      {isCompleted && (
+        <SuggestedRolesSection
+          allRoles={roles}
+          activeRoleIds={activeRoleIdsFromMessages ?? new Set(roleStreamStates.keys())}
+          userMessage={userMessage}
+          onInvite={onInviteRole}
+        />
       )}
 
       {/* Accordion sections */}

@@ -477,9 +477,11 @@ export const App: React.FC = () => {
           panelPhase={panelPhase}
           roleStreamStates={roleStreamStates}
           lastRoundSnapshot={lastRoundSnapshot}
-          roles={DEFAULT_ROLES}
+          roles={[...DEFAULT_ROLES, ...customRoles.map((r) => ({ ...r, type: r.type as RoleCard["type"] }))]}
           outputs={outputs}
           references={selectedRefs}
+          userMessage={messages.filter((m) => m.senderType === "user").slice(-1)[0]?.content}
+          activeRoleIdsFromMessages={new Set(messages.filter((m) => m.senderType === "role").map((m) => m.senderId))}
         />
       }
       composer={
@@ -510,6 +512,7 @@ export const App: React.FC = () => {
       <SettingsModal
         onClose={() => setShowSettings(false)}
         onConfigChanged={handleConfigChanged}
+        workspacePath={workspace?.path}
       />
     )}
     </I18nProvider>

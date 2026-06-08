@@ -3,16 +3,21 @@ import type { LLMSettingsView, SaveLLMSettingsInput, TestConnectionResult } from
 import { createStyles } from "./settingsStyles.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
+import { CustomRolesTab } from "../Inspector/CustomRolesTab.js";
+
+type SettingsTab = "llm" | "roles";
 
 interface SettingsModalProps {
   onClose: () => void;
   onConfigChanged: () => void;
+  workspacePath?: string;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigChanged }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigChanged, workspacePath }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const [tab, setTab] = useState<SettingsTab>("llm");
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState("mock");
   const [model, setModel] = useState("mock");
@@ -86,11 +91,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
-          <span>{t.modelSettings}</span>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button
+              style={{ ...styles.tabBtn, ...(tab === "llm" ? styles.tabBtnActive : {}) }}
+              onClick={() => setTab("llm")}
+            >
+              {t.modelSettings}
+            </button>
+            <button
+              style={{ ...styles.tabBtn, ...(tab === "roles" ? styles.tabBtnActive : {}) }}
+              onClick={() => setTab("roles")}
+            >
+              {t.roles}
+            </button>
+          </div>
           <button style={styles.closeBtn} onClick={onClose}>x</button>
         </div>
 
         <div style={styles.body}>
+        {tab === "roles" ? (
+          <CustomRolesTab workspacePath={workspacePath} t={t} styles={{ empty: { color: colors.textMuted, fontSize: 12, textAlign: "center" as const, padding: 20 }}} colors={colors} />
+        ) : (
+          <>
           <label style={styles.label}>{t.provider}</label>
           <select style={styles.select} value={provider} onChange={(e) => setProvider(e.target.value)}>
             <option value="mock">{t.mockTesting}</option>
@@ -149,6 +171,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
               {testResult.ok ? `${t.connected} (${testResult.latencyMs}ms)` : `${t.failed_} ${testResult.error}`}
             </div>
           )}
+          </>
+        )}
         </div>
       </div>
     </div>

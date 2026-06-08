@@ -36,6 +36,20 @@ export const createStyles = (colors: ColorPalette): Record<string, React.CSSProp
     cursor: "pointer",
     fontSize: 16,
   },
+  tabBtn: {
+    background: "none",
+    border: "none",
+    borderBottom: "2px solid transparent",
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    padding: "2px 0",
+  },
+  tabBtnActive: {
+    color: colors.accent,
+    borderBottomColor: colors.accent,
+  },
   body: {
     padding: "12px 16px",
     overflowY: "auto",
