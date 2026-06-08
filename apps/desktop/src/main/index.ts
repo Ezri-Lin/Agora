@@ -22,7 +22,7 @@ function createWindow(): void {
     mainWindow.loadURL(devUrl);
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(join(__dirname, "../../dist/renderer/index.html"));
   }
 }
 
