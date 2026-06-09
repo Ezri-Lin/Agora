@@ -7,6 +7,17 @@ import { getBridge } from "../AgoraBridge.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
+import {
+  agoraDarkColors,
+  consoleTokens,
+  fontFamilies,
+  radius,
+  shadow,
+  shadowDark,
+  spacing,
+  typography,
+  zIndex,
+} from "../theme/tokens.js";
 
 interface TerminalPanelProps {
   visible: boolean;
@@ -14,8 +25,8 @@ interface TerminalPanelProps {
   onClose: () => void;
 }
 
-const DEFAULT_HEIGHT = 250;
-const MIN_HEIGHT = 100;
+const DEFAULT_HEIGHT = 280;
+const MIN_HEIGHT = 120;
 
 export const TerminalPanel: React.FC<TerminalPanelProps> = ({ visible, workspacePath, onClose }) => {
   const { colors } = useTheme();
@@ -78,13 +89,13 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ visible, workspace
 
     const term = new Terminal({
       theme: {
-        background: c.bg,
-        foreground: c.text,
+        background: getConsolePalette(c).bg,
+        foreground: getConsolePalette(c).text,
         cursor: c.accent,
         selectionBackground: `${c.accent}40`,
       },
-      fontSize: 12,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontSize: typography.console.size,
+      fontFamily: fontFamilies.mono,
       cursorBlink: true,
       convertEol: true,
     });
@@ -168,9 +179,10 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ visible, workspace
   useEffect(() => {
     const term = termRef.current;
     if (!term) return;
+    const consolePalette = getConsolePalette(colors);
     term.options.theme = {
-      background: colors.bg,
-      foreground: colors.text,
+      background: consolePalette.bg,
+      foreground: consolePalette.text,
       cursor: colors.accent,
       selectionBackground: `${colors.accent}40`,
     };
@@ -179,31 +191,45 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ visible, workspace
   if (!visible) return null;
 
   return (
-    <div style={panelStyle(colors, height)}>
+    <div role="region" aria-label="Activity Console" style={panelStyle(colors, height)}>
       <div
         style={dragHandleStyle(colors)}
         onMouseDown={handleDragStart}
       />
       <div style={headerStyle(colors)}>
-        <span style={titleStyle(colors)}>{t.terminal}</span>
-        <button style={closeBtnStyle(colors)} onClick={onClose}>✕</button>
+        <span style={titleStyle(colors)}>Activity Console</span>
+        <span style={statusStyle(colors)}>{t.terminal}</span>
+        <button type="button" aria-label={t.closeTerminal} style={closeBtnStyle(colors)} onClick={onClose}>x</button>
       </div>
       <div ref={containerRef} style={termContainerStyle} />
     </div>
   );
 };
 
+function getConsolePalette(colors: ColorPalette): { bg: string; text: string; muted: string } {
+  const dark = colors.bg === agoraDarkColors.bgApp;
+  return dark
+    ? { bg: consoleTokens.bgDark, text: consoleTokens.textDark, muted: consoleTokens.mutedDark }
+    : { bg: consoleTokens.bgLight, text: consoleTokens.textLight, muted: consoleTokens.mutedLight };
+}
+
 const panelStyle = (colors: ColorPalette, height: number): React.CSSProperties => ({
   display: "flex",
   flexDirection: "column",
-  height,
+  position: "fixed",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  height: `clamp(${MIN_HEIGHT}px, ${Math.round(height)}px, 60vh)`,
   borderTop: `1px solid ${colors.border}`,
-  background: colors.bg,
-  flexShrink: 0,
+  background: getConsolePalette(colors).bg,
+  color: getConsolePalette(colors).text,
+  boxShadow: colors.bg === agoraDarkColors.bgApp ? shadowDark.deep : shadow.deep,
+  zIndex: zIndex.console,
 });
 
 const dragHandleStyle = (colors: ColorPalette): React.CSSProperties => ({
-  height: 4,
+  height: spacing.xs,
   cursor: "row-resize",
   background: "transparent",
   flexShrink: 0,
@@ -215,32 +241,39 @@ const dragHandleStyle = (colors: ColorPalette): React.CSSProperties => ({
 
 const headerStyle = (colors: ColorPalette): React.CSSProperties => ({
   display: "flex",
-  justifyContent: "space-between",
   alignItems: "center",
-  padding: "4px 10px",
+  gap: spacing.sm,
+  padding: `${spacing.xs}px ${spacing.md}px`,
   borderBottom: `1px solid ${colors.border}`,
   flexShrink: 0,
 });
 
 const titleStyle = (colors: ColorPalette): React.CSSProperties => ({
-  fontSize: 10,
-  fontWeight: 600,
-  color: colors.textMuted,
+  fontSize: typography.badge.size,
+  fontWeight: typography.badge.weight,
+  color: getConsolePalette(colors).text,
   textTransform: "uppercase",
-  letterSpacing: 0.5,
+  letterSpacing: typography.badge.tracking,
+});
+
+const statusStyle = (colors: ColorPalette): React.CSSProperties => ({
+  fontSize: typography.badge.size,
+  color: getConsolePalette(colors).muted,
+  marginLeft: "auto",
 });
 
 const closeBtnStyle = (colors: ColorPalette): React.CSSProperties => ({
-  background: "none",
-  border: "none",
-  color: colors.textMuted,
-  fontSize: 12,
+  background: "transparent",
+  border: `1px solid ${colors.border}`,
+  borderRadius: radius.xs,
+  color: getConsolePalette(colors).muted,
+  fontSize: typography.meta.size,
   cursor: "pointer",
-  padding: "2px 4px",
+  padding: `${spacing.xs}px ${spacing.sm}px`,
 });
 
 const termContainerStyle: React.CSSProperties = {
   flex: 1,
   overflow: "hidden",
-  padding: "4px 0 0 4px",
+  padding: `${spacing.xs}px 0 0 ${spacing.xs}px`,
 };

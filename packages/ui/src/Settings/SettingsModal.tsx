@@ -5,7 +5,7 @@ import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { CustomRolesTab } from "../Inspector/CustomRolesTab.js";
 
-type SettingsTab = "llm" | "roles";
+type SettingsTab = "llm" | "roles" | "appearance";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -14,8 +14,8 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigChanged, workspacePath }) => {
-  const { t } = useI18n();
-  const { colors } = useTheme();
+  const { t, toggleLocale, locale } = useI18n();
+  const { colors, theme, toggleTheme } = useTheme();
   const styles = createStyles(colors);
   const [tab, setTab] = useState<SettingsTab>("llm");
   const [loading, setLoading] = useState(true);
@@ -104,14 +104,55 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
             >
               {t.roles}
             </button>
+            <button
+              style={{ ...styles.tabBtn, ...(tab === "appearance" ? styles.tabBtnActive : {}) }}
+              onClick={() => setTab("appearance")}
+            >
+              {t.appearance}
+            </button>
           </div>
           <button style={styles.closeBtn} onClick={onClose}>x</button>
         </div>
 
         <div style={styles.body}>
-        {tab === "roles" ? (
+        {tab === "roles" && (
           <CustomRolesTab workspacePath={workspacePath} t={t} styles={{ empty: { color: colors.textMuted, fontSize: 12, textAlign: "center" as const, padding: 20 }}} colors={colors} />
-        ) : (
+        )}
+        {tab === "appearance" && (
+          <>
+            <label style={styles.label}>{t.theme}</label>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              <button
+                style={{ ...styles.saveBtn, opacity: theme === "light" ? 1 : 0.5 }}
+                onClick={theme === "dark" ? toggleTheme : undefined}
+              >
+                {t.lightMode}
+              </button>
+              <button
+                style={{ ...styles.saveBtn, opacity: theme === "dark" ? 1 : 0.5 }}
+                onClick={theme === "light" ? toggleTheme : undefined}
+              >
+                {t.darkMode}
+              </button>
+            </div>
+            <label style={styles.label}>{t.language}</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                style={{ ...styles.saveBtn, opacity: locale === "en" ? 1 : 0.5 }}
+                onClick={locale !== "en" ? toggleLocale : undefined}
+              >
+                English
+              </button>
+              <button
+                style={{ ...styles.saveBtn, opacity: locale === "zh" ? 1 : 0.5 }}
+                onClick={locale !== "zh" ? toggleLocale : undefined}
+              >
+                中文
+              </button>
+            </div>
+          </>
+        )}
+        {tab === "llm" && (
           <>
           <label style={styles.label}>{t.provider}</label>
           <select style={styles.select} value={provider} onChange={(e) => setProvider(e.target.value)}>

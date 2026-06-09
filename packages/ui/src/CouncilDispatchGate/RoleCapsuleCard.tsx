@@ -77,17 +77,24 @@ export const RoleCapsuleCard: React.FC<RoleCapsuleCardProps> = ({
         {reason && <div style={reasonStyle(colors)}>{reason}</div>}
       </div>
       {hasBio && (
-        <button
-          type="button"
+        <span
+          role="button"
+          tabIndex={0}
           style={infoBtnStyle(colors)}
           onClick={(e) => {
+            e.stopPropagation();
+            onInfo(roleId);
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
             e.stopPropagation();
             onInfo(roleId);
           }}
           aria-label={`查看 ${name} 详情`}
         >
           i
-        </button>
+        </span>
       )}
       {selected && (
         <div style={checkStyle(roleColor)} aria-hidden="true">

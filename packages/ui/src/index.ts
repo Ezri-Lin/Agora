@@ -5,6 +5,7 @@ export { CouncilRoom } from "./CouncilRoom/CouncilRoom.js";
 export { Composer } from "./Composer/Composer.js";
 export { ContextGraph } from "./ContextGraph/ContextGraph.js";
 export { Inspector } from "./Inspector/Inspector.js";
+export { RunInspector } from "./RunInspector/RunInspector.js";
 export { RoleMessage } from "./RoleMessage/RoleMessage.js";
 export { EmptyState } from "./EmptyState.js";
 export { RefPicker } from "./RefPicker.js";

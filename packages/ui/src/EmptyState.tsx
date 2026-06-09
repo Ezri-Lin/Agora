@@ -3,6 +3,7 @@ import type { RecentWorkspace } from "./AgoraBridge.js";
 import { useI18n } from "./i18n/I18nContext.js";
 import { useTheme } from "./theme/ThemeContext.js";
 import type { ColorPalette } from "./theme/palettes.js";
+import { brandGlow, radius, shadow, spacing, typography } from "./theme/tokens.js";
 
 interface EmptyStateProps {
   onOpen: () => void;
@@ -22,7 +23,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen, onOpenRecent }) 
   return (
     <div style={styles.root}>
       <div style={styles.card}>
-        <div style={styles.logo}>A</div>
+        <div style={styles.logo} role="img" aria-label="Agora logo">A</div>
         <h1 style={styles.title}>{t.appTitle}</h1>
         <p style={styles.subtitle}>{t.appSubtitle}</p>
         <button style={styles.btn} onClick={onOpen}>
@@ -59,78 +60,82 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
   },
   card: {
     textAlign: "center",
-    padding: 48,
+    padding: spacing.xxl,
     maxWidth: 480,
     width: "100%",
   },
   logo: {
     width: 64,
     height: 64,
-    borderRadius: 12,
-    background: colors.accent,
-    color: "#fff",
+    borderRadius: radius.md,
+    background: colors.accentDim,
+    color: colors.bg,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: 700,
-    fontSize: 32,
-    margin: "0 auto 16px",
+    fontWeight: typography.heroTitle.weight,
+    fontSize: typography.heroTitle.size,
+    margin: `0 auto ${spacing.lg}px`,
+    boxShadow: brandGlow,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 700,
+    fontSize: typography.heroTitle.size,
+    fontWeight: typography.heroTitle.weight,
+    lineHeight: typography.heroTitle.lineHeight,
     color: colors.text,
     margin: 0,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: typography.chatBody.size,
+    lineHeight: typography.chatBody.lineHeight,
     color: colors.textMuted,
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
   },
   btn: {
-    padding: "10px 24px",
-    borderRadius: 8,
-    background: colors.accent,
+    padding: `${spacing.sm + 2}px ${spacing.xl}px`,
+    borderRadius: radius.sm,
+    background: colors.accentDim,
     border: "none",
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: 600,
+    color: colors.bg,
+    fontSize: typography.chatBody.size,
+    fontWeight: 700,
     cursor: "pointer",
   },
   recentSection: {
-    marginTop: 32,
+    marginTop: spacing.xxl,
     textAlign: "left",
   },
   recentLabel: {
-    fontSize: 11,
-    fontWeight: 600,
+    fontSize: typography.sectionTitle.size,
+    fontWeight: typography.sectionTitle.weight,
     color: colors.textMuted,
     textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 8,
+    letterSpacing: typography.sectionTitle.tracking,
+    marginBottom: spacing.sm,
   },
   recentItem: {
     display: "flex",
     flexDirection: "column" as const,
     width: "100%",
-    padding: "8px 12px",
-    background: "none",
+    padding: `${spacing.sm}px ${spacing.md}px`,
+    background: colors.surface,
     border: `1px solid ${colors.border}`,
-    borderRadius: 6,
-    marginBottom: 4,
+    borderRadius: radius.sm,
+    marginBottom: spacing.xs,
     cursor: "pointer",
     textAlign: "left" as const,
+    boxShadow: shadow.card,
   },
   recentName: {
-    fontSize: 13,
-    fontWeight: 600,
+    fontSize: typography.chatBody.size,
+    fontWeight: 700,
     color: colors.text,
   },
   recentPath: {
-    fontSize: 11,
+    fontSize: typography.meta.size,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: spacing.xxs,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap" as const,

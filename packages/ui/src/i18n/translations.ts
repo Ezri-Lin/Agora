@@ -116,6 +116,9 @@ export interface Translations {
   appSubtitle: string;
   darkMode: string;
   lightMode: string;
+  appearance: string;
+  theme: string;
+  language: string;
   localFirst: string;
   docsOnly: string;
   modelSettings: string;
@@ -191,6 +194,34 @@ export interface Translations {
   // Terminal
   terminal: string;
   closeTerminal: string;
+
+  // Composer toolbar
+  add: string;
+  parameters: string;
+  speakers: string;
+  documents: string;
+  discussionMode: string;
+  contextScope: string;
+  writePolicy: string;
+  searchPolicy: string;
+  quickAnswer: string;
+  deepDiscussion: string;
+  counterFirst: string;
+  summarySink: string;
+  currentRoom: string;
+  currentDocument: string;
+  currentSelection: string;
+  workspaceGraph: string;
+  discussOnly: string;
+  generateSummary: string;
+  writeToDocument: string;
+  generateMemories: string;
+  noSearch: string;
+  searchWhenNeeded: string;
+  uploadFile: string;
+  pasteLongText: string;
+  addDocumentRef: string;
+  addRole: string;
 }
 
 export const en: Translations = {
@@ -276,6 +307,9 @@ export const en: Translations = {
   appSubtitle: "Local-first, memory-aware council room",
   darkMode: "Dark",
   lightMode: "Light",
+  appearance: "Appearance",
+  theme: "Theme",
+  language: "Language",
   localFirst: "Local-first",
   docsOnly: "Docs-only",
   modelSettings: "Model Settings",
@@ -345,6 +379,32 @@ export const en: Translations = {
   councilModeHint: "Multiple roles, cross-examination",
   terminal: "Terminal",
   closeTerminal: "Close terminal",
+  add: "Add",
+  parameters: "Parameters",
+  speakers: "Speakers",
+  documents: "Documents",
+  discussionMode: "Discussion Mode",
+  contextScope: "Context Scope",
+  writePolicy: "Write Policy",
+  searchPolicy: "Search Policy",
+  quickAnswer: "Quick Answer",
+  deepDiscussion: "Deep Discussion",
+  counterFirst: "Counter First",
+  summarySink: "Summary Sink",
+  currentRoom: "Current Room",
+  currentDocument: "Current Document",
+  currentSelection: "Current Selection",
+  workspaceGraph: "Workspace Graph",
+  discussOnly: "Discuss Only",
+  generateSummary: "Generate Summary",
+  writeToDocument: "Write to Document",
+  generateMemories: "Generate Memories",
+  noSearch: "No Search",
+  searchWhenNeeded: "Search When Needed",
+  uploadFile: "Upload File",
+  pasteLongText: "Paste Long Text",
+  addDocumentRef: "Add Document Reference",
+  addRole: "Add Role",
 };
 
 export const zh: Translations = {
@@ -430,6 +490,9 @@ export const zh: Translations = {
   appSubtitle: "本地优先、记忆感知的议事厅",
   darkMode: "深色",
   lightMode: "浅色",
+  appearance: "外观",
+  theme: "主题",
+  language: "语言",
   localFirst: "本地优先",
   docsOnly: "文档模式",
   modelSettings: "模型设置",
@@ -499,6 +562,32 @@ export const zh: Translations = {
   councilModeHint: "多角色讨论，交叉审查",
   terminal: "终端",
   closeTerminal: "关闭终端",
+  add: "添加",
+  parameters: "参数",
+  speakers: "发言人",
+  documents: "文档",
+  discussionMode: "讨论模式",
+  contextScope: "上下文范围",
+  writePolicy: "写回策略",
+  searchPolicy: "搜索策略",
+  quickAnswer: "快速回答",
+  deepDiscussion: "深度议事",
+  counterFirst: "反方优先",
+  summarySink: "总结沉淀",
+  currentRoom: "当前 Room",
+  currentDocument: "当前文档",
+  currentSelection: "当前选区",
+  workspaceGraph: "工作区图谱",
+  discussOnly: "只讨论",
+  generateSummary: "生成总结",
+  writeToDocument: "写入文档",
+  generateMemories: "生成记忆候选",
+  noSearch: "不搜索",
+  searchWhenNeeded: "必要时搜索",
+  uploadFile: "上传文件",
+  pasteLongText: "粘贴长文本",
+  addDocumentRef: "添加文档引用",
+  addRole: "添加角色",
 };
 
 export const translations: Record<Locale, Translations> = { en, zh };
