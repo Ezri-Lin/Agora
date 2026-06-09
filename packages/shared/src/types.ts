@@ -293,6 +293,10 @@ export interface RoleDomain {
   nameCN?: string;
   description?: string;
   enabledByDefault: boolean;
+  visual?: {
+    colorToken?: string;
+    avatarStyle?: string;
+  };
 }
 
 export interface RoleFamily {
@@ -303,6 +307,7 @@ export interface RoleFamily {
   description: string;
   tags: string[];
   enabledByDefault: boolean;
+  defaultMaxPersonasPerRound?: number;
 }
 
 export interface RolePersona {
@@ -322,6 +327,83 @@ export interface RolePersona {
   prompt: string;
   style?: string;
   source?: { type: "built_in" | "imported" | "custom"; url?: string; license?: string };
+}
+
+// === PersonaContract (runtime behavior specification) ===
+
+export interface PersonaCompactField {
+  key: string;
+  description: string;
+  required: boolean;
+}
+
+export interface PersonaVoice {
+  tone: string;
+  styleRules: string[];
+  languageRules?: string[];
+}
+
+export interface PersonaResponsibilities {
+  must: string[];
+  should: string[];
+  mustNot: string[];
+}
+
+export interface PersonaDecisionRights {
+  may: string[];
+  mustNot: string[];
+}
+
+export interface PersonaEvidencePolicy {
+  groundingRules: string[];
+  uncertaintyRules: string[];
+}
+
+export interface PersonaRouting {
+  aliases: string[];
+  tags: string[];
+  triggerSituations: string[];
+  antiTriggers?: string[];
+}
+
+export interface PersonaOutputSchema {
+  format: "markdown" | "json" | "hybrid";
+  template: string;
+}
+
+export interface PersonaCompactSchema {
+  format: "json";
+  fields: PersonaCompactField[];
+}
+
+export interface PersonaMemoryHook {
+  trigger: string;
+  candidateType:
+    | "role_usage_memory"
+    | "decision_memory"
+    | "preference_memory"
+    | "project_memory";
+}
+
+export interface PersonaContract {
+  id: string;
+  name: string;
+  nameCN?: string;
+  subtitle: string;
+  domainId: string;
+  familyId: string;
+  mission: string;
+  responsibilities: PersonaResponsibilities;
+  decisionRights: PersonaDecisionRights;
+  analysisFrameworks: string[];
+  evidencePolicy: PersonaEvidencePolicy;
+  collaborationRules: string[];
+  voice: PersonaVoice;
+  outputSchema: PersonaOutputSchema;
+  compactSchema: PersonaCompactSchema;
+  routing: PersonaRouting;
+  boundaries: string[];
+  memoryHooks?: PersonaMemoryHook[];
 }
 
 // === Role Routing Settings ===
