@@ -35,6 +35,7 @@ export interface Translations {
   // Context
   noContextData: string;
   moderator: string;
+  you: string;
   status: string;
   overflow: string;
   full: string;
@@ -212,6 +213,7 @@ export const en: Translations = {
   noOutputs: "No outputs generated",
   noContextData: "No context data yet. Send a message first.",
   moderator: "Moderator",
+  you: "You",
   status: "Status",
   overflow: "OVERFLOW",
   full: "Full",
@@ -365,6 +367,7 @@ export const zh: Translations = {
   noOutputs: "暂无生成的输出",
   noContextData: "暂无上下文数据，请先发送消息。",
   moderator: "主持人",
+  you: "你",
   status: "状态",
   overflow: "溢出",
   full: "完整",

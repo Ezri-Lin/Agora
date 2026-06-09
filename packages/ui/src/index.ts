@@ -8,3 +8,5 @@ export { Inspector } from "./Inspector/Inspector.js";
 export { RoleMessage } from "./RoleMessage/RoleMessage.js";
 export { EmptyState } from "./EmptyState.js";
 export { RefPicker } from "./RefPicker.js";
+export { CouncilDispatchGate } from "./CouncilDispatchGate/CouncilDispatchGate.js";
+export type { CouncilDispatchGateProps, CouncilDispatchPreviewViewModel, RoleViewModel } from "./CouncilDispatchGate/CouncilDispatchGate.js";

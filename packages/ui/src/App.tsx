@@ -1,9 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent, CouncilRoundSnapshot, RoleRunSnapshot, RoomMode, ExplicitRoleRequest, RoleRoutingDecision } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
-import { runCouncilRound, stopRole, type CouncilRunResult } from "@agora/kernel";
+import { runCouncilRound, stopRole, prepareCouncilDispatch, type CouncilRunResult, type CouncilDispatchPreview } from "@agora/kernel";
+import { CouncilDispatchGate, type CouncilDispatchPreviewViewModel, type RoleViewModel } from "./CouncilDispatchGate/CouncilDispatchGate.js";
+import { getDomainLabel } from "./CouncilDispatchGate/roleAvatar.js";
 import { buildRoleHistories } from "./FloatingPanel/buildRoleHistories.js";
-import { DEFAULT_ROLES } from "@agora/roles";
+import { DEFAULT_ROLES, getPersonaContract } from "@agora/roles";
 import { getBridge, type ScannedDoc } from "./AgoraBridge.js";
 import { IPCProvider } from "./IPCProvider.js";
 import { AppShell } from "./AppShell/AppShell.js";
@@ -18,6 +20,7 @@ import { EmptyState } from "./EmptyState.js";
 import { RefPicker } from "./RefPicker.js";
 import { SettingsModal } from "./Settings/SettingsModal.js";
 import { errorStyle } from "./appStyles.js";
+import { overlayStyle, panelStyle } from "./CouncilDispatchGate/styles.js";
 import { buildSessionExport } from "./sessionExport.js";
 import { I18nProvider } from "./i18n/I18nContext.js";
 import { ThemeProvider } from "./theme/ThemeContext.js";
@@ -50,6 +53,20 @@ export const App: React.FC = () => {
     messageId: string;
     decision: RoleRoutingDecision;
   } | null>(null);
+  // Dispatch gate state — stashed context for council mode
+  interface DispatchGateContext {
+    preview: CouncilDispatchPreview;
+    userMsg: CouncilMessage;
+    roomForCouncil: ReturnType<typeof Object>;
+    allRoles: RoleCard[];
+    docContents: Map<string, string>;
+    onEvent: (event: CouncilEvent) => void;
+    roleSettings?: { roleCount: number; maxAutoInviteLenses: number; allowAutoInviteLenses: boolean };
+    chipRequests: ExplicitRoleRequest[];
+  }
+  const [dispatchGate, setDispatchGate] = useState<DispatchGateContext | null>(null);
+  const [dispatchSelectedRoleIds, setDispatchSelectedRoleIds] = useState<string[]>([]);
+
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const jumpFnsRef = useRef<{ scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void } | null>(null);
 
@@ -399,6 +416,36 @@ export const App: React.FC = () => {
       // Clear chips immediately — they're consumed by this send
       setPendingPerspectiveChips([]);
 
+      // Council mode: show dispatch gate before running the round
+      if (roomMode === "council") {
+        const preview = await prepareCouncilDispatch({
+          room: roomForCouncil,
+          topic: text,
+          userMessage: userMsg,
+          availableRoles: allRoles,
+          recentMessages: messages,
+          docContents,
+          roleSettings,
+          explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
+        });
+
+        setDispatchGate({
+          preview,
+          userMsg,
+          roomForCouncil,
+          allRoles,
+          docContents,
+          onEvent,
+          roleSettings,
+          chipRequests,
+        });
+        setDispatchSelectedRoleIds(preview.defaultSelectedRoleIds);
+        setIsLoading(false);
+        setLoadingStatus("");
+        return;
+      }
+
+      // Single mode: run directly
       const result: CouncilRunResult = await runCouncilRound({
         room: roomForCouncil,
         topic: text,
@@ -495,6 +542,120 @@ export const App: React.FC = () => {
       });
     }
   }, [workspace, messages, selectedRefs, llmConfig, roomMode, pendingPerspectiveChips]);
+
+  // Dispatch gate: continue with confirmed role selection
+  const handleDispatchContinue = useCallback(async (selectedRoleIds: string[]) => {
+    if (!dispatchGate || !workspace) return;
+    const bridge = getBridge();
+    if (!bridge) return;
+
+    const { preview, userMsg, roomForCouncil, allRoles, docContents, onEvent, roleSettings, chipRequests } = dispatchGate;
+    setDispatchGate(null);
+    setIsLoading(true);
+    setLoadingStatus("Running council round...");
+
+    try {
+      const provider = new IPCProvider(llmConfig, (status) => setLoadingStatus(status));
+
+      const result: CouncilRunResult = await runCouncilRound({
+        room: roomForCouncil as never,
+        topic: preview.topic,
+        userMessage: userMsg,
+        availableRoles: allRoles,
+        llm: provider,
+        recentMessages: messages,
+        docContents,
+        onEvent,
+        roleSettings,
+        explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
+        selectedRoleIds,
+      });
+
+      if (result.routingDecision) {
+        setLastRoutingDecision({ messageId: userMsg.id, decision: result.routingDecision });
+      }
+
+      setLoadingStatus("Persisting...");
+
+      const modMsg: CouncilMessage = {
+        id: generateId("msg"), roomId: roomIdRef.current!, senderType: "moderator",
+        senderId: "moderator", content: result.moderatorAnalysis, createdAt: nowISO(),
+      };
+      const summaryMsg: CouncilMessage = {
+        id: generateId("msg"), roomId: roomIdRef.current!, senderType: "moderator",
+        senderId: "moderator", content: result.summary, createdAt: nowISO(),
+      };
+      const allNew = [userMsg, modMsg, ...result.roleMessages, ...result.crossExaminationMessages, summaryMsg];
+
+      for (const msg of allNew) {
+        await bridge.room.appendMessage(workspace.path, roomIdRef.current!, msg);
+      }
+      await bridge.room.writeSummary(workspace.path, roomIdRef.current!, result.summary);
+
+      if (result.extractedMemories.length > 0) {
+        const memLines = [
+          "# Memory Candidates", "",
+          ...result.extractedMemories.map((m) =>
+            `- **[${m.scope}]** ${m.content}\n  domains: ${m.domains.join(", ")} | tags: ${m.tags.join(", ")}`,
+          ),
+        ];
+        await bridge.room.writeMemoryCandidates(workspace.path, roomIdRef.current!, memLines.join("\n"));
+      }
+
+      const sessionContent = buildSessionExport(roomForCouncil as never, [...messages, ...allNew], result.summary, result.contextDebug);
+      await bridge.room.exportSession(workspace.path, roomIdRef.current!, sessionContent);
+
+      const outputFiles = await bridge.room.listOutputs(workspace.path, roomIdRef.current!);
+
+      if (result.crossExaminationMessages.length > 0) {
+        setMessages((prev) => [...prev, ...result.crossExaminationMessages]);
+      }
+      setOutputs(outputFiles);
+      setContextDebug(result.contextDebug);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("Council round failed:", msg);
+      setError(msg);
+      setPanelPhase("error");
+    } finally {
+      setIsLoading(false);
+      setLoadingStatus("");
+      setRoleStreamStates((prev) => {
+        const snapshots: RoleRunSnapshot[] = [];
+        const now = Date.now();
+        prev.forEach((state, roleId) => {
+          snapshots.push({
+            roleId,
+            status: state.status === "error" ? "error" : "done",
+            startedAt: state.startedAt,
+            endedAt: now,
+            microSummary: state.microSummary,
+          });
+        });
+        if (snapshots.length > 0) {
+          setLastRoundSnapshot({
+            roundId: roomIdRef.current ?? "unknown",
+            completedAt: now,
+            roleSnapshots: snapshots,
+            roleCount: snapshots.length,
+            doneCount: snapshots.filter((s) => s.status === "done").length,
+            errorCount: snapshots.filter((s) => s.status === "error").length,
+          });
+          setPanelPhase((phase) => phase === "error" ? "error" : "completed");
+        }
+        return prev;
+      });
+    }
+  }, [dispatchGate, workspace, messages, llmConfig]);
+
+  // Dispatch gate: cancel — clear gate state, no round
+  const handleDispatchCancel = useCallback(() => {
+    setDispatchGate(null);
+    setDispatchSelectedRoleIds([]);
+    setIsLoading(false);
+    setLoadingStatus("");
+    setPanelPhase("idle");
+  }, []);
 
   const handleNodeClick = useCallback((msgId: string) => {
     const el = document.getElementById(msgId);
@@ -620,6 +781,67 @@ export const App: React.FC = () => {
         onConfigChanged={handleConfigChanged}
         workspacePath={workspace?.path}
       />
+    )}
+    {dispatchGate && (
+      <div style={overlayStyle} onClick={handleDispatchCancel}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="选择参与者"
+          style={panelStyle({ surface: "#16213e", border: "#2a3a5c" })}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <CouncilDispatchGate
+            preview={{
+              moderatorSummary: dispatchGate.preview.moderatorSummary,
+              defaultSelectedRoleIds: dispatchGate.preview.defaultSelectedRoleIds,
+              alternativeRoleIds: dispatchGate.preview.alternativeRoleIds,
+            }}
+            roles={(() => {
+              const scores = dispatchGate.preview.routingDecision.scores;
+              const reasonMap = new Map<string, string>();
+              for (const s of scores) {
+                if (s.reason) reasonMap.set(s.personaId, s.reason);
+              }
+              // Also pull reasons from activeEntrants
+              for (const e of dispatchGate.preview.routingDecision.activeEntrants) {
+                if (e.reason) reasonMap.set(e.roleId, e.reason);
+              }
+              return dispatchGate.allRoles.map((r): RoleViewModel => {
+                const contract = getPersonaContract(r.id);
+                return {
+                  id: r.id,
+                  name: r.name,
+                  subtitle: r.subtitle,
+                  domainId: r.domainId,
+                  domainLabel: r.domainId ? getDomainLabel(r.domainId) : undefined,
+                  familyId: r.familyId,
+                  tags: r.tags,
+                  reason: reasonMap.get(r.id),
+                  source: dispatchGate.preview.defaultSelectedRoleIds.includes(r.id)
+                    ? "recommended"
+                    : dispatchGate.preview.alternativeRoleIds.includes(r.id)
+                      ? "alternative"
+                      : undefined,
+                  bio: contract?.mission,
+                  responsibilities: contract
+                    ? [...contract.responsibilities.must, ...contract.responsibilities.should]
+                    : undefined,
+                  strengths: contract?.responsibilities.must,
+                  boundaries: contract
+                    ? [...contract.responsibilities.mustNot, ...contract.boundaries]
+                    : undefined,
+                  decisionRights: contract?.decisionRights.may,
+                };
+              });
+            })()}
+            selectedRoleIds={dispatchSelectedRoleIds}
+            onSelectionChange={setDispatchSelectedRoleIds}
+            onCancel={handleDispatchCancel}
+            onContinue={handleDispatchContinue}
+          />
+        </div>
+      </div>
     )}
     </I18nProvider>
     </ThemeProvider>

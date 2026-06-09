@@ -3,7 +3,7 @@ import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
-import { getRoleColor } from "../theme/palettes.js";
+import { getRoleColor, USER_COLOR } from "../theme/palettes.js";
 import { MessageContent } from "../ChatBubble/MessageContent.js";
 import { CopyButton } from "../ChatBubble/CopyButton.js";
 
@@ -43,8 +43,8 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, roles, stream
   // Catalog-driven meta: built from role catalog + stable hash colors
   const roleMetaMap = useMemo(() => {
     const map = new Map<string, { name: string; subtitle: string; color: string }>();
-    map.set("user", { name: "You", subtitle: "", color: colors.user });
-    map.set("moderator", { name: "Moderator", subtitle: "", color: colors.moderator });
+    map.set("user", { name: t.you, subtitle: "", color: USER_COLOR });
+    map.set("moderator", { name: t.moderator, subtitle: "", color: getRoleColor("moderator") });
     for (const role of roles ?? []) {
       map.set(role.id, {
         name: role.name,
@@ -53,7 +53,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, roles, stream
       });
     }
     return map;
-  }, [roles, colors.user, colors.moderator]);
+  }, [roles, t.you, t.moderator]);
   const isUser = message.senderType === "user";
   const isError = message.status === "error";
 
