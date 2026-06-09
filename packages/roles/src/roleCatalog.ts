@@ -17,6 +17,10 @@ import { SECURITY_LENS } from "./cards/securityLens.js";
 import { SCIENCE_LENS } from "./cards/scienceLens.js";
 import { PSYCHOLOGY_LENS } from "./cards/psychologyLens.js";
 
+export { BUILT_IN_DOMAINS } from "./domains.js";
+export { BUILT_IN_FAMILIES } from "./families.js";
+export { BUILT_IN_PERSONAS } from "./personas.js";
+
 export const DEFAULT_ROLES: RoleCard[] = [
   // Layer 1: Core Roles
   MODERATOR,

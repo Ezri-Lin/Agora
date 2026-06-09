@@ -22,7 +22,7 @@ export { SCIENCE_LENS } from "./cards/scienceLens.js";
 export { PSYCHOLOGY_LENS } from "./cards/psychologyLens.js";
 
 // Catalog
-export { DEFAULT_ROLES } from "./roleCatalog.js";
+export { DEFAULT_ROLES, BUILT_IN_DOMAINS, BUILT_IN_FAMILIES, BUILT_IN_PERSONAS } from "./roleCatalog.js";
 
 // Re-exports from kernel
 export { scoreRole, selectRoles } from "@agora/kernel";

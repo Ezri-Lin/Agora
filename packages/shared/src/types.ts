@@ -93,6 +93,9 @@ export interface RoleCard {
   type: "moderator" | "critic" | "historian" | "strategist" | "lens" | "architect";
   systemPrompt: string;
   tags: string[];
+  domainId?: string;
+  familyId?: string;
+  personaId?: string;
 }
 
 export interface RoleCallInput {
@@ -280,6 +283,161 @@ export interface RoleSelectionResult {
     reason: "over_limit" | "below_threshold" | "already_active" | "disabled" | "removed";
     score?: number;
   }>;
+}
+
+// === Role Hierarchy (Domain / Family / Persona) ===
+
+export interface RoleDomain {
+  id: string;
+  name: string;
+  nameCN?: string;
+  description?: string;
+  enabledByDefault: boolean;
+}
+
+export interface RoleFamily {
+  id: string;
+  domainId: string;
+  name: string;
+  nameCN?: string;
+  description: string;
+  tags: string[];
+  enabledByDefault: boolean;
+}
+
+export interface RolePersona {
+  id: string;
+  domainId: string;
+  familyId: string;
+  name: string;
+  nameCN?: string;
+  subtitle: string;
+  mission: string;
+  whenToUse: string[];
+  whenNotToUse?: string[];
+  capabilities: string[];
+  deliverables: string[];
+  exampleQueries: string[];
+  tags: string[];
+  prompt: string;
+  style?: string;
+  source?: { type: "built_in" | "imported" | "custom"; url?: string; license?: string };
+}
+
+// === Role Routing Settings ===
+
+export interface RoleRoutingSettings {
+  maxActiveRolesPerRound: number;
+  maxNewEntrantsPerRound: number;
+  maxPersonasPerRoleFamily: number;
+  relevanceThreshold: number;
+  suggestionThreshold: number;
+  enabledDomainIds: string[];
+  enabledRoleFamilyIds: string[];
+}
+
+export const DEFAULT_ROLE_ROUTING_SETTINGS: RoleRoutingSettings = {
+  maxActiveRolesPerRound: 5,
+  maxNewEntrantsPerRound: 3,
+  maxPersonasPerRoleFamily: 1,
+  relevanceThreshold: 0.68,
+  suggestionThreshold: 0.50,
+  enabledDomainIds: [],
+  enabledRoleFamilyIds: [],
+};
+
+export function normalizeRoleRoutingSettings(input?: Partial<RoleRoutingSettings>): RoleRoutingSettings {
+  const merged = { ...DEFAULT_ROLE_ROUTING_SETTINGS, ...input };
+  const maxActive = clampInt(merged.maxActiveRolesPerRound, 1, 12);
+  return {
+    maxActiveRolesPerRound: maxActive,
+    maxNewEntrantsPerRound: clampInt(merged.maxNewEntrantsPerRound, 0, maxActive),
+    maxPersonasPerRoleFamily: clampInt(merged.maxPersonasPerRoleFamily, 1, 3),
+    relevanceThreshold: Math.max(0, Math.min(1, merged.relevanceThreshold)),
+    suggestionThreshold: Math.max(0, Math.min(merged.relevanceThreshold, merged.suggestionThreshold)),
+    enabledDomainIds: merged.enabledDomainIds,
+    enabledRoleFamilyIds: merged.enabledRoleFamilyIds,
+  };
+}
+
+export function toRoleRoutingSettings(
+  councilSettings: CouncilRoleSettings,
+  overrides?: Partial<RoleRoutingSettings>,
+): RoleRoutingSettings {
+  return normalizeRoleRoutingSettings({
+    maxActiveRolesPerRound: councilSettings.maxActiveRolesPerRound,
+    ...overrides,
+  });
+}
+
+// === Routing Decision Types ===
+
+export type RoutingIntent = "continue_discussion" | "introduce_perspective" | "ask_specific_role" | "single_chat";
+export type ParticipationPolicy = "all_selected" | "new_entrants_only" | "follow_up_existing" | "moderator_only";
+
+export interface ExplicitRoleRequest {
+  targetType: "persona" | "family" | "domain";
+  targetId: string;
+  confidence: number;
+  rawText: string;
+}
+
+export interface CandidateRecallResult {
+  personaId: string;
+  semanticScore?: number;
+  metadataScore: number;
+  localScore: number;
+  matchedSignals: string[];
+}
+
+export interface AIRoleScore {
+  personaId: string;
+  score: number;
+  shouldEnter: boolean;
+  suggestedOnly: boolean;
+  reason: string;
+}
+
+export interface RoutingSelectedRole {
+  roleId: string;
+  personaId?: string;
+  domainId?: string;
+  familyId?: string;
+  name: string;
+  nameCN?: string;
+  subtitle?: string;
+  reason?: string;
+  source: "existing_role_card" | "persona" | "manual" | "auto_routed";
+}
+
+export interface SuggestedPerspective {
+  familyId: string;
+  familyName: string;
+  domainId: string;
+  reason: string;
+  score: number;
+  personaId?: string;
+  personaName?: string;
+}
+
+export interface RoleRoutingScore {
+  personaId: string;
+  roleFamilyId: string;
+  domainId: string;
+  localScore: number;
+  aiScore?: number;
+  finalScore: number;
+  reason: string;
+  blockedBy?: "below_threshold" | "round_cap" | "family_cap" | "new_entrant_cap" | "already_spoken" | "disabled_domain" | "disabled_family";
+}
+
+export interface RoleRoutingDecision {
+  intent: RoutingIntent;
+  participationPolicy: ParticipationPolicy;
+  activeEntrants: RoutingSelectedRole[];
+  silentExistingRoles: RoutingSelectedRole[];
+  suggestedPerspectives: SuggestedPerspective[];
+  scores: RoleRoutingScore[];
 }
 
 // === Role Round History ===
