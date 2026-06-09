@@ -24,5 +24,26 @@ export { PSYCHOLOGY_LENS } from "./cards/psychologyLens.js";
 // Catalog
 export { DEFAULT_ROLES, BUILT_IN_DOMAINS, BUILT_IN_FAMILIES, BUILT_IN_PERSONAS } from "./roleCatalog.js";
 
+// PersonaContract — behavior layer
+export type {
+  PersonaContract,
+  PersonaCompactField,
+  PersonaVoice,
+  PersonaResponsibilities,
+  PersonaDecisionRights,
+  PersonaEvidencePolicy,
+  PersonaRouting,
+  PersonaOutputSchema,
+  PersonaCompactSchema,
+  PersonaMemoryHook,
+} from "./personaContractTypes.js";
+
+export {
+  PERSONA_CONTRACTS,
+  getPersonaContract,
+  hasPersonaContract,
+  resolveRoleDomain,
+} from "./personaContractRegistry.js";
+
 // Re-exports from kernel
 export { scoreRole, selectRoles } from "@agora/kernel";
