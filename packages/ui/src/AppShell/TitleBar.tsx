@@ -10,9 +10,11 @@ interface TitleBarProps {
   onOpenSettings?: () => void;
   terminalVisible?: boolean;
   onToggleTerminal?: () => void;
+  panelVisible?: boolean;
+  onTogglePanel?: () => void;
 }
 
-export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspace, onOpenSettings, terminalVisible, onToggleTerminal }) => {
+export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspace, onOpenSettings, terminalVisible, onToggleTerminal, panelVisible, onTogglePanel }) => {
   const { t, toggleLocale, locale } = useI18n();
   const { colors, theme, toggleTheme } = useTheme();
   const styles = createStyles(colors);
@@ -43,6 +45,15 @@ export const TitleBar: React.FC<TitleBarProps> = ({ workspaceName, onOpenWorkspa
             title={t.terminal}
           >
             {">_"}
+          </button>
+        )}
+        {onTogglePanel && (
+          <button
+            style={{ ...styles.langBtn, borderColor: panelVisible ? colors.accent : undefined, color: panelVisible ? colors.accent : undefined }}
+            onClick={onTogglePanel}
+            title={panelVisible ? t.collapse : t.expand}
+          >
+            {panelVisible ? "☑" : "☐"}
           </button>
         )}
         {onOpenSettings && (

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { RoomMode } from "@agora/shared";
 import { TitleBar } from "./TitleBar.js";
 import { sizes } from "../theme/tokens.js";
@@ -60,13 +60,27 @@ export const AppShell: React.FC<AppShellProps> = ({
   const { t } = useI18n();
   const { colors } = useTheme();
   const [leftExpanded, setLeftExpanded] = useState(false);
+
+  // Ctrl+` toggles terminal
+  useEffect(() => {
+    if (!onToggleTerminal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "`") {
+        e.preventDefault();
+        onToggleTerminal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onToggleTerminal]);
+
   const styles = createStyles(colors);
   const leftStyle: React.CSSProperties = leftExpanded
     ? { ...styles.left, width: "100%", position: "relative" as const }
     : styles.left;
   return (
     <div style={styles.root}>
-      <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} terminalVisible={terminalVisible} onToggleTerminal={onToggleTerminal} />
+      <TitleBar workspaceName={workspaceName} onOpenWorkspace={onOpenWorkspace} onOpenSettings={onOpenSettings} terminalVisible={terminalVisible} onToggleTerminal={onToggleTerminal} panelVisible={panelVisible} onTogglePanel={onTogglePanel} />
       <div style={styles.body}>
         <div style={leftStyle}>
           <div style={styles.leftHeader}>
@@ -95,6 +109,8 @@ export const AppShell: React.FC<AppShellProps> = ({
                         labelSingle={t.singleMode}
                         labelCouncil={t.councilMode}
                         tooltip={t.modeOnlyAffectsNext}
+                        singleHint={t.singleModeHint}
+                        councilHint={t.councilModeHint}
                       />
                     )}
                     <span style={styles.chatTitle}>{t.councilRoom}</span>
@@ -103,15 +119,6 @@ export const AppShell: React.FC<AppShellProps> = ({
                     {onAddRef && (
                       <button style={styles.addRefBtn} onClick={onAddRef}>
                         {t.addReference}
-                      </button>
-                    )}
-                    {onTogglePanel && (
-                      <button
-                        style={styles.panelToggleBtn}
-                        onClick={onTogglePanel}
-                        title={panelVisible ? t.collapse : t.expand}
-                      >
-                        {panelVisible ? "▸" : "◂"}
                       </button>
                     )}
                   </div>
@@ -297,19 +304,6 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     padding: "2px 8px",
     color: colors.accent,
     fontSize: 11,
-    cursor: "pointer",
-  },
-  panelToggleBtn: {
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 4,
-    width: 28,
-    height: 28,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: colors.text,
-    fontSize: 14,
     cursor: "pointer",
   },
   leftHeader: {
