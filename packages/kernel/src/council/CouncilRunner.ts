@@ -9,6 +9,7 @@ import type {
   CouncilRoleSettings,
   ExplicitRoleRequest,
   RoleRoutingDecision,
+  PersonaContract,
 } from "@agora/shared";
 import { extractGraphSummary, firstMeaningfulSentence, normalizeCouncilRoleSettings } from "@agora/shared";
 import type { LLMProvider } from "../types/index.js";
@@ -17,7 +18,17 @@ import { routeRolesLocal } from "../routing/routeRoles.js";
 import { toRoleRoutingSettings } from "@agora/shared";
 import { buildContextPack, type ContextPack } from "../context/ContextPack.js";
 import { buildModeratorContextPack, type ModeratorContextPack } from "../context/ModeratorContextPack.js";
+import type { RetrievalEngine } from "../context/types.js";
+import type { ContextPackage } from "../context/ContextCompiler.js";
+import { retrieveAndCompileContext } from "../context/retrieveAndCompileContext.js";
 import { buildRolePrompt, buildModeratorPrompt, buildCrossExaminationPrompt } from "../context/promptContracts.js";
+import { compilePersonaPrompt } from "../prompt/compilePersonaPrompt.js";
+import { parseTailCompact } from "../compact/parseTailCompact.js";
+import { buildRoundCompact } from "../compact/buildRoundCompact.js";
+import { formatCompactsForPrompt } from "../compact/formatCompactsForPrompt.js";
+import { buildSessionRunningBrief } from "../compact/buildSessionRunningBrief.js";
+import { formatSessionBriefForPrompt } from "../compact/formatSessionBriefForPrompt.js";
+import type { MessageCompact, CouncilRoundCompact, SessionRunningBrief } from "../compact/types.js";
 import type { MemoryStore } from "../memory/MemoryStore.js";
 import { extractMemories } from "../memory/MemoryExtractor.js";
 
@@ -55,6 +66,9 @@ export interface CouncilRunResult {
   contextDebug: ContextDebug;
   extractedMemories: MemoryCandidate[];
   routingDecision?: RoleRoutingDecision;
+  messageCompacts?: MessageCompact[];
+  roundCompact?: CouncilRoundCompact;
+  sessionRunningBrief?: SessionRunningBrief;
 }
 
 export interface RunCouncilRoundInput {
@@ -69,6 +83,22 @@ export interface RunCouncilRoundInput {
   onEvent?: (event: CouncilEvent) => void;
   roleSettings?: Partial<CouncilRoleSettings>;
   explicitRoleRequests?: ExplicitRoleRequest[];
+  /** Optional resolver to look up a PersonaContract by role ID. Enables PromptCompiler integration. */
+  getContractForRole?: (roleId: string) => PersonaContract | undefined;
+  /** Optional retrieval engine for dynamic document context. */
+  retrievalEngine?: RetrievalEngine;
+  /** Query string for retrieval. Defaults to topic if not provided. */
+  retrievalQuery?: string;
+  /** Pre-compiled context package. Takes precedence over retrievalEngine. */
+  contextPackage?: ContextPackage;
+  /** Session running brief from prior rounds. Injected into moderator + persona prompts. */
+  sessionRunningBrief?: SessionRunningBrief;
+  /**
+   * Explicit role IDs to use for this round, overriding routing decision.
+   * When provided, skips moderator role selection and uses these roles directly.
+   * Empty array → no role fan-out, moderator-only response.
+   */
+  selectedRoleIds?: string[];
 }
 
 /**
@@ -88,9 +118,23 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     room, topic, userMessage, availableRoles, llm,
     recentMessages = [], docContents, memoryStore,
     onEvent, roleSettings, explicitRoleRequests,
+    getContractForRole, retrievalEngine, retrievalQuery, contextPackage: explicitContextPackage,
+    sessionRunningBrief: inputSessionBrief, selectedRoleIds,
   } = input;
   const effectiveSettings = normalizeCouncilRoleSettings(roleSettings);
   const roundId = `round_${room.id}_${Date.now()}`;
+
+  // Step 0.5: Resolve context package (explicit > retrieval > fallback)
+  let effectiveContextPackage: ContextPackage | undefined = explicitContextPackage;
+  if (!effectiveContextPackage && retrievalEngine) {
+    effectiveContextPackage = await retrieveAndCompileContext({
+      task: topic,
+      query: retrievalQuery ?? topic,
+      retrievalEngine,
+      mode: "synthesize",
+      limit: 6,
+    }) ?? undefined;
+  }
   // Step 0: Inject relevant memories into docContents
   const effectiveDocContents = new Map(docContents ?? new Map<string, string>());
   if (memoryStore) {
@@ -121,60 +165,86 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     content: analysis, thinking: analysisResult.thinking, status: "ok", createdAt: new Date().toISOString(),
   }});
 
-  // Step 3: Select roles (full context)
-  const selectPrompt = buildModeratorPrompt("select_roles", modPack);
-  const selectResult = await llm.callModerator({
-    roomId: room.id,
-    task: "select_roles",
-    context: selectPrompt,
-    availableRoles,
-  });
-  let selectedIds: string[];
-  try {
-    selectedIds = JSON.parse(selectResult.content);
-  } catch {
-    selectedIds = [];
+  // Step 3: Select roles — use explicit selectedRoleIds or moderator + routing
+  let routingDecision: import("@agora/shared").RoleRoutingDecision;
+  let finalRoles: RoleCard[];
+
+  if (selectedRoleIds !== undefined) {
+    // Explicit role IDs from dispatch preview — skip moderator selection
+    finalRoles = selectedRoleIds
+      .map((id) => availableRoles.find((r) => r.id === id))
+      .filter((r): r is RoleCard => r !== undefined);
+
+    // Build a minimal routing decision for downstream consumers
+    routingDecision = {
+      intent: "continue_discussion",
+      participationPolicy: "all_selected",
+      activeEntrants: finalRoles.map((r) => ({
+        roleId: r.id,
+        name: r.name,
+        subtitle: r.subtitle,
+        source: "manual" as const,
+      })),
+      silentExistingRoles: [],
+      suggestedPerspectives: [],
+      scores: [],
+    };
+  } else {
+    // Original flow: moderator selects roles, then route
+    const selectPrompt = buildModeratorPrompt("select_roles", modPack);
+    const selectResult = await llm.callModerator({
+      roomId: room.id,
+      task: "select_roles",
+      context: selectPrompt,
+      availableRoles,
+    });
+    let selectedIds: string[];
+    try {
+      selectedIds = JSON.parse(selectResult.content);
+    } catch {
+      selectedIds = [];
+    }
+
+    const selectedRoles = selectedIds
+      .map((id) => availableRoles.find((r) => r.id === id))
+      .filter((r): r is RoleCard => r !== undefined);
+
+    const routingSettings = toRoleRoutingSettings(effectiveSettings);
+    routingDecision = routeRolesLocal(
+      selectedRoles.length >= 2 ? selectedRoles : availableRoles,
+      topic,
+      routingSettings,
+      {
+        previousSpeakerIds: recentMessages
+          .filter((m) => m.senderType === "role")
+          .map((m) => m.senderId),
+        existingActiveRoleIds: availableRoles.map((r) => r.id),
+        explicitRoleRequests,
+      },
+    );
+
+    // Map routing decision back to RoleCard for downstream use
+    const allSelectedRoles = routingDecision.activeEntrants
+      .map((sr) => availableRoles.find((r) => r.id === sr.roleId))
+      .filter((r): r is RoleCard => r !== undefined);
+
+    // Respect participation policy
+    const isNewEntrantsOnly = routingDecision.participationPolicy === "new_entrants_only";
+    const newEntrantIds = new Set(
+      routingDecision.activeEntrants
+        .filter((r) => r.source !== "existing_role_card")
+        .map((r) => r.roleId),
+    );
+
+    finalRoles = isNewEntrantsOnly
+      ? allSelectedRoles.filter((r) => newEntrantIds.has(r.id))
+      : allSelectedRoles;
   }
-
-  const selectedRoles = selectedIds
-    .map((id) => availableRoles.find((r) => r.id === id))
-    .filter((r): r is RoleCard => r !== undefined);
-
-  // Use new routing with participation policy support
-  const routingSettings = toRoleRoutingSettings(effectiveSettings);
-  const routingDecision = routeRolesLocal(
-    selectedRoles.length >= 2 ? selectedRoles : availableRoles,
-    topic,
-    routingSettings,
-    {
-      previousSpeakerIds: recentMessages
-        .filter((m) => m.senderType === "role")
-        .map((m) => m.senderId),
-      existingActiveRoleIds: availableRoles.map((r) => r.id),
-      explicitRoleRequests,
-    },
-  );
-
-  // Map routing decision back to RoleCard for downstream use
-  const allSelectedRoles = routingDecision.activeEntrants
-    .map((sr) => availableRoles.find((r) => r.id === sr.roleId))
-    .filter((r): r is RoleCard => r !== undefined);
-
-  // Respect participation policy
-  const isNewEntrantsOnly = routingDecision.participationPolicy === "new_entrants_only";
-  const newEntrantIds = new Set(
-    routingDecision.activeEntrants
-      .filter((r) => r.source !== "existing_role_card")
-      .map((r) => r.roleId),
-  );
-
-  const finalRoles = isNewEntrantsOnly
-    ? allSelectedRoles.filter((r) => newEntrantIds.has(r.id))
-    : allSelectedRoles;
 
   // Step 4: Each role responds independently — all called concurrently with per-role abort
   const roleMessages: CouncilMessage[] = [];
   const failedRoles: string[] = [];
+  const messageCompacts: MessageCompact[] = [];
 
   // Register abort controllers for each role
   for (const role of finalRoles) {
@@ -187,7 +257,24 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     const controller = roleAbortControllers.get(key);
     const signal = controller?.signal;
 
-    const rolePrompt = buildRolePrompt(role, rolePack);
+    // Use PersonaContract-aware prompt if available, else fall back to legacy
+    const contract = getContractForRole?.(role.id);
+    const sessionBriefText = inputSessionBrief
+      ? formatSessionBriefForPrompt(inputSessionBrief)
+      : undefined;
+    const rolePrompt = contract
+      ? compilePersonaPrompt({
+          personaContract: contract,
+          phase: "opening",
+          roomContext: {
+            topic,
+            userMessage: userMessage.content,
+            participants: finalRoles.map((r) => ({ id: r.id, name: r.name })),
+          },
+          contextPackage: effectiveContextPackage,
+          existingContext: sessionBriefText || undefined,
+        }).promptText
+      : buildRolePrompt(role, rolePack);
     onEvent?.({ type: "role_start", roleId: role.id, roundId });
 
     // Track partial content for abort case
@@ -224,12 +311,24 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
         ? result.content.replace(/<!--\s*summary:\s*.+?\s*-->/, "").trim()
         : result.content;
 
+      // Parse tail compact block (strip from visible content)
+      const compactResult = parseTailCompact({
+        content: cleanContent,
+        messageId: `msg_${role.id}_${Date.now()}`,
+        speakerId: role.id,
+        phase: "opening",
+      });
+      const visibleContent = compactResult.visibleContent;
+      if (compactResult.compact) {
+        messageCompacts.push(compactResult.compact);
+      }
+
       const msg: CouncilMessage = {
         id: `msg_${role.id}_${Date.now()}`,
         roomId: room.id,
         senderType: "role",
         senderId: role.id,
-        content: cleanContent,
+        content: visibleContent,
         thinking: result.thinking,
         graphSummary,
         status: "ok",
@@ -282,7 +381,16 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     }
   }));
 
-  // Step 4.5: Cross-examination (roles challenge each other)
+  // Step 4.5: Build round compact from message compacts
+  const roundCompact = buildRoundCompact({
+    roundId,
+    userQuestion: userMessage.content,
+    moderatorFraming: undefined,
+    selectedPersonas: finalRoles.map((r) => r.id),
+    messageCompacts,
+  });
+
+  // Step 4.6: Cross-examination (roles challenge each other)
   const crossExaminationMessages: CouncilMessage[] = [];
   if (room.settings.allowCrossExamination) {
     const okResponsesForX = roleMessages.filter((m) => m.status !== "error");
@@ -296,7 +404,9 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
             return { roleId: m.senderId, roleName: otherRole?.name ?? m.senderId, content: m.content };
           });
         if (others.length === 0) continue;
-        const xPrompt = buildCrossExaminationPrompt(role, others);
+        const compactSummary = formatCompactsForPrompt(messageCompacts);
+        const xPrompt = buildCrossExaminationPrompt(role, others)
+          + (compactSummary ? "\n\n" + compactSummary : "");
         try {
           const xResult = await llm.callRole({
             roomId: room.id,
@@ -332,6 +442,18 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     "",
     ...okResponses.map((m) => `### [${m.senderId}]\n${m.content}`),
   ];
+
+  // Inject session brief for moderator synthesis (from prior rounds)
+  if (inputSessionBrief) {
+    const briefText = formatSessionBriefForPrompt(inputSessionBrief);
+    if (briefText) summaryLines.push("", briefText);
+  }
+
+  // Inject compact summary for moderator synthesis
+  const compactSummaryForMod = formatCompactsForPrompt(messageCompacts);
+  if (compactSummaryForMod) {
+    summaryLines.push("", compactSummaryForMod);
+  }
 
   if (crossExaminationMessages.length > 0) {
     summaryLines.push(
@@ -400,6 +522,14 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     roleDocCount: rolePack.meta.docCount,
   };
 
+  // Build updated session running brief
+  const sessionRunningBrief = buildSessionRunningBrief({
+    previous: inputSessionBrief,
+    roundCompact,
+    topic,
+    latestUserIntent: userMessage.content,
+  });
+
   return {
     moderatorAnalysis: analysis,
     roleMessages,
@@ -410,5 +540,8 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     contextDebug,
     extractedMemories,
     routingDecision,
+    messageCompacts,
+    roundCompact,
+    sessionRunningBrief,
   };
 }
