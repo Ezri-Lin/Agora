@@ -8,11 +8,19 @@ interface SourceRef {
   label: string;
 }
 
+export interface PendingPerspectiveChip {
+  id: string;
+  roleId: string;
+  roleName: string;
+}
+
 interface ComposerProps {
   onSend: (message: string) => void;
   isLoading: boolean;
   references: SourceRef[];
   onRemoveRef: (path: string) => void;
+  perspectiveChips?: PendingPerspectiveChip[];
+  onRemovePerspectiveChip?: (id: string) => void;
 }
 
 export const Composer: React.FC<ComposerProps> = ({
@@ -20,6 +28,8 @@ export const Composer: React.FC<ComposerProps> = ({
   isLoading,
   references,
   onRemoveRef,
+  perspectiveChips,
+  onRemovePerspectiveChip,
 }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -44,6 +54,22 @@ export const Composer: React.FC<ComposerProps> = ({
   return (
     <div style={styles.container}>
       {showSettings && <SettingsPopover t={t} styles={styles} />}
+      {perspectiveChips && perspectiveChips.length > 0 && (
+        <div style={styles.chips}>
+          {perspectiveChips.map((chip) => (
+            <span key={chip.id} style={{ ...styles.chip, borderColor: colors.accent }}>
+              <span style={styles.chipIcon}>+</span>
+              {chip.roleName}
+              <button
+                style={styles.chipRemove}
+                onClick={() => onRemovePerspectiveChip?.(chip.id)}
+              >
+                x
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       {references.length > 0 && (
         <div style={styles.chips}>
           {references.map((ref) => (

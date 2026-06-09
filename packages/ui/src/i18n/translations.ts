@@ -155,6 +155,8 @@ export interface Translations {
   elapsed: string;
   jumpToLatest: string;
   inviteNextRound: string;
+  suggestedPerspectives: string;
+  addPerspective: string;
   expand: string;
   collapse: string;
 
@@ -182,6 +184,8 @@ export interface Translations {
   singleMode: string;
   councilMode: string;
   modeOnlyAffectsNext: string;
+  singleModeHint: string;
+  councilModeHint: string;
 
   // Terminal
   terminal: string;
@@ -310,6 +314,8 @@ export const en: Translations = {
   elapsed: "elapsed",
   jumpToLatest: "Jump to latest",
   inviteNextRound: "Invite next round",
+  suggestedPerspectives: "Suggested perspectives",
+  addPerspective: "Add",
   expand: "Expand",
   collapse: "Collapse",
   stopTurn: "Stop turn",
@@ -333,6 +339,8 @@ export const en: Translations = {
   singleMode: "Single",
   councilMode: "Council",
   modeOnlyAffectsNext: "Only affects next reply",
+  singleModeHint: "One role, no cross-examination",
+  councilModeHint: "Multiple roles, cross-examination",
   terminal: "Terminal",
   closeTerminal: "Close terminal",
 };
@@ -459,6 +467,8 @@ export const zh: Translations = {
   elapsed: "已用时",
   jumpToLatest: "跳到最新",
   inviteNextRound: "邀请下轮参与",
+  suggestedPerspectives: "推荐视角",
+  addPerspective: "添加",
   expand: "展开",
   collapse: "折叠",
   stopTurn: "停止本轮",
@@ -482,6 +492,8 @@ export const zh: Translations = {
   singleMode: "单角色",
   councilMode: "议会",
   modeOnlyAffectsNext: "仅影响下一轮",
+  singleModeHint: "单角色回复，无交叉审查",
+  councilModeHint: "多角色讨论，交叉审查",
   terminal: "终端",
   closeTerminal: "关闭终端",
 };

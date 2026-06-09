@@ -189,15 +189,15 @@ export async function runEval(input: EvalInput): Promise<EvalResult> {
 
   // Run council
   console.log("[eval] Running council...");
-  const councilResult = await runCouncilRound(
+  const councilResult = await runCouncilRound({
     room,
     topic,
-    userMsg,
+    userMessage: userMsg,
     availableRoles,
     llm,
-    [],
+    recentMessages: [],
     docContents,
-  );
+  });
 
   const sessionContent = formatSession(room, topic, councilResult);
 

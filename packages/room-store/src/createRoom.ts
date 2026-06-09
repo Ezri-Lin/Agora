@@ -8,6 +8,7 @@ const DEFAULT_SETTINGS: RoomSettings = {
   allowAutoDocs: true,
   allowCrossExamination: true,
   generationMode: "multi_call_cached",
+  contextMode: "standard",
 };
 
 export interface CreateRoomInput {

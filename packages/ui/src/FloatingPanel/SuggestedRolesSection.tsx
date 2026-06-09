@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import type { RoleCard } from "@agora/shared";
+import type { RoleCard, SuggestedPerspective } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
@@ -8,7 +8,9 @@ interface SuggestedRolesSectionProps {
   allRoles: RoleCard[];
   activeRoleIds: Set<string>;
   userMessage?: string;
+  suggestedPerspectives?: SuggestedPerspective[];
   onInvite?: (roleId: string) => void;
+  onAddPerspective?: (roleId: string, roleName: string) => void;
 }
 
 function extractKeywords(text: string): Set<string> {
@@ -42,24 +44,43 @@ export const SuggestedRolesSection: React.FC<SuggestedRolesSectionProps> = ({
   allRoles,
   activeRoleIds,
   userMessage,
+  suggestedPerspectives,
   onInvite,
+  onAddPerspective,
 }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
 
   const suggestions = useMemo(() => {
+    // Primary path: use kernel routing suggestions when available
+    if (suggestedPerspectives && suggestedPerspectives.length > 0) {
+      const results: { role: RoleCard; score: number; reason?: string }[] = [];
+      for (const sp of suggestedPerspectives) {
+        // Match by personaId first, then familyId
+        const match = allRoles.find(
+          (r) => !activeRoleIds.has(r.id) && (
+            (sp.personaId && r.id === sp.personaId) ||
+            r.id === sp.familyId
+          ),
+        );
+        if (match) {
+          results.push({ role: match, score: sp.score, reason: sp.reason });
+        }
+      }
+      return results.slice(0, MAX_SUGGESTIONS);
+    }
+
+    // Fallback: client-side tag-count scoring (local/demo mode, no routing decision)
     if (!userMessage) return [];
     const keywords = extractKeywords(userMessage);
     if (keywords.size === 0) return [];
 
-    // Collect active types for diversity scoring
     const activeTypes = new Set<string>();
     for (const role of allRoles) {
       if (activeRoleIds.has(role.id)) activeTypes.add(role.type);
     }
 
-    // Score and filter candidates
-    const candidates = allRoles
+    const candidates: { role: RoleCard; score: number; reason?: string }[] = allRoles
       .filter((r) => !activeRoleIds.has(r.id))
       .map((r) => ({ role: r, score: scoreRole(r, keywords, activeTypes) }))
       .filter((c) => c.score > 0)
@@ -67,22 +88,31 @@ export const SuggestedRolesSection: React.FC<SuggestedRolesSectionProps> = ({
       .slice(0, MAX_SUGGESTIONS);
 
     return candidates;
-  }, [allRoles, activeRoleIds, userMessage]);
+  }, [allRoles, activeRoleIds, userMessage, suggestedPerspectives]);
 
   if (suggestions.length === 0) return null;
 
   return (
     <div style={wrapStyle}>
-      {suggestions.map(({ role }) => (
+      <div style={sectionLabelStyle(colors)}>
+        {t.suggestedPerspectives ?? "Suggested perspectives"}
+      </div>
+      {suggestions.map(({ role, reason }) => (
         <div key={role.id} style={cardStyle(colors)}>
           <div style={cardInfoStyle}>
             <span style={roleNameStyle(colors)}>{role.name}</span>
             <span style={roleTypeStyle(colors)}>{role.type}</span>
           </div>
-          {role.subtitle && <div style={subtitleStyle(colors)}>{role.subtitle}</div>}
-          {onInvite && (
-            <button style={inviteBtnStyle(colors)} onClick={() => onInvite(role.id)}>
-              {t.inviteNextRound ?? "Invite"}
+          {reason
+            ? <div style={subtitleStyle(colors)}>{reason}</div>
+            : role.subtitle && <div style={subtitleStyle(colors)}>{role.subtitle}</div>
+          }
+          {(onAddPerspective || onInvite) && (
+            <button
+              style={inviteBtnStyle(colors)}
+              onClick={() => onAddPerspective?.(role.id, role.name) ?? onInvite?.(role.id)}
+            >
+              {t.addPerspective ?? "Add"}
             </button>
           )}
         </div>
@@ -99,6 +129,15 @@ const wrapStyle: React.CSSProperties = {
   flexDirection: "column",
   gap: 6,
 };
+
+const sectionLabelStyle = (colors: ColorPalette): React.CSSProperties => ({
+  fontSize: 10,
+  fontWeight: 600,
+  color: colors.textMuted,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+  marginBottom: 2,
+});
 
 const cardStyle = (colors: ColorPalette): React.CSSProperties => ({
   display: "flex",

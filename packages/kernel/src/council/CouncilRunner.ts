@@ -7,10 +7,14 @@ import type {
   MemoryCandidate,
   CouncilEvent,
   CouncilRoleSettings,
+  ExplicitRoleRequest,
+  RoleRoutingDecision,
 } from "@agora/shared";
 import { extractGraphSummary, firstMeaningfulSentence, normalizeCouncilRoleSettings } from "@agora/shared";
 import type { LLMProvider } from "../types/index.js";
 import { selectRoles } from "../routing/RoleRouter.js";
+import { routeRolesLocal } from "../routing/routeRoles.js";
+import { toRoleRoutingSettings } from "@agora/shared";
 import { buildContextPack, type ContextPack } from "../context/ContextPack.js";
 import { buildModeratorContextPack, type ModeratorContextPack } from "../context/ModeratorContextPack.js";
 import { buildRolePrompt, buildModeratorPrompt, buildCrossExaminationPrompt } from "../context/promptContracts.js";
@@ -50,6 +54,21 @@ export interface CouncilRunResult {
   moderatorContextPack: ModeratorContextPack;
   contextDebug: ContextDebug;
   extractedMemories: MemoryCandidate[];
+  routingDecision?: RoleRoutingDecision;
+}
+
+export interface RunCouncilRoundInput {
+  room: CouncilRoom;
+  topic: string;
+  userMessage: CouncilMessage;
+  availableRoles: RoleCard[];
+  llm: LLMProvider;
+  recentMessages?: CouncilMessage[];
+  docContents?: Map<string, string>;
+  memoryStore?: MemoryStore;
+  onEvent?: (event: CouncilEvent) => void;
+  roleSettings?: Partial<CouncilRoleSettings>;
+  explicitRoleRequests?: ExplicitRoleRequest[];
 }
 
 /**
@@ -64,18 +83,12 @@ export interface CouncilRunResult {
  * 7. Moderator summarizes (full context + role responses)
  * 8. Extract memory candidates from the discussion
  */
-export async function runCouncilRound(
-  room: CouncilRoom,
-  topic: string,
-  userMessage: CouncilMessage,
-  availableRoles: RoleCard[],
-  llm: LLMProvider,
-  recentMessages: CouncilMessage[] = [],
-  docContents?: Map<string, string>,
-  memoryStore?: MemoryStore,
-  onEvent?: (event: CouncilEvent) => void,
-  roleSettings?: Partial<CouncilRoleSettings>,
-): Promise<CouncilRunResult> {
+export async function runCouncilRound(input: RunCouncilRoundInput): Promise<CouncilRunResult> {
+  const {
+    room, topic, userMessage, availableRoles, llm,
+    recentMessages = [], docContents, memoryStore,
+    onEvent, roleSettings, explicitRoleRequests,
+  } = input;
   const effectiveSettings = normalizeCouncilRoleSettings(roleSettings);
   const roundId = `round_${room.id}_${Date.now()}`;
   // Step 0: Inject relevant memories into docContents
@@ -127,16 +140,37 @@ export async function runCouncilRound(
     .map((id) => availableRoles.find((r) => r.id === id))
     .filter((r): r is RoleCard => r !== undefined);
 
-  // Use settings-driven role selection (selectRoles handles base + auto-invite + limits)
-  const selection = selectRoles(
+  // Use new routing with participation policy support
+  const routingSettings = toRoleRoutingSettings(effectiveSettings);
+  const routingDecision = routeRolesLocal(
     selectedRoles.length >= 2 ? selectedRoles : availableRoles,
     topic,
-    effectiveSettings,
+    routingSettings,
+    {
+      previousSpeakerIds: recentMessages
+        .filter((m) => m.senderType === "role")
+        .map((m) => m.senderId),
+      existingActiveRoleIds: availableRoles.map((r) => r.id),
+      explicitRoleRequests,
+    },
   );
-  // Map SelectedRole back to RoleCard for downstream use
-  const finalRoles = selection.activeRoles
+
+  // Map routing decision back to RoleCard for downstream use
+  const allSelectedRoles = routingDecision.activeEntrants
     .map((sr) => availableRoles.find((r) => r.id === sr.roleId))
     .filter((r): r is RoleCard => r !== undefined);
+
+  // Respect participation policy
+  const isNewEntrantsOnly = routingDecision.participationPolicy === "new_entrants_only";
+  const newEntrantIds = new Set(
+    routingDecision.activeEntrants
+      .filter((r) => r.source !== "existing_role_card")
+      .map((r) => r.roleId),
+  );
+
+  const finalRoles = isNewEntrantsOnly
+    ? allSelectedRoles.filter((r) => newEntrantIds.has(r.id))
+    : allSelectedRoles;
 
   // Step 4: Each role responds independently — all called concurrently with per-role abort
   const roleMessages: CouncilMessage[] = [];
@@ -375,5 +409,6 @@ export async function runCouncilRound(
     moderatorContextPack: modPack,
     contextDebug,
     extractedMemories,
+    routingDecision,
   };
 }

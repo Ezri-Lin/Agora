@@ -43,6 +43,7 @@
     "@agora/kernel": "workspace:*",
     "@agora/memory": "workspace:*",
     "@agora/roles": "workspace:*",
+    "@agora/ui": "workspace:*",
     "@agora/room-store": "workspace:*",
     "@agora/shared": "workspace:*",
     "@agora/vault-adapter": "workspace:*",

@@ -1,13 +1,15 @@
-import React, { useState } from "react";
-import type { CouncilMessage } from "@agora/shared";
+import React, { useState, useMemo } from "react";
+import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
+import { getRoleColor } from "../theme/palettes.js";
 import { MessageContent } from "../ChatBubble/MessageContent.js";
 import { CopyButton } from "../ChatBubble/CopyButton.js";
 
 interface RoleMessageProps {
   message: CouncilMessage;
+  roles?: RoleCard[];
   streaming?: boolean;
   expanded?: boolean;
   onToggle?: () => void;
@@ -18,25 +20,47 @@ function truncate(s: string, max: number): string {
   return clean.length > max ? clean.slice(0, max) + "..." : clean;
 }
 
-export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, expanded = true, onToggle }) => {
+function formatTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const h = d.getHours().toString().padStart(2, "0");
+    const m = d.getMinutes().toString().padStart(2, "0");
+    return `${h}:${m}`;
+  } catch {
+    return "";
+  }
+}
+
+function formatThinkingLen(n: number): string {
+  return n > 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
+export const RoleMessage: React.FC<RoleMessageProps> = ({ message, roles, streaming, expanded = true, onToggle }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = createStyles(colors);
 
-  const ROLE_META: Record<string, { name: string; subtitle: string; color: string }> = {
-    user: { name: "You", subtitle: "", color: colors.user },
-    moderator: { name: "Moderator", subtitle: "长期主持人", color: colors.moderator },
-    skeptic_critic: { name: "Skeptic Critic", subtitle: "反驳者", color: colors.critic },
-    historian: { name: "Historian", subtitle: "历史周期视角", color: colors.historian },
-    product_strategist: { name: "Product Strategist", subtitle: "产品策略", color: colors.strategist },
-  };
+  // Catalog-driven meta: built from role catalog + stable hash colors
+  const roleMetaMap = useMemo(() => {
+    const map = new Map<string, { name: string; subtitle: string; color: string }>();
+    map.set("user", { name: "You", subtitle: "", color: colors.user });
+    map.set("moderator", { name: "Moderator", subtitle: "", color: colors.moderator });
+    for (const role of roles ?? []) {
+      map.set(role.id, {
+        name: role.name,
+        subtitle: role.subtitle,
+        color: getRoleColor(role.id),
+      });
+    }
+    return map;
+  }, [roles, colors.user, colors.moderator]);
   const isUser = message.senderType === "user";
   const isError = message.status === "error";
 
   // Error messages render as system warning
   if (isError) {
     const roleName = message.targetRoleId
-      ? (ROLE_META[message.targetRoleId]?.name ?? message.targetRoleId)
+      ? (roleMetaMap.get(message.targetRoleId)?.name ?? message.targetRoleId)
       : "Unknown";
     return (
       <div id={message.id} style={styles.errorRow}>
@@ -51,7 +75,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, ex
     );
   }
 
-  const meta = ROLE_META[message.senderId] ?? {
+  const meta = roleMetaMap.get(message.senderId) ?? {
     name: message.senderId,
     subtitle: "",
     color: colors.textMuted,
@@ -72,9 +96,11 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({ message, streaming, ex
         >
           <span style={{ ...styles.name, color: meta.color }}>{meta.name}</span>
           {meta.subtitle && <span style={styles.subtitle}>{meta.subtitle}</span>}
+          {message.createdAt && <span style={styles.timestamp}>{formatTime(message.createdAt)}</span>}
         </div>
         {!expanded && !isUser && (
           <div style={styles.preview} onClick={onToggle}>
+            {message.graphSummary && <span style={styles.summaryBadge}>Summary</span>}
             {preview}
             {onToggle && <span style={styles.expandIndicator}>▾</span>}
           </div>
@@ -133,6 +159,7 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
   header: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 },
   name: { fontSize: 12, fontWeight: 600 },
   subtitle: { fontSize: 10, color: colors.textMuted },
+  timestamp: { fontSize: 10, color: colors.textMuted, marginLeft: 4 },
   preview: {
     fontSize: 12, color: colors.textMuted, lineHeight: 1.5,
     padding: "6px 10px", cursor: "pointer",
@@ -140,6 +167,10 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     border: `1px solid ${colors.border}`,
     display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
     overflow: "hidden", position: "relative",
+  },
+  summaryBadge: {
+    fontSize: 9, color: colors.accent, textTransform: "uppercase" as const,
+    letterSpacing: 0.5, fontWeight: 600, marginBottom: 2, display: "block",
   },
   expandIndicator: {
     position: "absolute",
@@ -222,6 +253,7 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
 
 const ThinkingBlock: React.FC<{ thinking: string; colors: ColorPalette; label: string }> = ({ thinking, colors, label }) => {
   const [expanded, setExpanded] = useState(false);
+  const lenLabel = formatThinkingLen(thinking.length);
   return (
     <div style={{ marginBottom: 4 }}>
       <button
@@ -233,16 +265,16 @@ const ThinkingBlock: React.FC<{ thinking: string; colors: ColorPalette; label: s
         }}
       >
         <span style={{ transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "0.15s", display: "inline-block", fontSize: 8 }}>&#9654;</span>
-        {label}
+        {label} <span style={{ opacity: 0.6 }}>({lenLabel})</span>
       </button>
       {expanded && (
         <div style={{
           marginTop: 2, padding: "6px 10px", fontSize: 11, lineHeight: 1.5,
           color: colors.textMuted, background: colors.surface,
           borderLeft: `2px solid ${colors.accentDim}`, borderRadius: "0 4px 4px 0",
-          whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 200, overflowY: "auto",
+          maxHeight: 200, overflowY: "auto",
         }}>
-          {thinking}
+          <MessageContent content={thinking} colors={colors} />
         </div>
       )}
     </div>

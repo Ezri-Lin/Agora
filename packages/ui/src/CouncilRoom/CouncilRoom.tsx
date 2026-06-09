@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import type { CouncilMessage } from "@agora/shared";
+import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { RoleMessage } from "../RoleMessage/RoleMessage.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
@@ -7,6 +7,7 @@ import type { ColorPalette } from "../theme/palettes.js";
 
 interface CouncilRoomProps {
   messages: CouncilMessage[];
+  roles?: RoleCard[];
   isLoading: boolean;
   loadingStatus?: string;
   onStop?: () => void;
@@ -15,7 +16,7 @@ interface CouncilRoomProps {
   onRegisterJumpFns?: (fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void }) => void;
 }
 
-export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, loadingStatus, onStop, streamingRoleId, onRegisterJumpFns }) => {
+export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, loadingStatus, onStop, streamingRoleId, onRegisterJumpFns }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -127,6 +128,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, isLoading, l
             <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>
               <RoleMessage
                 message={msg}
+                roles={roles}
                 streaming={isStreaming}
                 expanded={isExpanded}
                 onToggle={alwaysExpand ? undefined : () => handleToggle(msg.id)}

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent, CouncilRoundSnapshot, RoleRunSnapshot, RoomMode } from "@agora/shared";
+import type { CouncilMessage, SourceRefImportance, LLMConfig, RoleCard, CouncilEvent, CouncilRoundSnapshot, RoleRunSnapshot, RoomMode, ExplicitRoleRequest, RoleRoutingDecision } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
 import { runCouncilRound, stopRole, type CouncilRunResult } from "@agora/kernel";
 import { buildRoleHistories } from "./FloatingPanel/buildRoleHistories.js";
@@ -11,6 +11,7 @@ import { ContextGraph } from "./ContextGraph/ContextGraph.js";
 import { CouncilRoom } from "./CouncilRoom/CouncilRoom.js";
 import { Composer } from "./Composer/Composer.js";
 import type { ContextDebug } from "./Inspector/Inspector.js";
+import type { PendingPerspectiveChip } from "./Composer/Composer.js";
 import type { RoleStreamState } from "./CouncilMonitor/CouncilMonitor.js";
 import { FloatingCouncilPanel } from "./FloatingPanel/FloatingCouncilPanel.js";
 import { EmptyState } from "./EmptyState.js";
@@ -44,6 +45,11 @@ export const App: React.FC = () => {
   const [panelVisible, setPanelVisible] = useState(false);
   const [roomMode, setRoomMode] = useState<RoomMode>("council");
   const [terminalVisible, setTerminalVisible] = useState(false);
+  const [pendingPerspectiveChips, setPendingPerspectiveChips] = useState<PendingPerspectiveChip[]>([]);
+  const [lastRoutingDecision, setLastRoutingDecision] = useState<{
+    messageId: string;
+    decision: RoleRoutingDecision;
+  } | null>(null);
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const jumpFnsRef = useRef<{ scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void } | null>(null);
 
@@ -176,6 +182,17 @@ export const App: React.FC = () => {
     });
   }, []);
 
+  const handleAddPerspective = useCallback((roleId: string, roleName: string) => {
+    setPendingPerspectiveChips((prev) => {
+      if (prev.some((c) => c.roleId === roleId)) return prev;
+      return [...prev, { id: `chip_${roleId}_${Date.now()}`, roleId, roleName }];
+    });
+  }, []);
+
+  const handleRemovePerspectiveChip = useCallback((id: string) => {
+    setPendingPerspectiveChips((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
   const handleJumpToMessage = useCallback((messageId: string) => {
     jumpFnsRef.current?.scrollToMessage(messageId);
     jumpFnsRef.current?.highlightMessage(messageId, 1800);
@@ -230,6 +247,7 @@ export const App: React.FC = () => {
     setLoadingStatus("Preparing context...");
     setRoleStreamStates(new Map());
     setLastRoundSnapshot(null);
+    setLastRoutingDecision(null);
     setPanelPhase("running");
     setPanelVisible(true);
     clearTimeout(collapseTimerRef.current);
@@ -371,10 +389,36 @@ export const App: React.FC = () => {
         ? { roleCount: 1, maxAutoInviteLenses: 0, allowAutoInviteLenses: false }
         : undefined;
 
-      const result: CouncilRunResult = await runCouncilRound(
-        roomForCouncil, text, userMsg, allRoles, provider,
-        messages, docContents, undefined, onEvent, roleSettings,
-      );
+      // Convert perspective chips to explicit role requests
+      const chipRequests: ExplicitRoleRequest[] = pendingPerspectiveChips.map((chip) => ({
+        targetType: "persona" as const,
+        targetId: chip.roleId,
+        confidence: 1.0,
+        rawText: `+${chip.roleName}`,
+      }));
+      // Clear chips immediately — they're consumed by this send
+      setPendingPerspectiveChips([]);
+
+      const result: CouncilRunResult = await runCouncilRound({
+        room: roomForCouncil,
+        topic: text,
+        userMessage: userMsg,
+        availableRoles: allRoles,
+        llm: provider,
+        recentMessages: messages,
+        docContents,
+        onEvent,
+        roleSettings,
+        explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
+      });
+
+      // Bind routing decision to this user message to prevent stale suggestions
+      const latestUserMessageId = userMsg.id;
+      if (result.routingDecision) {
+        setLastRoutingDecision({ messageId: latestUserMessageId, decision: result.routingDecision });
+      } else {
+        setLastRoutingDecision(null);
+      }
 
       setLoadingStatus("Persisting...");
 
@@ -450,7 +494,7 @@ export const App: React.FC = () => {
         return prev; // keep live states until snapshot is built
       });
     }
-  }, [workspace, messages, selectedRefs, llmConfig, roomMode]);
+  }, [workspace, messages, selectedRefs, llmConfig, roomMode, pendingPerspectiveChips]);
 
   const handleNodeClick = useCallback((msgId: string) => {
     const el = document.getElementById(msgId);
@@ -512,7 +556,7 @@ export const App: React.FC = () => {
               Error: {error}
             </div>
           )}
-          <CouncilRoom messages={messages} isLoading={isLoading} loadingStatus={loadingStatus} onStop={handleStop} streamingRoleId={streamingRoleIdRef.current} onRegisterJumpFns={handleRegisterJumpFns} />
+          <CouncilRoom messages={messages} roles={[...DEFAULT_ROLES, ...customRoles.map((r) => ({ ...r, type: r.type as RoleCard["type"] }))]} isLoading={isLoading} loadingStatus={loadingStatus} onStop={handleStop} streamingRoleId={streamingRoleIdRef.current} onRegisterJumpFns={handleRegisterJumpFns} />
         </>
       }
       floatingPanel={
@@ -533,6 +577,8 @@ export const App: React.FC = () => {
           onStopRole={handleStopRole}
           onRemoveRole={handleRemoveRole}
           onJumpToMessage={handleJumpToMessage}
+          onAddPerspective={handleAddPerspective}
+          suggestedPerspectives={lastRoutingDecision?.decision.suggestedPerspectives}
         />
       }
       composer={
@@ -549,6 +595,8 @@ export const App: React.FC = () => {
             isLoading={isLoading}
             references={selectedRefs}
             onRemoveRef={handleRemoveRef}
+            perspectiveChips={pendingPerspectiveChips}
+            onRemovePerspectiveChip={handleRemovePerspectiveChip}
           />
         </>
       }

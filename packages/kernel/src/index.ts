@@ -9,7 +9,7 @@ export { buildModeratorContextPack, type ModeratorContextPack, type ModeratorCon
 export { buildModeratorPrompt, buildRolePrompt } from "./context/promptContracts.js";
 export { estimateTokens, CONTEXT_BUDGETS, getDocBudget, type ContextBudget } from "./context/tokenBudget.js";
 export { extractRelevantExcerpt } from "./context/extractExcerpt.js";
-export { runCouncilRound, stopRole, type CouncilRunResult, type ContextDebug } from "./council/CouncilRunner.js";
+export { runCouncilRound, stopRole, type CouncilRunResult, type RunCouncilRoundInput, type ContextDebug } from "./council/CouncilRunner.js";
 // MemoryStore and extractMemories use node:fs — import directly from "./memory/MemoryStore.js"
 // eval module uses node:fs — import directly from "./eval/runEval.js"
 export type { LLMProvider, CouncilSession } from "./types/index.js";

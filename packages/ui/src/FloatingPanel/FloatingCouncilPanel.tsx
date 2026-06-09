@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import type { RoleCard, CouncilRoundSnapshot, CouncilMessage, RoleRoundHistory } from "@agora/shared";
+import type { RoleCard, CouncilRoundSnapshot, CouncilMessage, RoleRoundHistory, SuggestedPerspective } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
@@ -33,6 +33,8 @@ interface FloatingCouncilPanelProps {
   onStopRole?: (roleId: string) => void;
   onRemoveRole?: (roleId: string) => void;
   onJumpToMessage?: (messageId: string) => void;
+  onAddPerspective?: (roleId: string, roleName: string) => void;
+  suggestedPerspectives?: SuggestedPerspective[];
 }
 
 export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
@@ -53,6 +55,8 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
   onStopRole,
   onRemoveRole,
   onJumpToMessage,
+  onAddPerspective,
+  suggestedPerspectives,
 }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -151,7 +155,9 @@ export const FloatingCouncilPanel: React.FC<FloatingCouncilPanelProps> = ({
               allRoles={roles}
               activeRoleIds={activeRoleIdsFromMessages ?? activeRoleIds}
               userMessage={userMessage}
+              suggestedPerspectives={suggestedPerspectives}
               onInvite={onInviteRole}
+              onAddPerspective={onAddPerspective}
             />
           </>
         )}
