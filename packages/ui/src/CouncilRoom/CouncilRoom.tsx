@@ -114,39 +114,37 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
   };
 
   return (
-    <div style={styles.container}>
-      <div ref={scrollRef} style={styles.messages} onScroll={handleScroll}>
-        <div style={styles.messageStack}>
-          {messages.length === 0 && !isLoading && (
-            <div style={styles.empty}>{t.sendToStart}</div>
-          )}
-          {messages.map((msg) => {
-            const isStreaming = streamingRoleId === msg.senderId;
-            const isUser = msg.senderType === "user";
-            // Only user messages always expanded; moderator and role messages are collapsible
-            const alwaysExpand = isUser;
-            const isExpanded = alwaysExpand || expandedIds.has(msg.id);
-            return (
-              <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>
-                <RoleMessage
-                  message={msg}
-                  roles={roles}
-                  streaming={isStreaming}
-                  expanded={isExpanded}
-                  onToggle={alwaysExpand ? undefined : () => handleToggle(msg.id)}
-                />
-              </div>
-            );
-          })}
-          {isLoading && (
-            <div style={styles.loadingRow}>
-              <span style={styles.loadingText}>{loadingStatus || t.rolesAreThinking}</span>
-              {onStop && (
-                <button style={styles.stopBtn} onClick={onStop}>{t.stop}</button>
-              )}
+    <div className="thread" ref={scrollRef} onScroll={handleScroll}>
+      <div className="thread-inner">
+        {messages.length === 0 && !isLoading && (
+          <div style={styles.empty}>{t.sendToStart}</div>
+        )}
+        {messages.map((msg) => {
+          const isStreaming = streamingRoleId === msg.senderId;
+          const isUser = msg.senderType === "user";
+          // Only user messages always expanded; moderator and role messages are collapsible
+          const alwaysExpand = isUser;
+          const isExpanded = alwaysExpand || expandedIds.has(msg.id);
+          return (
+            <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>
+              <RoleMessage
+                message={msg}
+                roles={roles}
+                streaming={isStreaming}
+                expanded={isExpanded}
+                onToggle={alwaysExpand ? undefined : () => handleToggle(msg.id)}
+              />
             </div>
-          )}
-        </div>
+          );
+        })}
+        {isLoading && (
+          <div style={styles.loadingRow}>
+            <span style={styles.loadingText}>{loadingStatus || t.rolesAreThinking}</span>
+            {onStop && (
+              <button style={styles.stopBtn} onClick={onStop}>{t.stop}</button>
+            )}
+          </div>
+        )}
       </div>
       {!isNearBottom && newMsgCount > 0 && (
         <button style={styles.jumpBtn} onClick={jumpToLatest}>

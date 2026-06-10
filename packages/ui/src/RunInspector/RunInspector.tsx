@@ -72,13 +72,17 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
   if (!visible) return null;
 
   return (
-    <div ref={panelRef} style={inspectorPanelStyle(colors)} data-testid="run-inspector">
-      <RunInspectorHeader
-        title={`Active roles · ${doneCount}/${totalActive}`}
-        colors={colors}
-        onClose={onToggle}
-      />
-      <div style={scrollAreaStyle}>
+    <aside
+      className="inspector"
+      ref={panelRef}
+      style={{ display: visible ? "block" : "none" }}
+    >
+      <div className="inspector-head">
+        <b>Run Inspector</b>
+        <label className="close" onClick={onToggle} style={{ cursor: "pointer" }}>×</label>
+      </div>
+
+      <div className="ins-scroll">
         <ProgressSection roles={roles} roleStates={roleStreamStates} colors={colors} />
         <ActiveRolesSection
           roles={activeRoleCards}
@@ -120,7 +124,7 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
           />
         )}
       </div>
-    </div>
+    </aside>
   );
 };
 

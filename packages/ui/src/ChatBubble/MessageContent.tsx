@@ -8,9 +8,10 @@ import { CodeBlock } from "./CodeBlock.js";
 interface MessageContentProps {
   content: string;
   colors: ColorPalette;
+  onWikiLink?: (target: string) => void;
 }
 
-export const MessageContent: React.FC<MessageContentProps> = ({ content, colors }) => {
+export const MessageContent: React.FC<MessageContentProps> = ({ content, colors, onWikiLink }) => {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -40,6 +41,19 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
           );
         },
         a({ children, href, ...props }) {
+          if (href?.startsWith("wikilink:") && onWikiLink) {
+            const target = href.slice("wikilink:".length);
+            return (
+              <a
+                href="#"
+                className="wikilink"
+                onClick={(e) => { e.preventDefault(); onWikiLink(target); }}
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          }
           return (
             <a
               href={href}

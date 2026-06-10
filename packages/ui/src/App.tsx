@@ -102,9 +102,35 @@ export const App: React.FC = () => {
           graph={<WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} />}
           rooms={council.rooms}
           docs={workspace.availableDocs}
+          workspacePath={workspace.workspace.path}
           onSelectRoom={handleSelectRoom}
           onOpenDocument={handleOpenDocument}
           onNewRoom={handleNewRoom}
+          composer={
+            <>
+              {workspace.showRefPicker && (
+                <RefPicker
+                  docs={workspace.availableDocs}
+                  onSelect={workspace.addRef}
+                  onClose={workspace.closeRefPicker}
+                />
+              )}
+              <Composer
+                onSend={handleSend}
+                isLoading={council.isLoading}
+                references={workspace.selectedRefs}
+                onRemoveRef={workspace.removeRef}
+                perspectiveChips={council.pendingPerspectiveChips}
+                onRemovePerspectiveChip={council.handleRemovePerspectiveChip}
+                onOpenRefPicker={workspace.toggleRefPicker}
+                onOpenDispatchGate={undefined}
+                workspaceName={workspace.workspace.name}
+                roomMode={council.roomMode}
+                onRoomModeChange={council.setRoomMode}
+                roleCount={council.allRoles?.length || 0}
+              />
+            </>
+          }
         />
       }
       contextGraph={
@@ -140,6 +166,7 @@ export const App: React.FC = () => {
           activeDoc={documentState.activeDoc}
           content={documentState.content}
           isLoading={documentState.isLoading}
+          workspacePath={workspace.workspace.path}
           onOpenDocument={handleOpenDocument}
           onAddReference={handleReferenceDocument}
         />
@@ -187,7 +214,11 @@ export const App: React.FC = () => {
             perspectiveChips={council.pendingPerspectiveChips}
             onRemovePerspectiveChip={council.handleRemovePerspectiveChip}
             onOpenRefPicker={workspace.toggleRefPicker}
-            onOpenDispatchGate={/* dispatch gate requires a topic; opened via handleSend in council mode */ undefined}
+            onOpenDispatchGate={undefined}
+            workspaceName={workspace.workspace.name}
+            roomMode={council.roomMode}
+            onRoomModeChange={council.setRoomMode}
+            roleCount={council.allRoles?.length || 0}
           />
         </>
       }

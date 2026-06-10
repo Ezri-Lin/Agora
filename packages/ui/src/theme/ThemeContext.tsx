@@ -21,7 +21,6 @@ function getInitialTheme(): ThemeMode {
   } catch {
     // localStorage not available
   }
-  if (window.matchMedia?.("(prefers-color-scheme: light)").matches) return "light";
   return "dark";
 }
 
@@ -40,6 +39,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggleTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const value: ThemeContextValue = {
     theme,

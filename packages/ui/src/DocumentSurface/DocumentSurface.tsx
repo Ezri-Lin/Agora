@@ -1,14 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { ScannedDoc } from "../AgoraBridge.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useNarrowViewport } from "../hooks/useNarrowViewport.js";
 import { createDocumentSurfaceStyles } from "./documentSurfaceStyles.js";
+import { MessageContent } from "../ChatBubble/MessageContent.js";
+import { DocTree } from "../DocTree/DocTree.js";
 
 interface DocumentSurfaceProps {
   docs: ScannedDoc[];
   activeDoc: ScannedDoc | null;
   content: string;
   isLoading: boolean;
+  workspacePath?: string;
   onOpenDocument: (doc: ScannedDoc) => void;
   onAddReference: (doc: ScannedDoc) => void;
 }
@@ -20,6 +23,7 @@ export const DocumentSurface: React.FC<DocumentSurfaceProps> = ({
   activeDoc,
   content,
   isLoading,
+  workspacePath,
   onOpenDocument,
   onAddReference,
 }) => {
@@ -34,108 +38,63 @@ export const DocumentSurface: React.FC<DocumentSurfaceProps> = ({
     setMode("preview");
   }, [activeDoc?.path, content]);
 
-  const previewBlocks = useMemo(() => renderPreview(draft), [draft]);
+  // Convert [[wikilinks]] to markdown links
+  const processedContent = useMemo(() => {
+    return draft.replace(/\[\[([^\]]+)\]\]/g, (match, target) => {
+      return `[${target}](wikilink:${encodeURIComponent(target)})`;
+    });
+  }, [draft]);
+
+  // Handle wikilink click: find doc by name and open it
+  const handleWikiLink = useCallback((target: string) => {
+    const decodedTarget = decodeURIComponent(target);
+    const match = docs.find(
+      (d) => d.name === decodedTarget || d.name.replace(/\.[^.]+$/, "") === decodedTarget,
+    );
+    if (match) onOpenDocument(match);
+  }, [docs, onOpenDocument]);
 
   return (
-    <main style={styles.root} role="region" aria-label="Document Surface">
-      <aside style={styles.rail} aria-label="Workspace documents">
-        <div style={styles.sectionLabel}>Documents</div>
-        <div style={styles.docList}>
-          {docs.length === 0 && <div style={styles.empty}>No documents found</div>}
-          {docs.map((doc) => {
-            const selected = activeDoc?.path === doc.path;
-            return (
-              <button
-                type="button"
-                key={doc.path}
-                style={{ ...styles.docRow, ...(selected ? styles.docRowActive : {}) }}
-                onClick={() => onOpenDocument(doc)}
-              >
-                <span style={styles.ext}>{doc.ext.replace(".", "") || "doc"}</span>
-                <span style={styles.docName}>{doc.name}</span>
-              </button>
-            );
-          })}
+    <aside className="docs-sidecar" style={{ display: "grid", position: "relative" }} role="region" aria-label="Document Surface">
+      <div className="doc-head">
+        <b>Project files</b>
+        <div className="doc-tabs">
+          <span className={mode === "preview" ? "on" : ""} onClick={() => setMode("preview")} style={{ cursor: "pointer" }}>Preview</span>
+          <span className={mode === "edit" ? "on" : ""} onClick={() => setMode("edit")} style={{ cursor: "pointer" }}>Edit</span>
+          {activeDoc && <span onClick={() => onAddReference(activeDoc)} style={{ cursor: "pointer", color: colors.accent }}>Reference</span>}
         </div>
-      </aside>
-      <section style={styles.documentPane}>
-        <header style={styles.header}>
-          <div>
-            <div style={styles.docTitle}>{activeDoc?.name ?? "Select a document"}</div>
-            <div style={styles.docPath}>{activeDoc?.path ?? "Open a workspace document to read or quote it."}</div>
-          </div>
-          <div style={styles.actions}>
-            <div style={styles.segmented} role="group" aria-label="Document mode">
-              <button
-                type="button"
-                style={{ ...styles.segmentButton, ...(mode === "preview" ? styles.segmentButtonActive : {}) }}
-                aria-pressed={mode === "preview"}
-                onClick={() => setMode("preview")}
-              >
-                Preview
-              </button>
-              <button
-                type="button"
-                style={{ ...styles.segmentButton, ...(mode === "edit" ? styles.segmentButtonActive : {}) }}
-                aria-pressed={mode === "edit"}
-                onClick={() => setMode("edit")}
-              >
-                Edit
-              </button>
-            </div>
-            {activeDoc && (
-              <button type="button" style={styles.primaryButton} onClick={() => onAddReference(activeDoc)}>
-                Reference in Chat
-              </button>
-            )}
-          </div>
-        </header>
-        <div style={styles.body}>
-          {isLoading && <div style={styles.empty}>Loading document...</div>}
-          {!isLoading && !activeDoc && <div style={styles.empty}>Choose a document from the list.</div>}
-          {!isLoading && activeDoc && mode === "preview" && (
-            <article style={styles.preview}>{previewBlocks}</article>
-          )}
-          {!isLoading && activeDoc && mode === "edit" && (
-            <textarea
-              aria-label="Document editor"
-              style={styles.editor}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-            />
-          )}
+      </div>
+      <div className="doc-body">
+        <div className="filetree">
+          <div className="filter">Filter files…</div>
+          <DocTree docs={docs} activeDocPath={activeDoc?.path} workspacePath={workspacePath} onSelect={onOpenDocument} colors={colors} />
         </div>
-      </section>
-    </main>
+        <article className="preview">
+          {isLoading && <div style={{ color: colors.textMuted }}>Loading document...</div>}
+          {!isLoading && !activeDoc && <div style={{ color: colors.textMuted }}>Choose a document from the list.</div>}
+          
+          {!isLoading && activeDoc && (
+            <>
+              <h1>{activeDoc.name}</h1>
+              {mode === "preview" && (
+                <MessageContent content={processedContent} colors={colors} onWikiLink={handleWikiLink} />
+              )}
+              {mode === "edit" && (
+                <textarea
+                  aria-label="Document editor"
+                  style={{
+                    width: "100%", height: "100%", minHeight: "300px",
+                    background: "transparent", color: "inherit", border: "1px solid #333",
+                    padding: "10px", borderRadius: "8px", font: "inherit", resize: "none"
+                  }}
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                />
+              )}
+            </>
+          )}
+        </article>
+      </div>
+    </aside>
   );
 };
-
-function renderPreview(markdown: string): React.ReactNode[] {
-  const lines = markdown.split(/\r?\n/);
-  const blocks: React.ReactNode[] = [];
-  let paragraph: string[] = [];
-
-  const flushParagraph = () => {
-    if (paragraph.length === 0) return;
-    const text = paragraph.join(" ").trim();
-    if (text) blocks.push(<p key={`p-${blocks.length}`}>{text}</p>);
-    paragraph = [];
-  };
-
-  lines.forEach((line) => {
-    if (!line.trim()) {
-      flushParagraph();
-      return;
-    }
-    const heading = line.match(/^(#{1,3})\s+(.+)$/);
-    if (heading) {
-      flushParagraph();
-      blocks.push(<h1 key={`h-${blocks.length}`}>{heading[2]}</h1>);
-      return;
-    }
-    paragraph.push(line);
-  });
-  flushParagraph();
-
-  return blocks.length > 0 ? blocks : [<p key="empty">This document is empty.</p>];
-}

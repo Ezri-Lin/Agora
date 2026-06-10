@@ -6,6 +6,7 @@
   "description": "Local-first multi-role council room document assistant",
   "author": "Ezri-Lin",
   "scripts": {
+    "postinstall": "chmod +x node_modules/.pnpm/node-pty*/node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true",
     "dev:vite": "vite",
     "dev:electron": "npx tsc -p tsconfig.electron.json && NODE_ENV=development VITE_DEV_SERVER_URL=http://localhost:5200 npx electron .",
     "build": "vite build && npx tsc -p tsconfig.electron.json",
@@ -25,6 +26,9 @@
       "dist-electron/**/*",
       "dist/renderer/**/*",
       "src/preload/index.js"
+    ],
+    "asarUnpack": [
+      "node_modules/node-pty/**"
     ],
     "mac": {
       "target": "dmg",

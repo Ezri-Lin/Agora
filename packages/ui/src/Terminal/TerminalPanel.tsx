@@ -216,10 +216,7 @@ function getConsolePalette(colors: ColorPalette): { bg: string; text: string; mu
 const panelStyle = (colors: ColorPalette, height: number): React.CSSProperties => ({
   display: "flex",
   flexDirection: "column",
-  position: "fixed",
-  left: 0,
-  right: 0,
-  bottom: 0,
+  position: "relative",
   height: `clamp(${MIN_HEIGHT}px, ${Math.round(height)}px, 60vh)`,
   borderTop: `1px solid ${colors.border}`,
   background: getConsolePalette(colors).bg,

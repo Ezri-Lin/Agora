@@ -4,7 +4,8 @@ import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { getRoleColor, USER_COLOR } from "../theme/palettes.js";
 import { createRoleMessageStyles } from "./roleMessageStyles.js";
-import { MessageBubble, RoleAvatar, RoleMessageHeader, ThinkingBlock, type RoleMeta } from "./RoleMessage.parts.js";
+import { MessageContent } from "../ChatBubble/MessageContent.js";
+import { ThinkingBlock, type RoleMeta } from "./RoleMessage.parts.js";
 
 interface RoleMessageProps {
   message: CouncilMessage;
@@ -63,11 +64,11 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
       ? (roleMetaMap.get(message.targetRoleId)?.name ?? message.targetRoleId)
       : "Unknown";
     return (
-      <div id={message.id} style={styles.errorRow}>
-        <RoleAvatar meta={{ name: "!", subtitle: "", color: colors.danger }} colors={colors} />
-        <div style={styles.errorContent}>
-          <div style={styles.errorTitle}>{roleName} - {message.errorCode ?? "error"}</div>
-          <div style={styles.errorBody}>{message.errorMessage ?? message.content}</div>
+      <div className="message" id={message.id}>
+        <div className="avatar" style={{ borderColor: colors.danger }}>!</div>
+        <div className="bubble">
+          <div className="meta"><b>{roleName} - {message.errorCode ?? "error"}</b></div>
+          <p>{message.errorMessage ?? message.content}</p>
         </div>
       </div>
     );
@@ -81,37 +82,31 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
   const preview = message.graphSummary || truncate(message.content, 200);
 
   return (
-    <div id={message.id} style={{ ...styles.row, flexDirection: isUser ? "row-reverse" : "row" }}>
-      <RoleAvatar meta={meta} colors={colors} active={streaming} />
-      <div style={styles.content}>
-        <RoleMessageHeader
-          meta={meta}
-          timestamp={message.createdAt ? formatTime(message.createdAt) : undefined}
-          cursor={onToggle ? "pointer" : "default"}
-          styles={styles}
-          onToggle={onToggle}
-        />
+    <div className="message" id={message.id}>
+      <div className={`avatar ${streaming ? "speaking" : ""}`} style={{ borderColor: meta.color }}>
+        {meta.name.charAt(0)}
+      </div>
+      <div className="bubble">
+        <div className="meta">
+          <b>{meta.name}</b>
+          <span>{message.createdAt ? formatTime(message.createdAt) : ""}</span>
+          {streaming && <span>speaking</span>}
+        </div>
+        
         {!expanded && !isUser && (
-          <div style={styles.preview} onClick={onToggle}>
-            {message.graphSummary && <span style={styles.summaryBadge}>Summary</span>}
+          <div style={{ cursor: "pointer", color: colors.textMuted, fontSize: 13 }} onClick={onToggle}>
+            {message.graphSummary && <span style={{ marginRight: 8, background: "#333", padding: "2px 6px", borderRadius: 4 }}>Summary</span>}
             {preview}
-            {onToggle && <span style={styles.expandIndicator}>v</span>}
+            {onToggle && <span style={{ marginLeft: 8 }}>v</span>}
           </div>
         )}
+        
         {expanded && (
-          <div style={styles.bubbleWrapper} onClick={onToggle}>
+          <div onClick={onToggle} style={{ cursor: onToggle ? "pointer" : "default" }}>
             {message.thinking?.trim() && (
               <ThinkingBlock thinking={message.thinking} colors={colors} styles={styles} />
             )}
-            <MessageBubble
-              content={message.content}
-              colors={colors}
-              meta={meta}
-              isUser={isUser}
-              streaming={streaming}
-              styles={styles}
-            />
-            {onToggle && <div style={styles.collapseHint}>^</div>}
+            <MessageContent content={message.content} colors={colors} />
           </div>
         )}
       </div>

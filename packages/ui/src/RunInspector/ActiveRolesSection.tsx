@@ -37,6 +37,7 @@ export const ActiveRolesSection: React.FC<ActiveRolesSectionProps> = ({
           key={role.id}
           roleId={role.id}
           roleName={role.name}
+          description={role.subtitle}
           state={state}
           history={roleHistories?.get(role.id) ?? []}
           onStopTurn={state?.status !== "done" ? () => onStopRole?.(role.id) : undefined}

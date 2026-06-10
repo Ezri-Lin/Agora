@@ -1,0 +1,25 @@
+/* Room title actions */
+.room-title-actions {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+  background: var(--panel2);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+.room-title-actions label {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.room-title-actions label:hover {
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}

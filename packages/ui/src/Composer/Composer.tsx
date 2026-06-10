@@ -38,6 +38,11 @@ interface ComposerProps {
   // Toolbar callbacks
   onOpenRefPicker?: () => void;
   onOpenDispatchGate?: () => void;
+  // Context state
+  workspaceName?: string;
+  roomMode?: "single" | "council";
+  onRoomModeChange?: (mode: "single" | "council") => void;
+  roleCount?: number;
 }
 
 // ─── Default parameters ──────────────────────────────────────────────
@@ -60,6 +65,10 @@ export const Composer: React.FC<ComposerProps> = ({
   onRemovePerspectiveChip,
   onOpenRefPicker,
   onOpenDispatchGate,
+  workspaceName = "Workspace",
+  roomMode = "single",
+  onRoomModeChange,
+  roleCount = 0,
 }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -107,68 +116,56 @@ export const Composer: React.FC<ComposerProps> = ({
   }, [handleSend]);
 
   return (
-    <div style={styles.container}>
-      {/* Chips */}
-      <ChipsRow chips={chips} onRemove={handleRemoveChip} styles={styles} />
+    <div className="composer" style={{ position: "relative" }}>
+      {chips.length > 0 && (
+        <div style={{ padding: "8px 16px 0", borderBottom: "1px solid #383838", background: "#252525" }}>
+          <ChipsRow chips={chips} onRemove={handleRemoveChip} styles={styles} />
+        </div>
+      )}
 
-      {/* Input area */}
-      <div style={styles.inputArea}>
+      <div style={{ position: "relative" }}>
         <textarea
-          style={styles.textarea}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t.sendMessagePlaceholder}
-          rows={1}
+          style={{ width: "100%", height: "70px", resize: "none", border: "0", outline: "none", background: "transparent", color: "#e9e9e3", padding: "14px 50px 14px 16px", font: "inherit", fontSize: "14px" }}
         />
         <button
-          style={{
-            ...styles.sendBtn,
-            ...((!text.trim() || isLoading) ? styles.sendBtnDisabled : {}),
-          }}
+          className="send"
           onClick={handleSend}
           disabled={!text.trim() || isLoading}
           title={isLoading ? t.stop : t.sendMessage}
+          style={{ position: "absolute", right: "12px", bottom: "14px", marginLeft: "auto", cursor: (!text.trim() || isLoading) ? "not-allowed" : "pointer", opacity: (!text.trim() || isLoading) ? 0.5 : 1 }}
         >
-          {isLoading ? "■" : "→"}
+          {isLoading ? "■" : "↑"}
         </button>
       </div>
-
-      {/* Bottom toolbar */}
-      <div style={styles.toolbar}>
-        <button
-          style={{
-            ...styles.toolbarBtn,
-            ...(showAdd ? styles.toolbarBtnActive : {}),
-          }}
-          onClick={() => { setShowAdd((v) => !v); setShowParams(false); setShowSpeakers(false); }}
+      
+      <div className="composer-bottom" style={{ height: "auto", paddingBottom: "12px" }}>
+        <label className="pill dropdown" style={{ cursor: "pointer" }}>
+          Project: {workspaceName} ▾
+        </label>
+        <label className="pill" style={{ cursor: "pointer" }}>
+          Work locally
+        </label>
+        <label 
+          className="pill dropdown" 
+          style={{ cursor: "pointer" }}
+          onClick={() => onRoomModeChange?.(roomMode === "single" ? "council" : "single")}
         >
-          + {t.add}
-        </button>
-        <button
-          style={{
-            ...styles.toolbarBtn,
-            ...(showParams ? styles.toolbarBtnActive : {}),
-          }}
-          onClick={() => { setShowParams((v) => !v); setShowAdd(false); setShowSpeakers(false); }}
-        >
-          {t.parameters}
-        </button>
-        <button
-          style={{
-            ...styles.toolbarBtn,
-            ...(showSpeakers ? styles.toolbarBtnActive : {}),
-          }}
-          onClick={() => { setShowSpeakers((v) => !v); setShowAdd(false); setShowParams(false); }}
-        >
-          {t.speakers}
-        </button>
-        <button
-          style={styles.toolbarBtn}
-          onClick={() => onOpenRefPicker?.()}
-        >
-          {t.documents}
-        </button>
+          {roomMode === "council" ? "多人" : "单人"} ▾
+        </label>
+        {roomMode === "council" && (
+          <label className="pill dropdown" style={{ cursor: "pointer" }} onClick={() => setShowSpeakers((v) => !v)}>
+            Roles: {roleCount > 0 ? `${roleCount} selected` : "Auto"} ▾
+          </label>
+        )}
+        {roomMode === "council" && (
+          <label className="pill dropdown" style={{ cursor: "pointer" }} onClick={() => setShowParams((v) => !v)}>
+            Turn limit: 4 ▾
+          </label>
+        )}
       </div>
 
       {/* Popovers */}

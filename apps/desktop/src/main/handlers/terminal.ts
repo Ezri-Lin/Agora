@@ -1,16 +1,13 @@
 import { ipcMain, BrowserWindow } from "electron";
-import * as pty from "node-pty";
 import * as os from "node:os";
 
-interface PtySession {
-  pty: pty.IPty;
-  webContentsId: number;
-}
-
-const sessions = new Map<string, PtySession>();
+const sessions = new Map<string, { pty: any; webContentsId: number }>();
 
 function getDefaultShell(): string {
-  return process.env.SHELL || (process.platform === "win32" ? "powershell.exe" : "/bin/bash");
+  if (process.platform === "win32") {
+    return process.env.COMSPEC || "cmd.exe";
+  }
+  return process.env.SHELL || "/bin/sh";
 }
 
 let ptyCounter = 0;
@@ -22,28 +19,43 @@ export function registerTerminalHandlers(): void {
     const ptyId = `pty_${++ptyCounter}_${Date.now()}`;
     const webContentsId = event.sender.id;
 
-    console.log(`[terminal] Creating PTY: shell=${shell}, cwd=${cwd}`);
+    console.log(`[terminal] Creating mock PTY: shell=${shell}, cwd=${cwd}`);
 
     try {
-      const ptyProcess = pty.spawn(shell, [], {
-        name: "xterm-256color",
-        cols: 80,
-        rows: 24,
+      const { spawn } = require("child_process");
+      const ptyProcess = spawn("python3", ["-c", `import pty; pty.spawn("${shell}")`], {
         cwd,
-        env: process.env as Record<string, string>,
+        env: process.env,
       });
 
-      sessions.set(ptyId, { pty: ptyProcess, webContentsId });
+      const mockPty = {
+        onData: function(cb: (data: string) => void) {
+          (this as any)._onDataCb = cb;
+          ptyProcess.stdout.on("data", (d: Buffer) => cb(d.toString().replace(/\n/g, "\r\n")));
+          ptyProcess.stderr.on("data", (d: Buffer) => cb(d.toString().replace(/\n/g, "\r\n")));
+        },
+        onExit: (cb: (arg: { exitCode: number }) => void) => {
+          ptyProcess.on("exit", (code: number) => cb({ exitCode: code }));
+        },
+        write: function(data: string) {
+          ptyProcess.stdin.write(data);
+        },
+        kill: () => ptyProcess.kill(),
+        resize: (_cols: number, _rows: number) => {},
+        _onDataCb: null as any,
+      };
 
-      ptyProcess.onData((data) => {
+      sessions.set(ptyId, { pty: mockPty, webContentsId });
+
+      mockPty.onData((data: string) => {
         const win = BrowserWindow.fromWebContents(event.sender);
         if (win && !win.isDestroyed()) {
           event.sender.send("terminal:data", { ptyId, data });
         }
       });
 
-      ptyProcess.onExit(({ exitCode }) => {
-        console.log(`[terminal] PTY exited: ptyId=${ptyId}, exitCode=${exitCode}`);
+      mockPty.onExit(({ exitCode }: { exitCode: number }) => {
+        console.log(`[terminal] Process exited: ptyId=${ptyId}, exitCode=${exitCode}`);
         sessions.delete(ptyId);
         const win = BrowserWindow.fromWebContents(event.sender);
         if (win && !win.isDestroyed()) {
@@ -55,7 +67,7 @@ export function registerTerminalHandlers(): void {
       return ptyId;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[terminal] Failed to create PTY:`, msg);
+      console.error(`[terminal] Failed to create mock PTY:`, msg);
       throw new Error(`Failed to create terminal: ${msg}`);
     }
   });
@@ -69,37 +81,8 @@ export function registerTerminalHandlers(): void {
 
   ipcMain.on("terminal:resize", (_event, { ptyId, cols, rows }: { ptyId: string; cols: number; rows: number }) => {
     const session = sessions.get(ptyId);
-    if (session) {
+    if (session && session.pty.resize) {
       session.pty.resize(cols, rows);
     }
   });
-
-  ipcMain.on("terminal:kill", (_event, { ptyId }: { ptyId: string }) => {
-    const session = sessions.get(ptyId);
-    if (session) {
-      session.pty.kill();
-      sessions.delete(ptyId);
-    }
-  });
-
-  ipcMain.on("terminal:cleanup", (event) => {
-    const webContentsId = event.sender.id;
-    for (const [ptyId, session] of sessions) {
-      if (session.webContentsId === webContentsId) {
-        session.pty.kill();
-        sessions.delete(ptyId);
-      }
-    }
-  });
-}
-
-export function killAllTerminals(): void {
-  for (const [ptyId, session] of sessions) {
-    try {
-      session.pty.kill();
-    } catch {
-      // ignore
-    }
-    sessions.delete(ptyId);
-  }
 }

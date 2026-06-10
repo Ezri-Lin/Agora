@@ -9,6 +9,7 @@ import { RoleHistoryPopover } from "./RoleHistoryPopover.js";
 interface RoleCardItemProps {
   roleId: string;
   roleName: string;
+  description?: string;
   state?: RoleStreamState;
   history: RoleRoundHistory[];
   onStopTurn?: () => void;
@@ -21,6 +22,7 @@ interface RoleCardItemProps {
 export const RoleCardItem: React.FC<RoleCardItemProps> = ({
   roleId,
   roleName,
+  description,
   state,
   history,
   onStopTurn,
@@ -32,6 +34,7 @@ export const RoleCardItem: React.FC<RoleCardItemProps> = ({
   const { t } = useI18n();
   const [showHistory, setShowHistory] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+  const [hovered, setHovered] = useState(false);
   const cardRef = React.useRef<HTMLDivElement>(null);
 
   const isActive = state?.status === "thinking" || state?.status === "streaming";
@@ -48,48 +51,43 @@ export const RoleCardItem: React.FC<RoleCardItemProps> = ({
   const accentColor = getRoleColor(roleId);
 
   return (
-    <div ref={cardRef} style={cardStyle(colors)}>
-      <div style={cardTopRow}>
+    <div
+      ref={cardRef}
+      style={cardStyle(colors)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="role-row" onClick={() => setShowHistory(!showHistory)} style={{ cursor: "pointer" }}>
         {/* Avatar */}
-        <div
-          style={avatarStyle(accentColor, showHistory)}
-          onClick={() => setShowHistory(!showHistory)}
-        >
+        <div className="role-dot" style={{ borderColor: accentColor }}>
           {roleName.charAt(0).toUpperCase()}
         </div>
 
-        {/* Name + status */}
-        <div style={infoCol} onClick={() => setShowHistory(!showHistory)}>
-          <span style={nameStyle(colors)}>{roleName}</span>
-          <span style={statusRowStyle}>
-            {statusLabel && (
-              <span style={statusBadgeStyle(accentColor, isActive)}>{statusLabel}</span>
-            )}
-            {elapsed > 0 && (
-              <span style={elapsedStyle(colors)}>{elapsed}s {t.elapsed}</span>
-            )}
-          </span>
+        {/* Name + description */}
+        <div style={{ minWidth: 0 }}>
+          <b>{roleName}</b>
+          <p>{description}</p>
         </div>
 
         {/* Icon actions */}
         <div style={actionsCol}>
           {isActive && onStopTurn && (
             <div style={iconBtnWrap} onMouseEnter={() => setHoveredBtn("stop")} onMouseLeave={() => setHoveredBtn(null)}>
-              <button style={iconBtnStyle(colors)} onClick={onStopTurn}>⏹</button>
+              <button style={iconBtnStyle(colors)} onClick={(e) => { e.stopPropagation(); onStopTurn(); }}>⏹</button>
               {hoveredBtn === "stop" && <Tooltip text={t.stopTurn} colors={colors} />}
             </div>
           )}
           {onRemove && (
             <div style={iconBtnWrap} onMouseEnter={() => setHoveredBtn("remove")} onMouseLeave={() => setHoveredBtn(null)}>
-              <button style={iconBtnStyle(colors)} onClick={onRemove}>✕</button>
+              <button style={iconBtnStyle(colors)} onClick={(e) => { e.stopPropagation(); onRemove(); }}>✕</button>
               {hoveredBtn === "remove" && <Tooltip text={t.removeFromRoom} colors={colors} />}
             </div>
           )}
         </div>
       </div>
 
-      {/* Summary preview */}
-      {latestSummary && !showHistory && (
+      {/* Summary snippet — shown on hover */}
+      {latestSummary && !showHistory && hovered && (
         <div style={summaryStyle(colors)}>{latestSummary}</div>
       )}
 
@@ -180,11 +178,22 @@ const nameStyle = (colors: ColorPalette): React.CSSProperties => ({
   textOverflow: "ellipsis",
 });
 
+const descStyle = (colors: ColorPalette): React.CSSProperties => ({
+  fontSize: 10,
+  color: colors.textMuted,
+  lineHeight: 1.3,
+  display: "block",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  marginTop: 1,
+});
+
 const statusRowStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 6,
-  marginTop: 1,
+  marginTop: 2,
 };
 
 const statusBadgeStyle = (color: string, pulse: boolean): React.CSSProperties => ({
