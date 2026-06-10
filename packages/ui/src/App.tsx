@@ -1,35 +1,40 @@
-import React, { useCallback, useRef } from "react";
-import type { RoleCard } from "@agora/shared";
-import { getPersonaContract } from "@agora/roles";
+import React, { useCallback, useRef, useState } from "react";
+import type { ScannedDoc } from "./AgoraBridge.js";
 import { AppShell } from "./AppShell/AppShell.js";
+import type { AppView } from "./AppShell/AppShell.types.js";
 import { ContextGraph } from "./ContextGraph/ContextGraph.js";
 import { CouncilRoom } from "./CouncilRoom/CouncilRoom.js";
 import { Composer } from "./Composer/Composer.js";
+import { DocumentSurface } from "./DocumentSurface/DocumentSurface.js";
 import { RunInspector } from "./RunInspector/RunInspector.js";
 import { EmptyState } from "./EmptyState.js";
 import { RefPicker } from "./RefPicker.js";
 import { SettingsModal } from "./Settings/SettingsModal.js";
 import { ReviewPanelHost } from "./ReviewPanels/ReviewPanelHost.js";
+import { WorkspaceGraph } from "./WorkspaceGraph/WorkspaceGraph.js";
+import { WorkspaceHome } from "./WorkspaceHome/WorkspaceHome.js";
 import { errorStyle } from "./appStyles.js";
-import { overlayStyle, panelStyle } from "./CouncilDispatchGate/styles.js";
-import { CouncilDispatchGate, type RoleViewModel } from "./CouncilDispatchGate/CouncilDispatchGate.js";
-import { getDomainLabel } from "./CouncilDispatchGate/roleAvatar.js";
+import { DispatchGateHost } from "./CouncilDispatchGate/DispatchGateHost.js";
 import { I18nProvider } from "./i18n/I18nContext.js";
 import { ThemeProvider } from "./theme/ThemeContext.js";
 import { usePanelState } from "./hooks/usePanelState.js";
 import { useWorkspaceState } from "./hooks/useWorkspaceState.js";
 import { useCouncilState } from "./hooks/useCouncilState.js";
+import { useDocumentState } from "./hooks/useDocumentState.js";
 
 export const App: React.FC = () => {
   const panels = usePanelState();
   const council = useCouncilState();
   const workspace = useWorkspaceState(council.loadWorkspaceData);
+  const documentState = useDocumentState();
+  const [activeView, setActiveView] = useState<AppView>("home");
 
   const jumpFnsRef = useRef<{ scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void } | null>(null);
 
   const handleSelectRoom = useCallback(async (roomId: string) => {
     if (!workspace.workspace) return;
     await council.handleSelectRoom(roomId, workspace.workspace.path);
+    setActiveView("room");
   }, [workspace.workspace, council.handleSelectRoom]);
 
   const handleSend = useCallback(async (text: string) => {
@@ -41,6 +46,22 @@ export const App: React.FC = () => {
     if (!workspace.workspace) return;
     await council.handleDispatchContinue(selectedRoleIds, workspace.workspace, workspace.selectedRefs);
   }, [workspace.workspace, workspace.selectedRefs, council.handleDispatchContinue]);
+
+  const handleNewRoom = useCallback(() => {
+    council.newRoom();
+    setActiveView("room");
+  }, [council.newRoom]);
+
+  const handleOpenDocument = useCallback(async (doc: ScannedDoc) => {
+    if (!workspace.workspace) return;
+    setActiveView("document");
+    await documentState.openDocument(workspace.workspace.path, doc);
+  }, [documentState.openDocument, workspace.workspace]);
+
+  const handleReferenceDocument = useCallback((doc: ScannedDoc) => {
+    workspace.addRef(doc);
+    setActiveView("room");
+  }, [workspace.addRef]);
 
   const handleNodeClick = useCallback((msgId: string) => {
     const el = document.getElementById(msgId);
@@ -72,8 +93,20 @@ export const App: React.FC = () => {
     <ThemeProvider>
     <I18nProvider>
       <AppShell
+      view={activeView}
+      onViewChange={setActiveView}
       workspaceName={workspace.workspace.name}
       onOpenWorkspace={workspace.openWorkspace}
+      home={
+        <WorkspaceHome
+          graph={<WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} />}
+          rooms={council.rooms}
+          docs={workspace.availableDocs}
+          onSelectRoom={handleSelectRoom}
+          onOpenDocument={handleOpenDocument}
+          onNewRoom={handleNewRoom}
+        />
+      }
       contextGraph={
         <ContextGraph
           messages={council.messages}
@@ -100,6 +133,16 @@ export const App: React.FC = () => {
             onRegisterJumpFns={handleRegisterJumpFns}
           />
         </>
+      }
+      document={
+        <DocumentSurface
+          docs={workspace.availableDocs}
+          activeDoc={documentState.activeDoc}
+          content={documentState.content}
+          isLoading={documentState.isLoading}
+          onOpenDocument={handleOpenDocument}
+          onAddReference={handleReferenceDocument}
+        />
       }
       floatingPanel={
         <RunInspector
@@ -153,7 +196,7 @@ export const App: React.FC = () => {
       rooms={council.rooms}
       activeRoomId={council.roomIdRef.current}
       onSelectRoom={handleSelectRoom}
-      onNewRoom={council.newRoom}
+      onNewRoom={handleNewRoom}
       panelVisible={panels.panelVisible}
       onTogglePanel={panels.togglePanel}
       roomMode={council.roomMode}
@@ -179,64 +222,13 @@ export const App: React.FC = () => {
       />
     )}
     {council.dispatchGate && (
-      <div style={overlayStyle} onClick={council.handleDispatchCancel}>
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="选择参与者"
-          style={panelStyle({ surface: "#16213e", border: "#2a3a5c" })}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <CouncilDispatchGate
-            preview={{
-              moderatorSummary: council.dispatchGate.preview.moderatorSummary,
-              defaultSelectedRoleIds: council.dispatchGate.preview.defaultSelectedRoleIds,
-              alternativeRoleIds: council.dispatchGate.preview.alternativeRoleIds,
-            }}
-            roles={(() => {
-              const scores = council.dispatchGate.preview.routingDecision.scores;
-              const reasonMap = new Map<string, string>();
-              for (const s of scores) {
-                if (s.reason) reasonMap.set(s.personaId, s.reason);
-              }
-              for (const e of council.dispatchGate.preview.routingDecision.activeEntrants) {
-                if (e.reason) reasonMap.set(e.roleId, e.reason);
-              }
-              return council.dispatchGate.allRoles.map((r): RoleViewModel => {
-                const contract = getPersonaContract(r.id);
-                return {
-                  id: r.id,
-                  name: r.name,
-                  subtitle: r.subtitle,
-                  domainId: r.domainId,
-                  domainLabel: r.domainId ? getDomainLabel(r.domainId) : undefined,
-                  familyId: r.familyId,
-                  tags: r.tags,
-                  reason: reasonMap.get(r.id),
-                  source: council.dispatchGate!.preview.defaultSelectedRoleIds.includes(r.id)
-                    ? "recommended"
-                    : council.dispatchGate!.preview.alternativeRoleIds.includes(r.id)
-                      ? "alternative"
-                      : undefined,
-                  bio: contract?.mission,
-                  responsibilities: contract
-                    ? [...contract.responsibilities.must, ...contract.responsibilities.should]
-                    : undefined,
-                  strengths: contract?.responsibilities.must,
-                  boundaries: contract
-                    ? [...contract.responsibilities.mustNot, ...contract.boundaries]
-                    : undefined,
-                  decisionRights: contract?.decisionRights.may,
-                };
-              });
-            })()}
-            selectedRoleIds={council.dispatchSelectedRoleIds}
-            onSelectionChange={council.setDispatchSelectedRoleIds}
-            onCancel={council.handleDispatchCancel}
-            onContinue={handleDispatchContinue}
-          />
-        </div>
-      </div>
+      <DispatchGateHost
+        context={council.dispatchGate}
+        selectedRoleIds={council.dispatchSelectedRoleIds}
+        onSelectionChange={council.setDispatchSelectedRoleIds}
+        onCancel={council.handleDispatchCancel}
+        onContinue={handleDispatchContinue}
+      />
     )}
     </I18nProvider>
     </ThemeProvider>

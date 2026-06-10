@@ -72,6 +72,12 @@ export const tagsRowStyle: React.CSSProperties = {
   marginTop: spacing.xxs,
 };
 
+export const titleRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: spacing.sm - 2,
+};
+
 export const tagStyle = (colors: ColorPalette): React.CSSProperties => ({
   fontSize: typography.badge.size,
   padding: `1px ${spacing.sm - 2}px`,

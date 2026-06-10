@@ -4,6 +4,7 @@ import { RoleMessage } from "../RoleMessage/RoleMessage.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
+import { layout, motion, radius, shadow, spacing, typography, zIndex } from "../theme/tokens.js";
 
 interface CouncilRoomProps {
   messages: CouncilMessage[];
@@ -115,35 +116,37 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
   return (
     <div style={styles.container}>
       <div ref={scrollRef} style={styles.messages} onScroll={handleScroll}>
-        {messages.length === 0 && !isLoading && (
-          <div style={styles.empty}>{t.sendToStart}</div>
-        )}
-        {messages.map((msg) => {
-          const isStreaming = streamingRoleId === msg.senderId;
-          const isUser = msg.senderType === "user";
-          // Only user messages always expanded; moderator and role messages are collapsible
-          const alwaysExpand = isUser;
-          const isExpanded = alwaysExpand || expandedIds.has(msg.id);
-          return (
-            <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>
-              <RoleMessage
-                message={msg}
-                roles={roles}
-                streaming={isStreaming}
-                expanded={isExpanded}
-                onToggle={alwaysExpand ? undefined : () => handleToggle(msg.id)}
-              />
+        <div style={styles.messageStack}>
+          {messages.length === 0 && !isLoading && (
+            <div style={styles.empty}>{t.sendToStart}</div>
+          )}
+          {messages.map((msg) => {
+            const isStreaming = streamingRoleId === msg.senderId;
+            const isUser = msg.senderType === "user";
+            // Only user messages always expanded; moderator and role messages are collapsible
+            const alwaysExpand = isUser;
+            const isExpanded = alwaysExpand || expandedIds.has(msg.id);
+            return (
+              <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>
+                <RoleMessage
+                  message={msg}
+                  roles={roles}
+                  streaming={isStreaming}
+                  expanded={isExpanded}
+                  onToggle={alwaysExpand ? undefined : () => handleToggle(msg.id)}
+                />
+              </div>
+            );
+          })}
+          {isLoading && (
+            <div style={styles.loadingRow}>
+              <span style={styles.loadingText}>{loadingStatus || t.rolesAreThinking}</span>
+              {onStop && (
+                <button style={styles.stopBtn} onClick={onStop}>{t.stop}</button>
+              )}
             </div>
-          );
-        })}
-        {isLoading && (
-          <div style={styles.loadingRow}>
-            <span style={styles.loadingText}>{loadingStatus || t.rolesAreThinking}</span>
-            {onStop && (
-              <button style={styles.stopBtn} onClick={onStop}>{t.stop}</button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
       {!isNearBottom && newMsgCount > 0 && (
         <button style={styles.jumpBtn} onClick={jumpToLatest}>
@@ -165,50 +168,59 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
   messages: {
     flex: 1,
     overflowY: "auto",
-    padding: "8px 16px",
+    padding: `${spacing.lg}px ${spacing.xl}px`,
+  },
+  messageStack: {
+    width: "100%",
+    maxWidth: layout.maxChatWidth,
+    margin: "0 auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: spacing.xs,
   },
   empty: {
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: typography.chatBody.size,
     textAlign: "center",
-    padding: 40,
+    padding: spacing.xxxl,
   },
   loadingRow: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    padding: 12,
+    gap: spacing.md,
+    padding: spacing.md,
   },
   loadingText: {
     color: colors.accent,
-    fontSize: 12,
+    fontSize: typography.meta.size,
     fontStyle: "italic",
   },
   stopBtn: {
     background: colors.dangerBg,
     border: `1px solid ${colors.dangerBorder}`,
-    borderRadius: 4,
-    padding: "2px 10px",
-    fontSize: 11,
+    borderRadius: radius.xs,
+    padding: `${spacing.xxs}px ${spacing.md - 2}px`,
+    fontSize: typography.meta.size,
     color: colors.danger,
     cursor: "pointer",
   },
   jumpBtn: {
     position: "absolute",
-    bottom: 16,
+    bottom: spacing.lg,
     left: "50%",
     transform: "translateX(-50%)",
     background: colors.accent,
     color: "#fff",
     border: "none",
-    borderRadius: 20,
-    padding: "6px 16px",
-    fontSize: 12,
+    borderRadius: radius.pill,
+    padding: `${spacing.xs + 2}px ${spacing.lg}px`,
+    fontSize: typography.meta.size,
     fontWeight: 600,
     cursor: "pointer",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-    zIndex: 10,
+    boxShadow: shadow.popover,
+    transition: `transform ${motion.fast}`,
+    zIndex: zIndex.chat,
     whiteSpace: "nowrap",
   },
 });

@@ -2,6 +2,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ColorPalette } from "../theme/palettes.js";
+import { fontFamilies, radius, spacing, typography } from "../theme/tokens.js";
 import { CodeBlock } from "./CodeBlock.js";
 
 interface MessageContentProps {
@@ -27,10 +28,10 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
               style={{
                 background: colors.surface,
                 border: `1px solid ${colors.border}`,
-                borderRadius: 3,
-                padding: "1px 4px",
+                borderRadius: radius.xs,
+                padding: `${spacing.xxs}px ${spacing.xs}px`,
                 fontSize: "0.9em",
-                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                fontFamily: fontFamilies.mono,
               }}
               {...props}
             >
@@ -53,12 +54,12 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
         },
         table({ children, ...props }) {
           return (
-            <div style={{ overflowX: "auto", marginBottom: 8 }}>
+            <div style={{ overflowX: "auto", marginBottom: spacing.sm }}>
               <table
                 style={{
                   borderCollapse: "collapse",
                   width: "100%",
-                  fontSize: 12,
+                  fontSize: typography.meta.size,
                 }}
                 {...props}
               >
@@ -72,9 +73,9 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
             <th
               style={{
                 border: `1px solid ${colors.border}`,
-                padding: "5px 8px",
+                padding: `${spacing.xs + 1}px ${spacing.sm}px`,
                 background: colors.surface,
-                fontWeight: 600,
+                fontWeight: typography.heading.weight,
                 textAlign: "left",
               }}
               {...props}
@@ -88,7 +89,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
             <td
               style={{
                 border: `1px solid ${colors.border}`,
-                padding: "5px 8px",
+                padding: `${spacing.xs + 1}px ${spacing.sm}px`,
               }}
               {...props}
             >
@@ -101,9 +102,9 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
             <blockquote
               style={{
                 borderLeft: `3px solid ${colors.accentDim}`,
-                paddingLeft: 12,
+                paddingLeft: spacing.md,
                 marginLeft: 0,
-                marginBottom: 8,
+                marginBottom: spacing.sm,
                 color: colors.textMuted,
                 fontStyle: "italic",
               }}
@@ -116,7 +117,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
         ul({ children, ...props }) {
           return (
             <ul
-              style={{ paddingLeft: 20, marginBottom: 8 }}
+              style={{ paddingLeft: spacing.xl, marginBottom: spacing.sm }}
               {...props}
             >
               {children}
@@ -126,7 +127,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
         ol({ children, ...props }) {
           return (
             <ol
-              style={{ paddingLeft: 20, marginBottom: 8 }}
+              style={{ paddingLeft: spacing.xl, marginBottom: spacing.sm }}
               {...props}
             >
               {children}
@@ -135,29 +136,29 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
         },
         li({ children, ...props }) {
           return (
-            <li style={{ marginBottom: 2 }} {...props}>
+            <li style={{ marginBottom: spacing.xxs }} {...props}>
               {children}
             </li>
           );
         },
         p({ children, ...props }) {
           return (
-            <p style={{ marginBottom: 6 }} {...props}>
+            <p style={{ marginBottom: spacing.sm - 2 }} {...props}>
               {children}
             </p>
           );
         },
         h1({ children, ...props }) {
-          return <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, marginTop: 12 }} {...props}>{children}</h1>;
+          return <h1 style={{ fontSize: typography.heroTitle.size - 4, fontWeight: typography.heroTitle.weight, marginBottom: spacing.sm, marginTop: spacing.md }} {...props}>{children}</h1>;
         },
         h2({ children, ...props }) {
-          return <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, marginTop: 10 }} {...props}>{children}</h2>;
+          return <h2 style={{ fontSize: typography.heading.size + 2, fontWeight: typography.heading.weight, marginBottom: spacing.sm - 2, marginTop: spacing.md - 2 }} {...props}>{children}</h2>;
         },
         h3({ children, ...props }) {
-          return <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, marginTop: 8 }} {...props}>{children}</h3>;
+          return <h3 style={{ fontSize: typography.heading.size, fontWeight: typography.heading.weight, marginBottom: spacing.xs, marginTop: spacing.sm }} {...props}>{children}</h3>;
         },
         hr({ ...props }) {
-          return <hr style={{ border: "none", borderTop: `1px solid ${colors.border}`, margin: "8px 0" }} {...props} />;
+          return <hr style={{ border: "none", borderTop: `1px solid ${colors.border}`, margin: `${spacing.sm}px 0` }} {...props} />;
         },
         del({ children, ...props }) {
           return <del style={{ color: colors.textMuted }} {...props}>{children}</del>;
@@ -168,7 +169,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors 
               type="checkbox"
               checked={checked}
               readOnly
-              style={{ marginRight: 6 }}
+              style={{ marginRight: spacing.xs + 2 }}
               {...props}
             />
           );

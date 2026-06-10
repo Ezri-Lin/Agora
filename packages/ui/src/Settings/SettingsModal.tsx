@@ -91,7 +91,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={styles.tabList}>
             <button
               style={{ ...styles.tabBtn, ...(tab === "llm" ? styles.tabBtnActive : {}) }}
               onClick={() => setTab("llm")}
@@ -116,35 +116,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
 
         <div style={styles.body}>
         {tab === "roles" && (
-          <CustomRolesTab workspacePath={workspacePath} t={t} styles={{ empty: { color: colors.textMuted, fontSize: 12, textAlign: "center" as const, padding: 20 }}} colors={colors} />
+          <CustomRolesTab workspacePath={workspacePath} t={t} styles={{ empty: styles.customRolesEmpty }} colors={colors} />
         )}
         {tab === "appearance" && (
           <>
             <label style={styles.label}>{t.theme}</label>
-            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <div style={styles.optionGroup}>
               <button
-                style={{ ...styles.saveBtn, opacity: theme === "light" ? 1 : 0.5 }}
+                type="button"
+                aria-pressed={theme === "light"}
+                style={{ ...styles.optionButton, ...(theme === "light" ? styles.optionButtonActive : {}) }}
                 onClick={theme === "dark" ? toggleTheme : undefined}
               >
                 {t.lightMode}
               </button>
               <button
-                style={{ ...styles.saveBtn, opacity: theme === "dark" ? 1 : 0.5 }}
+                type="button"
+                aria-pressed={theme === "dark"}
+                style={{ ...styles.optionButton, ...(theme === "dark" ? styles.optionButtonActive : {}) }}
                 onClick={theme === "light" ? toggleTheme : undefined}
               >
                 {t.darkMode}
               </button>
             </div>
             <label style={styles.label}>{t.language}</label>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={styles.optionGroup}>
               <button
-                style={{ ...styles.saveBtn, opacity: locale === "en" ? 1 : 0.5 }}
+                type="button"
+                aria-pressed={locale === "en"}
+                style={{ ...styles.optionButton, ...(locale === "en" ? styles.optionButtonActive : {}) }}
                 onClick={locale !== "en" ? toggleLocale : undefined}
               >
                 English
               </button>
               <button
-                style={{ ...styles.saveBtn, opacity: locale === "zh" ? 1 : 0.5 }}
+                type="button"
+                aria-pressed={locale === "zh"}
+                style={{ ...styles.optionButton, ...(locale === "zh" ? styles.optionButtonActive : {}) }}
                 onClick={locale !== "zh" ? toggleLocale : undefined}
               >
                 中文

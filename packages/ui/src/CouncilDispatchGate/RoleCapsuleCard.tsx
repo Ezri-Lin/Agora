@@ -13,6 +13,7 @@ import {
   tagStyle,
   reasonStyle,
   infoBtnStyle,
+  titleRowStyle,
 } from "./styles.js";
 
 export interface RoleCapsuleCardProps {
@@ -58,7 +59,7 @@ export const RoleCapsuleCard: React.FC<RoleCapsuleCardProps> = ({
         {avatar.symbol}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={titleRowStyle}>
           <div style={nameStyle(colors)}>{name}</div>
           {domainLabel && (
             <span style={domainBadgeStyle(colors)}>{domainLabel}</span>

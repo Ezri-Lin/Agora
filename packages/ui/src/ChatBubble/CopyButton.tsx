@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import type { ColorPalette } from "../theme/palettes.js";
+import { motion, radius, spacing, typography } from "../theme/tokens.js";
 
 interface CopyButtonProps {
   text: string;
@@ -41,19 +42,19 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ text, colors, size = "me
         border: "none",
         cursor: "pointer",
         color: copied ? colors.success : colors.textMuted,
-        fontSize: isSmall ? 10 : 12,
-        padding: isSmall ? "1px 4px" : "2px 6px",
-        borderRadius: 3,
+        fontSize: isSmall ? typography.badge.size : typography.meta.size,
+        padding: isSmall ? `${spacing.xxs - 1}px ${spacing.xs}px` : `${spacing.xxs}px ${spacing.xs + 2}px`,
+        borderRadius: radius.xs,
         display: "flex",
         alignItems: "center",
-        gap: 3,
+        gap: spacing.xxs + 1,
         lineHeight: 1,
-        transition: "color 0.15s",
+        transition: `color ${motion.fast}`,
       }}
       title="Copy"
     >
       {copied ? "✓" : "📋"}
-      {!isSmall && <span style={{ fontSize: 10 }}>{copied ? "Copied!" : "Copy"}</span>}
+      {!isSmall && <span style={{ fontSize: typography.badge.size }}>{copied ? "Copied!" : "Copy"}</span>}
     </button>
   );
 };

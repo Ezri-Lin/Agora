@@ -1,12 +1,16 @@
 import React from "react";
-import { layout, radius, spacing, typography, motion, zIndex, shadow } from "../theme/tokens.js";
+import { layout, radius, spacing, typography, motion, zIndex } from "../theme/tokens.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
+import { useNarrowViewport } from "../hooks/useNarrowViewport.js";
+import type { AppView } from "./AppShell.types.js";
 
 interface TitleBarProps {
   workspaceName: string;
   onOpenWorkspace: () => void;
+  view?: AppView;
+  onViewChange?: (view: AppView) => void;
   onOpenSettings?: () => void;
   terminalVisible?: boolean;
   onToggleTerminal?: () => void;
@@ -17,6 +21,8 @@ interface TitleBarProps {
 export const TitleBar: React.FC<TitleBarProps> = ({
   workspaceName,
   onOpenWorkspace,
+  view,
+  onViewChange,
   onOpenSettings,
   terminalVisible,
   onToggleTerminal,
@@ -25,7 +31,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const isNarrow = useNarrowViewport();
+  const styles = createStyles(colors, isNarrow);
   return (
     <header style={styles.bar}>
       <div style={styles.left}>
@@ -33,35 +40,50 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           {workspaceName || t.openWorkspace}
         </button>
       </div>
-      <div style={styles.center} />
+      <nav style={styles.center} aria-label="Primary">
+        {(["home", "room", "document"] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            style={{
+              ...styles.navButton,
+              ...(view === item ? styles.navButtonActive : {}),
+            }}
+            aria-pressed={view === item}
+            onClick={() => onViewChange?.(item)}
+          >
+            {item === "home" ? "Home" : item === "room" ? "Room" : "Document"}
+          </button>
+        ))}
+      </nav>
       <div style={styles.right}>
-        {onTogglePanel && (
+        {view === "room" && onTogglePanel && (
           <button
             style={{
-              ...styles.iconBtn,
-              ...(panelVisible ? styles.iconBtnActive : {}),
+              ...styles.utilityButton,
+              ...(panelVisible ? styles.utilityButtonActive : {}),
             }}
             onClick={onTogglePanel}
             title={panelVisible ? t.collapse : t.expand}
           >
-            {panelVisible ? "☑" : "☐"}
+            Inspector
           </button>
         )}
-        {onToggleTerminal && (
+        {!isNarrow && onToggleTerminal && (
           <button
             style={{
-              ...styles.iconBtn,
-              ...(terminalVisible ? styles.iconBtnActive : {}),
+              ...styles.utilityButton,
+              ...(terminalVisible ? styles.utilityButtonActive : {}),
             }}
             onClick={onToggleTerminal}
             title={t.terminal}
           >
-            {">_"}
+            Activity
           </button>
         )}
         {onOpenSettings && (
-          <button style={styles.iconBtn} onClick={onOpenSettings} title={t.settings}>
-            {"⚙"}
+          <button style={styles.settingsButton} onClick={onOpenSettings}>
+            {t.settings}
           </button>
         )}
       </div>
@@ -69,13 +91,13 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   );
 };
 
-const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
+const createStyles = (colors: ColorPalette, isNarrow: boolean): Record<string, React.CSSProperties> => ({
   bar: {
     height: layout.titleBar,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: `0 ${spacing.md}px`,
+    padding: `0 ${isNarrow ? spacing.sm : spacing.md}px`,
     background: colors.surface,
     borderBottom: `1px solid ${colors.border}`,
     userSelect: "none",
@@ -84,9 +106,29 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
   left: {
     display: "flex",
     alignItems: "center",
-    minWidth: 200,
+    minWidth: isNarrow ? 0 : 200,
+    maxWidth: isNarrow ? 98 : undefined,
   },
-  center: { flex: 1 },
+  center: {
+    flex: 1,
+    display: "flex",
+    justifyContent: "center",
+    gap: isNarrow ? 0 : spacing.xs,
+  },
+  navButton: {
+    border: "none",
+    borderRadius: radius.pill,
+    background: "transparent",
+    color: colors.textMuted,
+    fontSize: typography.meta.size,
+    fontWeight: 800,
+    padding: `${spacing.xs}px ${isNarrow ? spacing.sm : spacing.md}px`,
+    cursor: "pointer",
+  },
+  navButtonActive: {
+    background: colors.surfaceHover,
+    color: colors.text,
+  },
   workspaceBtn: {
     background: "none",
     border: `1px solid ${colors.border}`,
@@ -96,7 +138,7 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     fontSize: typography.meta.size,
     cursor: "pointer",
     transition: `border-color ${motion.fast}`,
-    maxWidth: 280,
+    maxWidth: isNarrow ? 88 : 280,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -106,22 +148,29 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     alignItems: "center",
     gap: spacing.xxs,
   },
-  iconBtn: {
-    background: "none",
+  utilityButton: {
     border: `1px solid transparent`,
-    borderRadius: radius.xs,
-    width: 28,
-    height: 28,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: radius.sm,
+    background: "transparent",
     color: colors.textMuted,
     fontSize: typography.meta.size,
+    fontWeight: 800,
+    padding: `${spacing.xs}px ${isNarrow ? spacing.sm : spacing.md}px`,
     cursor: "pointer",
-    transition: `all ${motion.fast}`,
   },
-  iconBtnActive: {
-    borderColor: colors.accent,
-    color: colors.accent,
+  utilityButtonActive: {
+    borderColor: colors.border,
+    background: colors.surfaceHover,
+    color: colors.text,
+  },
+  settingsButton: {
+    border: `1px solid ${colors.border}`,
+    borderRadius: radius.sm,
+    background: "transparent",
+    color: colors.text,
+    fontSize: typography.meta.size,
+    fontWeight: 800,
+    padding: `${spacing.xs}px ${isNarrow ? spacing.sm : spacing.md}px`,
+    cursor: "pointer",
   },
 });

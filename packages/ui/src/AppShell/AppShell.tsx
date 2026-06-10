@@ -8,6 +8,7 @@ import type { ColorPalette } from "../theme/palettes.js";
 import { RoomModeTabs } from "../RoomMode/RoomModeTabs.js";
 import { TerminalPanel } from "../Terminal/TerminalPanel.js";
 import { createAppShellStyles } from "./AppShell.styles.js";
+import type { AppView } from "./AppShell.types.js";
 
 interface RoomEntry {
   id: string;
@@ -16,10 +17,14 @@ interface RoomEntry {
 }
 
 interface AppShellProps {
+  view?: AppView;
+  onViewChange?: (view: AppView) => void;
   workspaceName: string;
   onOpenWorkspace: () => void;
+  home?: React.ReactNode;
   contextGraph: React.ReactNode;
   main: React.ReactNode;
+  document?: React.ReactNode;
   floatingPanel?: React.ReactNode;
   composer: React.ReactNode;
   onAddRef?: () => void;
@@ -38,10 +43,14 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
+  view = "room",
+  onViewChange,
   workspaceName,
   onOpenWorkspace,
+  home,
   contextGraph,
   main,
+  document,
   floatingPanel,
   composer,
   onAddRef,
@@ -84,12 +93,25 @@ export const AppShell: React.FC<AppShellProps> = ({
       <TitleBar
         workspaceName={workspaceName}
         onOpenWorkspace={onOpenWorkspace}
+        view={view}
+        onViewChange={onViewChange}
         onOpenSettings={onOpenSettings}
         terminalVisible={terminalVisible}
         onToggleTerminal={onToggleTerminal}
         panelVisible={panelVisible}
         onTogglePanel={onTogglePanel}
       />
+      {view === "home" && (
+        <div style={styles.surfaceSlot}>
+          {home}
+        </div>
+      )}
+      {view === "document" && (
+        <div style={styles.surfaceSlot}>
+          {document}
+        </div>
+      )}
+      {view === "room" && (
       <div style={styles.mainLayout}>
         <div style={leftRailStyle}>
           <div style={styles.leftHeader}>
@@ -147,6 +169,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

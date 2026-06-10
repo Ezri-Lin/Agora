@@ -16,6 +16,11 @@ export const createAppShellStyles = (
     display: "flex",
     overflow: "hidden",
   },
+  surfaceSlot: {
+    flex: 1,
+    minHeight: 0,
+    overflow: "hidden",
+  },
   leftRail: {
     width: layout.miniGraph,
     flexShrink: 0,
@@ -23,12 +28,14 @@ export const createAppShellStyles = (
     display: "flex",
     flexDirection: "column",
     borderRight: `1px solid ${colors.border}`,
+    background: colors.surface,
   },
   roomList: {
     display: "flex",
     flexDirection: "column",
     borderBottom: `1px solid ${colors.border}`,
     maxHeight: 200,
+    background: colors.surface,
   },
   roomListHeader: {
     display: "flex",
@@ -83,7 +90,7 @@ export const createAppShellStyles = (
     whiteSpace: "nowrap" as const,
   },
   roomItemActive: {
-    background: `${colors.accent}11`,
+    background: colors.surfaceHover,
     color: colors.accent,
   },
   chatRegion: {

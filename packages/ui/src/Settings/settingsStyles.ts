@@ -1,11 +1,11 @@
 import type { ColorPalette } from "../theme/palettes.js";
-import { radius, spacing, typography, zIndex } from "../theme/tokens.js";
+import { radius, shadow, spacing, typography, zIndex } from "../theme/tokens.js";
 
 export const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.4)",
+    background: colors.overlay,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -14,11 +14,12 @@ export const createStyles = (colors: ColorPalette): Record<string, React.CSSProp
   panel: {
     background: colors.surface,
     border: `1px solid ${colors.border}`,
-    borderRadius: radius.md,
-    width: 440,
+    borderRadius: radius.lg,
+    width: 520,
     maxHeight: "80vh",
     display: "flex",
     flexDirection: "column",
+    boxShadow: shadow.popover,
   },
   header: {
     display: "flex",
@@ -37,6 +38,10 @@ export const createStyles = (colors: ColorPalette): Record<string, React.CSSProp
     cursor: "pointer",
     fontSize: typography.chatBody.size,
   },
+  tabList: {
+    display: "flex",
+    gap: spacing.md,
+  },
   tabBtn: {
     background: "none",
     border: "none",
@@ -45,7 +50,7 @@ export const createStyles = (colors: ColorPalette): Record<string, React.CSSProp
     fontSize: typography.meta.size,
     fontWeight: 700,
     cursor: "pointer",
-    padding: "2px 0",
+    padding: `${spacing.xxs}px 0`,
   },
   tabBtnActive: {
     color: colors.accent,
@@ -57,6 +62,35 @@ export const createStyles = (colors: ColorPalette): Record<string, React.CSSProp
     display: "flex",
     flexDirection: "column",
     gap: spacing.sm,
+  },
+  customRolesEmpty: {
+    color: colors.textMuted,
+    fontSize: typography.meta.size,
+    textAlign: "center" as const,
+    padding: spacing.xl,
+  },
+  optionGroup: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  optionButton: {
+    border: `1px solid ${colors.border}`,
+    borderRadius: radius.sm,
+    background: colors.bg,
+    color: colors.textMuted,
+    padding: `${spacing.sm}px ${spacing.md}px`,
+    fontSize: typography.chatBody.size,
+    fontWeight: 700,
+    cursor: "pointer",
+    textAlign: "left" as const,
+  },
+  optionButtonActive: {
+    borderColor: colors.accent,
+    background: colors.surface,
+    color: colors.text,
+    boxShadow: shadow.card,
   },
   loading: {
     padding: spacing.xxxl,

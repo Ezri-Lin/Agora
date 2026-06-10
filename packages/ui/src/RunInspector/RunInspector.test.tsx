@@ -27,6 +27,15 @@ const roles: RoleCard[] = [
     systemPrompt: "Facilitate",
     tags: ["core"],
   },
+  {
+    id: "skeptic_critic",
+    name: "Skeptic Critic",
+    nameCN: "怀疑者",
+    subtitle: "Challenges assumptions",
+    type: "critic",
+    systemPrompt: "Challenge assumptions",
+    tags: ["risk"],
+  },
 ];
 
 const messages: CouncilMessage[] = [
@@ -111,5 +120,32 @@ describe("RunInspector", () => {
   it("returns null when hidden", () => {
     const { container } = renderWithProviders(<RunInspector {...makeProps({ visible: false })} />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it("shows suggested roles in the merged inspector after a completed run", async () => {
+    const onAddPerspective = vi.fn();
+    renderWithProviders(
+      <RunInspector
+        {...makeProps({
+          panelPhase: "completed",
+          activeRoleIdsFromMessages: new Set(["moderator"]),
+          suggestedPerspectives: [
+            {
+              familyId: "skeptic_critic",
+              familyName: "Critic",
+              domainId: "risk",
+              score: 0.82,
+              reason: "Challenge risk assumptions before writing.",
+            },
+          ],
+          onAddPerspective,
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Suggested perspectives")).toBeInTheDocument();
+    expect(screen.getByText("Skeptic Critic")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Add Skeptic Critic" }));
+    expect(onAddPerspective).toHaveBeenCalledWith("skeptic_critic", "Skeptic Critic");
   });
 });

@@ -95,3 +95,20 @@ export const bioCloseBtnStyle = (colors: ColorPalette): React.CSSProperties => (
   justifyContent: "center",
   flexShrink: 0,
 });
+
+export const bioBodyTextStyle = (colors: ColorPalette): React.CSSProperties => ({
+  fontSize: typography.meta.size,
+  color: colors.text,
+  lineHeight: 1.6,
+  marginBottom: spacing.md,
+});
+
+export const bioSectionStyle: React.CSSProperties = {
+  marginBottom: spacing.sm + 2,
+};
+
+export const bioEmptyStyle = (colors: ColorPalette): React.CSSProperties => ({
+  fontSize: typography.meta.size,
+  color: colors.textMuted,
+  opacity: 0.6,
+});

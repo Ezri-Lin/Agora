@@ -1,5 +1,6 @@
 import React from "react";
 import type { ColorPalette } from "../theme/palettes.js";
+import { motion, radius, spacing, typography } from "../theme/tokens.js";
 
 interface TerminalToggleProps {
   visible: boolean;
@@ -23,13 +24,13 @@ export const TerminalToggle: React.FC<TerminalToggleProps> = ({ visible, onToggl
 const btnStyle = (colors: ColorPalette, active: boolean): React.CSSProperties => ({
   background: active ? colors.surface : "none",
   border: `1px solid ${active ? colors.accent : colors.border}`,
-  borderRadius: 4,
-  padding: "3px 10px",
+  borderRadius: radius.xs,
+  padding: `${spacing.xs - 1}px ${spacing.md - 2}px`,
   color: active ? colors.accent : colors.textMuted,
-  fontSize: 11,
+  fontSize: typography.meta.size,
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
-  gap: 4,
-  transition: "color 0.15s, border-color 0.15s",
+  gap: spacing.xs,
+  transition: `color ${motion.fast}, border-color ${motion.fast}`,
 });

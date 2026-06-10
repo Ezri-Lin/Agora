@@ -14,6 +14,9 @@ import {
   bioSectionListStyle,
   bioReasonStyle,
   bioCloseBtnStyle,
+  bioBodyTextStyle,
+  bioSectionStyle,
+  bioEmptyStyle,
 } from "./styles.js";
 
 export interface RoleBioPopoverProps {
@@ -64,14 +67,14 @@ export const RoleBioPopover: React.FC<RoleBioPopoverProps> = ({
 
       {/* Bio */}
       {view.bio && (
-        <div style={{ fontSize: 12, color: colors.text, lineHeight: 1.6, marginBottom: 12 }}>
+        <div style={bioBodyTextStyle(colors)}>
           {view.bio}
         </div>
       )}
 
       {/* Sections */}
       {view.sections.map((section) => (
-        <div key={section.label} style={{ marginBottom: 10 }}>
+        <div key={section.label} style={bioSectionStyle}>
           <div style={bioSectionLabelStyle(colors)}>{section.label}</div>
           <ul style={bioSectionListStyle(colors)}>
             {section.items.map((item, i) => (
@@ -83,7 +86,7 @@ export const RoleBioPopover: React.FC<RoleBioPopoverProps> = ({
 
       {/* Fallback */}
       {!view.hasContent && (
-        <div style={{ fontSize: 12, color: colors.textMuted, opacity: 0.6 }}>
+        <div style={bioEmptyStyle(colors)}>
           暂无详细信息
         </div>
       )}

@@ -1,24 +1,26 @@
 import type { ColorPalette } from "../../theme/palettes.js";
 import { blur, radius, shadow, spacing, typography, zIndex } from "../../theme/tokens.js";
 
-export const overlayStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: zIndex.modal,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: spacing.xxl,
-  background: "rgba(0,0,0,0.3)",
-  backdropFilter: blur.frosted,
-  WebkitBackdropFilter: blur.frosted,
-};
-
-export function panelStyle(opts: { surface: string; border: string }): React.CSSProperties {
+export function overlayStyle(colors: ColorPalette): React.CSSProperties {
   return {
-    background: opts.surface,
+    position: "fixed",
+    inset: 0,
+    zIndex: zIndex.modal,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xxl,
+    background: colors.overlay,
+    backdropFilter: blur.frosted,
+    WebkitBackdropFilter: blur.frosted,
+  };
+}
+
+export function panelStyle(colors: ColorPalette): React.CSSProperties {
+  return {
+    background: colors.surface,
     borderRadius: radius.lg,
-    border: `1px solid ${opts.border}`,
+    border: `1px solid ${colors.border}`,
     maxWidth: 820,
     width: "100%",
     maxHeight: "80vh",

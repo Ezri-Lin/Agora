@@ -4,7 +4,18 @@ import { MemoryCandidateReviewPanel } from "../MemoryReview/MemoryCandidateRevie
 import { SessionSummaryPanel } from "../SessionSummary/SessionSummaryPanel.js";
 import type { SessionSummaryViewModel } from "../SessionSummary/types.js";
 import { useTheme } from "../theme/ThemeContext.js";
-import { radius, shadow, shadowDark, spacing, typography, zIndex } from "../theme/tokens.js";
+import {
+  agoraDarkColors,
+  agoraLightColors,
+  blur,
+  blurDark,
+  radius,
+  shadow,
+  shadowDark,
+  spacing,
+  typography,
+  zIndex,
+} from "../theme/tokens.js";
 import type { ColorPalette } from "../theme/palettes.js";
 
 export interface ReviewPanelHostProps {
@@ -131,7 +142,12 @@ function frameStyle(colors: ColorPalette, offset: number): React.CSSProperties {
     marginTop: offset === 0 ? 0 : spacing.md,
     pointerEvents: "auto",
     borderRadius: radius.lg,
+    border: `1px solid ${dark ? agoraDarkColors.borderSubtle : agoraLightColors.borderSubtle}`,
+    background: dark ? agoraDarkColors.surfaceFrostedStrong : agoraLightColors.surfaceFrostedStrong,
     boxShadow: dark ? shadowDark.popover : shadow.popover,
+    backdropFilter: dark ? blurDark.frosted : blur.frosted,
+    WebkitBackdropFilter: dark ? blurDark.frosted : blur.frosted,
+    overflow: "hidden",
   };
 }
 

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { MessageContent } from "../ChatBubble/MessageContent.js";
 import { CopyButton } from "../ChatBubble/CopyButton.js";
 import type { ColorPalette } from "../theme/palettes.js";
+import { motion, radius, spacing } from "../theme/tokens.js";
 import {
   avatarStyle,
   processDotStyle,
@@ -122,17 +123,17 @@ const PulsingDots: React.FC<{ color: string }> = ({ color }) => {
     return () => clearInterval(id);
   }, []);
   return (
-    <span style={{ display: "inline-flex", gap: 3, marginLeft: 4, verticalAlign: "middle" }}>
+    <span style={{ display: "inline-flex", gap: spacing.xxs + 1, marginLeft: spacing.xs, verticalAlign: "middle" }}>
       {[0, 1, 2].map((index) => (
         <span
           key={index}
           style={{
-            width: 5,
-            height: 5,
-            borderRadius: "50%",
+            width: spacing.xs + 1,
+            height: spacing.xs + 1,
+            borderRadius: radius.pill,
             background: color,
             opacity: tick === index ? 1 : 0.3,
-            transition: "opacity 120ms ease",
+            transition: `opacity ${motion.fast}`,
           }}
         />
       ))}
