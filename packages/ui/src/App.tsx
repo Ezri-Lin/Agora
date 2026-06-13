@@ -280,10 +280,12 @@ export const App: React.FC = () => {
       onRenameRoom={handleRenameRoom}
       onOpenContextGraph={() => setActiveView("contextGraph")}
       scrollToBottomBtn={!isNearBottom ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "4px 0", flexShrink: 0 }}>
+        <div style={{ display: "flex", justifyContent: "center", position: "relative", height: 0, zIndex: 10 }}>
           <button
             onClick={() => jumpFnsRef.current?.scrollToBottom()}
             style={{
+              position: "absolute",
+              bottom: 8,
               background: "var(--panel)",
               border: "1px solid var(--line)",
               borderRadius: "50%",
@@ -295,7 +297,6 @@ export const App: React.FC = () => {
               cursor: "pointer",
               color: "var(--muted)",
               boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-              position: "relative",
             }}
             title="Scroll to bottom"
           >
