@@ -331,6 +331,7 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
         content: visibleContent,
         thinking: result.thinking,
         graphSummary,
+        toolCalls: result.toolCalls,
         status: "ok",
         createdAt: new Date().toISOString(),
       };

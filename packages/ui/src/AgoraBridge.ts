@@ -91,13 +91,13 @@ export interface AgoraBridge {
     chat(params: {
       messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
       config: { provider: string; model: string; apiKeyEnv?: string; baseUrl?: string };
-    }): Promise<{ content: string; thinking?: string }>;
+    }): Promise<{ content: string; thinking?: string; toolCalls?: Array<{ id: string; name: string; args: Record<string, any> }> }>;
     chatStream(params: {
       messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
       config: { provider: string; model: string; apiKeyEnv?: string; baseUrl?: string };
     }): Promise<{ streamId: string }>;
     onChunk(callback: (data: { streamId: string; delta?: string; thinkingDelta?: string }) => void): () => void;
-    onDone(callback: (data: { streamId: string; fullContent: string; fullThinking?: string }) => void): () => void;
+    onDone(callback: (data: { streamId: string; fullContent: string; fullThinking?: string; toolCalls?: Array<{ id: string; name: string; args: Record<string, any> }> }) => void): () => void;
     onStreamError(callback: (data: { streamId: string; error: string }) => void): () => void;
   };
   customRoles: {

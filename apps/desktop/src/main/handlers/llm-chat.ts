@@ -65,9 +65,25 @@ export function registerLLMChatHandlers(): void {
       const data = (await res.json()) as any;
       const content = data.choices?.[0]?.message?.content ?? "";
       const thinking = data.choices?.[0]?.message?.reasoning_content ?? "";
-      if (!content) throw new Error("empty_response: API returned no content");
+      const rawToolCalls = data.choices?.[0]?.message?.tool_calls;
+
+      // Parse tool calls if present
+      const toolCalls = rawToolCalls?.map((tc: any) => ({
+        id: tc.id,
+        name: tc.function?.name ?? "unknown",
+        args: parseToolCallArgs(tc.function?.arguments),
+      }));
+
+      if (!content && (!toolCalls || toolCalls.length === 0)) {
+        throw new Error("empty_response: API returned no content");
+      }
+
       auditLog("llm:chat", { detail: `${config.provider}/${config.model}`, ok: true });
-      return { content, thinking: thinking || undefined };
+      return {
+        content,
+        thinking: thinking || undefined,
+        toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+      };
     } catch (err: any) {
       auditLog("llm:chat", { detail: `${config.provider}/${config.model}`, ok: false, error: err.message });
       if (err.name === "AbortError") throw new Error("timeout: Request timed out after 60s");
@@ -186,4 +202,12 @@ export function registerLLMChatHandlers(): void {
 
     return { streamId };
   });
+}
+
+function parseToolCallArgs(raw: string): Record<string, any> {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { raw };
+  }
 }

@@ -1,4 +1,4 @@
-import type { RoleCallInput, RoleCallResult, RoleCard, CouncilMessage, LLMConfig, ProviderErrorCode } from "@agora/shared";
+import type { RoleCallInput, RoleCallResult, RoleCard, CouncilMessage, LLMConfig, ProviderErrorCode, ToolCall } from "@agora/shared";
 import type { LLMProvider } from "@agora/kernel";
 import { getBridge } from "./AgoraBridge.js";
 
@@ -51,7 +51,12 @@ export class IPCProvider implements LLMProvider {
     ];
 
     const result = await bridge.llm.chat({ messages, config: this.config });
-    return { roleId: input.role.id, content: result.content, thinking: result.thinking };
+    return {
+      roleId: input.role.id,
+      content: result.content,
+      thinking: result.thinking,
+      toolCalls: result.toolCalls as ToolCall[] | undefined,
+    };
   }
 
   async callRoleStream(
@@ -89,6 +94,7 @@ export class IPCProvider implements LLMProvider {
           roleId: input.role.id,
           content: data.fullContent || fullContent,
           thinking: data.fullThinking || fullThinking || undefined,
+          toolCalls: data.toolCalls as ToolCall[] | undefined,
         });
       });
 

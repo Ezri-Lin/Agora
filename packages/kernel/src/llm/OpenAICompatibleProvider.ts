@@ -1,4 +1,4 @@
-import type { RoleCallInput, RoleCallResult, RoleCard, CouncilMessage } from "@agora/shared";
+import type { RoleCallInput, RoleCallResult, RoleCard, CouncilMessage, ToolCall } from "@agora/shared";
 import type { LLMConfig } from "@agora/shared";
 import type { LLMProvider } from "../types/index.js";
 
@@ -7,8 +7,18 @@ interface ChatMessage {
   content: string;
 }
 
+interface OpenAIToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+
 interface ChatCompletionChoice {
-  message: { content: string; reasoning_content?: string };
+  message: {
+    content: string;
+    reasoning_content?: string;
+    tool_calls?: OpenAIToolCall[];
+  };
 }
 
 interface ChatCompletionResponse {
@@ -42,7 +52,12 @@ export class OpenAICompatibleProvider implements LLMProvider {
     ];
 
     const result = await this.chat(messages);
-    return { roleId: input.role.id, content: result.content, thinking: result.thinking };
+    return {
+      roleId: input.role.id,
+      content: result.content,
+      thinking: result.thinking,
+      toolCalls: result.toolCalls,
+    };
   }
 
   async callModerator(params: {
@@ -77,7 +92,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     return { content: result.content, thinking: result.thinking };
   }
 
-  private async chat(messages: ChatMessage[]): Promise<{ content: string; thinking?: string }> {
+  private async chat(messages: ChatMessage[]): Promise<{ content: string; thinking?: string; toolCalls?: ToolCall[] }> {
     const body = {
       model: this.model,
       messages,
@@ -109,10 +124,24 @@ export class OpenAICompatibleProvider implements LLMProvider {
         }
         const content = data.choices?.[0]?.message?.content;
         const thinking = data.choices?.[0]?.message?.reasoning_content;
-        if (!content) {
+        const rawToolCalls = data.choices?.[0]?.message?.tool_calls;
+
+        // Parse tool calls if present
+        const toolCalls = rawToolCalls?.map((tc) => ({
+          id: tc.id,
+          name: tc.function.name,
+          args: parseToolCallArgs(tc.function.arguments),
+        }));
+
+        if (!content && (!toolCalls || toolCalls.length === 0)) {
           throw new Error("empty_response: LLM returned empty content");
         }
-        return { content, thinking: thinking || undefined };
+
+        return {
+          content: content ?? "",
+          thinking: thinking || undefined,
+          toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+        };
       }
 
       const text = await res.text().catch(() => "");
@@ -124,6 +153,14 @@ export class OpenAICompatibleProvider implements LLMProvider {
     }
 
     throw lastError ?? new Error("unknown: LLM request failed after retries");
+  }
+}
+
+function parseToolCallArgs(raw: string): Record<string, any> {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { raw };
   }
 }
 
