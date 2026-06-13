@@ -84,6 +84,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [projectExpanded, setProjectExpanded] = useState(true);
 
   // Navigation history (browser-style back/forward)
   const [history, setHistory] = useState<AppView[]>(["room"]);
@@ -270,30 +271,52 @@ export const AppShell: React.FC<AppShellProps> = ({
               )}
             </div>
             <div className="projects">
-              <div className="side-label">PROJECTS</div>
-              <div className="project-block">
-                {rooms.map((r) => (
-                  <a
-                    key={r.id}
-                    className={`room-link ${r.id === activeRoomId ? "active" : ""}`}
-                    onClick={() => onSelectRoom?.(r.id)}
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
-                  >
-                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled Room"}</span>
-                    {r.id === activeRoomId && isLoading && (
-                      <SpiralLoader size={12} style={{ opacity: 0.5, color: "var(--text-muted)" }} />
-                    )}
-                    {onDeleteRoom && (
-                      <span
-                        className="room-delete"
-                        onClick={e => { e.stopPropagation(); onDeleteRoom(r.id); }}
-                        style={{ opacity: 0, cursor: "pointer", fontSize: 11, color: "var(--muted)", padding: "0 2px", flexShrink: 0 }}
-                        title="Delete room"
-                      >✕</span>
-                    )}
-                  </a>
-                ))}
+              <div className="side-label">Projects</div>
+              {/* Project entry: folder icon + name, click to expand/collapse */}
+              <div
+                onClick={() => setProjectExpanded(!projectExpanded)}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "var(--text)", userSelect: "none" }}
+                title={workspacePath || workspaceName}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0, opacity: 0.7 }}>
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{workspaceName}</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 12, height: 12, flexShrink: 0, opacity: 0.4, transition: "transform 150ms", transform: projectExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                  <path d="M9 18l6-6-6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
+              {/* Rooms under this project */}
+              {projectExpanded && (
+                <div>
+                  {rooms.map((r) => (
+                    <a
+                      key={r.id}
+                      className={`room-link ${r.id === activeRoomId ? "active" : ""}`}
+                      onClick={() => onSelectRoom?.(r.id)}
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px 4px 24px", fontSize: 13, color: r.id === activeRoomId ? "var(--text)" : "var(--text-muted)", borderRadius: 4, margin: "0 8px", cursor: "pointer" }}
+                    >
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled Room"}</span>
+                      {r.id === activeRoomId && isLoading && (
+                        <SpiralLoader size={12} style={{ opacity: 0.5, color: "var(--text-muted)" }} />
+                      )}
+                      {onDeleteRoom && (
+                        <span
+                          className="room-delete"
+                          onClick={e => { e.stopPropagation(); onDeleteRoom(r.id); }}
+                          style={{ opacity: 0, cursor: "pointer", fontSize: 11, color: "var(--muted)", padding: "0 2px", flexShrink: 0 }}
+                          title="Delete room"
+                        >✕</span>
+                      )}
+                    </a>
+                  ))}
+                  {rooms.length === 0 && (
+                    <div style={{ padding: "4px 16px", fontSize: 12, color: "var(--faint)", fontStyle: "italic" }}>
+                      No chats yet
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="side-bottom" style={{ marginTop: "auto" }}>
               <div className="settings" onClick={onOpenSettings} style={{ cursor: "pointer" }}>

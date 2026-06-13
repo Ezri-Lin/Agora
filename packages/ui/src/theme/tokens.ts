@@ -151,16 +151,17 @@ export const opacity = {
 export const graph = {
   gridDotSize: 1,
   gridDotSpacing: 22,
-  edgeWidth: 1,
-  edgeWidthMajor: 1.6,
-  edgeWidthRole: 1.15,
-  edgeWidthSemantic: 1.7,
-  nodeCoreRadius: 25,
-  nodeRoomRadius: 18,
-  nodeDocRadius: 14,
-  nodeClaimRadius: 12,
-  nodeRoleRadius: 13,
-  nodeMicroRadius: 5.2,
+  edgeWidth: 0.4,
+  edgeWidthMajor: 0.6,
+  edgeWidthRole: 0.5,
+  edgeWidthSemantic: 0.7,
+  // Obsidian-scale: small dots, not large circles
+  nodeCoreRadius: 8,
+  nodeRoomRadius: 6,
+  nodeDocRadius: 5,
+  nodeClaimRadius: 4,
+  nodeRoleRadius: 5,
+  nodeMicroRadius: 3,
   // Color tokens (light values; dark consumers should read from agoraDarkColors)
   nodeFill:          "#ffffff",
   nodeStroke:        "#111111",
@@ -170,6 +171,11 @@ export const graph = {
   edgeChallenge:     "#c2413d",
   nodeSelectedRing:  "#111111",
   nodeThinkingRing:  "#111111",
+  // Obsidian-style node colors
+  nodeGreen:         "#6abf69",
+  nodeYellow:        "#e5c07b",
+  nodeGray:          "#6b6b76",
+  nodeMuted:         "#4a4a52",
 } as const;
 
 // ─── Console tokens (always dark, independent of theme) ───────────────

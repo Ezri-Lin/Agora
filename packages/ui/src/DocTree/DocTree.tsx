@@ -110,7 +110,6 @@ const TreeNodeView: React.FC<{
           onClick={() => onToggle(node.path)}
         >
           <span style={chevronStyle(colors)}>{isExpanded ? "▾" : "▸"}</span>
-          <span style={folderIconStyle}>📁</span>
           <span style={folderNameStyle(colors)}>{node.name}</span>
         </button>
         {isExpanded && (
@@ -139,7 +138,6 @@ const TreeNodeView: React.FC<{
       style={fileRowStyle(colors, depth, !!isActive)}
       onClick={() => node.doc && onSelect(node.doc)}
     >
-      <span style={extBadgeStyle(colors, node.doc?.ext)}>{node.doc?.ext.replace(".", "") || "doc"}</span>
       <span style={fileNameStyle(colors, !!isActive)}>{node.name}</span>
     </button>
   );
@@ -164,7 +162,7 @@ const folderRowStyle = (colors: ColorPalette, depth: number): React.CSSPropertie
   gap: spacing.xs,
   width: "100%",
   padding: `${spacing.xxs + 1}px ${spacing.sm}px`,
-  paddingLeft: spacing.sm + depth * 16,
+  paddingLeft: spacing.sm + depth * 8,
   border: "none",
   borderRadius: 0,
   background: "transparent",
@@ -180,7 +178,7 @@ const fileRowStyle = (colors: ColorPalette, depth: number, active: boolean): Rea
   gap: spacing.sm,
   width: "100%",
   padding: `${spacing.xs}px ${spacing.sm}px`,
-  paddingLeft: spacing.sm + depth * 16 + 18,
+  paddingLeft: spacing.sm + depth * 8 + 12,
   border: `1px solid ${active ? colors.border : "transparent"}`,
   borderRadius: radius.xs,
   background: active ? colors.surfaceHover : "transparent",

@@ -217,7 +217,7 @@ const panelStyle = (colors: ColorPalette, height: number): React.CSSProperties =
   display: "flex",
   flexDirection: "column",
   position: "relative",
-  height: `clamp(${MIN_HEIGHT}px, ${Math.round(height)}px, 60vh)`,
+  height: "100%",
   borderTop: `1px solid ${colors.border}`,
   background: getConsolePalette(colors).bg,
   color: getConsolePalette(colors).text,
@@ -226,14 +226,7 @@ const panelStyle = (colors: ColorPalette, height: number): React.CSSProperties =
 });
 
 const dragHandleStyle = (colors: ColorPalette): React.CSSProperties => ({
-  height: spacing.xs,
-  cursor: "row-resize",
-  background: "transparent",
-  flexShrink: 0,
-  position: "relative",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  display: "none"
 });
 
 const headerStyle = (colors: ColorPalette): React.CSSProperties => ({

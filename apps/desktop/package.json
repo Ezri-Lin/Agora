@@ -32,15 +32,15 @@
     ],
     "mac": {
       "target": "dmg",
-      "icon": null
+      "icon": "build/icon.icns"
     },
     "win": {
       "target": "nsis",
-      "icon": null
+      "icon": "build/icon.png"
     },
     "linux": {
       "target": "AppImage",
-      "icon": null
+      "icon": "build/icon.png"
     }
   },
   "dependencies": {

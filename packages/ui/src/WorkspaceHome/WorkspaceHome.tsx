@@ -23,7 +23,7 @@ export const WorkspaceHome: React.FC<WorkspaceHomeProps> = ({
   composer,
 }) => {
   return (
-    <section className="screen home-screen" style={{ display: "block", position: "relative", width: "100%", height: "100%" }}>
+    <section className="screen home-screen">
       <div className="graph-field">
         <div className="graph-controls">
           <h3>Graph display</h3>
@@ -33,12 +33,9 @@ export const WorkspaceHome: React.FC<WorkspaceHomeProps> = ({
           <div className="layer-row"><span>Claims / memory</span><span className="switch"></span></div>
           <div className="layer-row"><span>Density</span><span className="pill">Clean ▾</span></div>
         </div>
-        <div style={{ position: "absolute", inset: 0 }}>
-          {graph}
-        </div>
+        {graph}
       </div>
       <div className="home-composer">
-        <h1>What should we build?</h1>
         {composer}
       </div>
     </section>

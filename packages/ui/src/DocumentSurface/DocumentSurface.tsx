@@ -55,7 +55,7 @@ export const DocumentSurface: React.FC<DocumentSurfaceProps> = ({
   }, [docs, onOpenDocument]);
 
   return (
-    <aside className="docs-sidecar" style={{ display: "grid", position: "relative" }} role="region" aria-label="Document Surface">
+    <aside className="docs-sidecar" style={{ display: "grid", position: "relative", width: "100%", height: "100%" }} role="region" aria-label="Document Surface">
       <div className="doc-head">
         <b>Project files</b>
         <div className="doc-tabs">

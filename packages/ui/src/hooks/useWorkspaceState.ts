@@ -23,16 +23,19 @@ export interface WorkspaceState {
   toggleRefPicker: () => void;
   closeRefPicker: () => void;
   clearContextDebug: () => void;
+  isLoading: boolean;
 }
 
 export function useWorkspaceState(
   onWorkspaceLoaded?: (path: string) => void,
 ): WorkspaceState {
   const [workspace, setWorkspace] = useState<{ path: string; name: string } | null>(null);
+  const [recentWorkspaces, setRecentWorkspaces] = useState<string[]>([]);
   const [availableDocs, setAvailableDocs] = useState<ScannedDoc[]>([]);
   const [selectedRefs, setSelectedRefs] = useState<WorkspaceRef[]>([]);
   const [showRefPicker, setShowRefPicker] = useState(false);
   const [contextDebug, setContextDebug] = useState<ContextDebug | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Auto-load most recent workspace on mount
   useEffect(() => {
@@ -40,17 +43,28 @@ export function useWorkspaceState(
     if (!bridge) return;
     bridge.getLLMConfig(); // still load config
     bridge.workspace.getRecent().then(async (recent) => {
-      if (recent.length === 0) return;
+      setRecentWorkspaces(recent);
+      if (recent.length === 0) {
+        console.log("[useWorkspaceState] No recent workspaces");
+        setIsLoading(false);
+        return;
+      }
       const last = recent[0]!;
+      console.log("[useWorkspaceState] Loading workspace:", last.path);
       try {
         const ws = await bridge.workspace.init(last.path);
         setWorkspace(ws);
         const docs = await bridge.workspace.listDocs(last.path);
+        console.log("[useWorkspaceState] Found", docs.length, "docs:", docs.slice(0, 5).map(d => d.name));
         setAvailableDocs(docs);
         onWorkspaceLoaded?.(last.path);
-      } catch {
-        // Workspace may have been deleted — ignore
+      } catch (err) {
+        console.error("[useWorkspaceState] Failed to load workspace:", err);
+      } finally {
+        setIsLoading(false);
       }
+    }).catch(() => {
+      setIsLoading(false);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -102,6 +116,7 @@ export function useWorkspaceState(
 
   return {
     workspace,
+    recentWorkspaces,
     availableDocs,
     selectedRefs,
     showRefPicker,
@@ -113,5 +128,6 @@ export function useWorkspaceState(
     toggleRefPicker,
     closeRefPicker,
     clearContextDebug,
+    isLoading,
   };
 }

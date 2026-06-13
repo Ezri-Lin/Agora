@@ -10,6 +10,7 @@ function createWindow(): void {
     minWidth: 960,
     minHeight: 600,
     title: "Agora",
+    titleBarStyle: "hiddenInset",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

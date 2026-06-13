@@ -44,10 +44,11 @@ export const App: React.FC = () => {
 
   const handleSend = useCallback(async (text: string, params: { roomMode: string; maxRoles: number; autoInvite: boolean }, targetedRoles?: any[]) => {
     council.setRoomMode(params.roomMode as any);
-    await (council.handleSend as any)(text, workspace.workspace, workspace.selectedRefs, targetedRoles, {
+    setActiveView("room");
+    await council.handleSend(text, workspace.workspace!, workspace.selectedRefs, targetedRoles, {
       maxRoles: params.maxRoles,
       autoInvite: params.autoInvite,
-    });
+    }, params.roomMode as any);
   }, [workspace.workspace, workspace.selectedRefs, council.handleSend, council.setRoomMode]);
 
   const handleDispatchContinue = useCallback(async (selectedRoleIds: string[]) => {
@@ -188,12 +189,9 @@ export const App: React.FC = () => {
             <div className="layer-row"><span>Density</span><span className="pill">Clean ▾</span></div>
           </div>
           <div style={{ position: "absolute", inset: 0 }}>
-            <ContextGraph
-              messages={council.messages}
-              selectedRefs={workspace.selectedRefs}
-              roles={council.allRoles}
-              roomId={council.roomIdRef.current}
-              onNodeClick={handleNodeClick}
+            <WorkspaceGraph
+              docs={workspace.availableDocs}
+              rooms={council.rooms}
             />
           </div>
         </div>

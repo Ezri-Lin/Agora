@@ -57,9 +57,14 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content, colors,
           return (
             <a
               href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: colors.accent, textDecoration: "underline" }}
+              onClick={(e) => {
+                e.preventDefault();
+                // Open external URLs via Electron shell or fallback
+                if (href && (href.startsWith("http://") || href.startsWith("https://"))) {
+                  window.open(href);
+                }
+              }}
+              style={{ color: colors.accent, textDecoration: "underline", cursor: "pointer" }}
               {...props}
             >
               {children}

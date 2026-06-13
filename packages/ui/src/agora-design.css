@@ -514,24 +514,21 @@ html, body {
 
 .home-screen {
   background: var(--graph-bg);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- Graph Field (Home) --- */
 
 .graph-field {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--graph-bg);
 }
 
-.graph-field:after,
-.room-graph-pane:after {
-  content: "";
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, .018), transparent 68%);
-  pointer-events: none;
+.graph-field canvas {
+  background: var(--graph-bg) !important;
 }
 
 .graph-svg {
@@ -634,39 +631,31 @@ html, body {
 
 .home-composer {
   position: absolute;
+  bottom: 24px;
   left: 50%;
-  bottom: 72px;
   transform: translateX(-50%);
   width: min(720px, 74%);
   z-index: 8;
 }
 
-.home-composer h1 {
-  text-align: center;
-  font-size: 24px;
-  font-weight: 520;
-  margin: 0 0 24px;
-  color: var(--ink);
-}
-
 /* --- Composer --- */
 
 .composer {
-  background: var(--panel-solid);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: none;
   border-radius: 16px;
-  box-shadow: 0 14px 44px rgba(0, 0, 0, .28);
   text-align: left;
 }
 
 .composer textarea {
   width: 100%;
   resize: none;
-  border: 0;
+  border: 1px solid var(--line);
   outline: 0;
-  background: var(--panel-solid);
+  background: transparent;
   color: var(--text);
   padding: 14px 16px;
+  border-radius: 12px;
   font: inherit;
   font-size: 14px;
 }

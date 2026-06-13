@@ -4,6 +4,7 @@ import { useI18n } from "./i18n/I18nContext.js";
 import { useTheme } from "./theme/ThemeContext.js";
 import type { ColorPalette } from "./theme/palettes.js";
 import { brandGlow, radius, shadow, spacing, typography } from "./theme/tokens.js";
+import logoUrl from "./assets/logo.png";
 
 interface EmptyStateProps {
   onOpen: () => void;
@@ -23,7 +24,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onOpen, onOpenRecent }) 
   return (
     <div style={styles.root}>
       <div style={styles.card}>
-        <div style={styles.logo} role="img" aria-label="Agora logo">A</div>
+        <img src={logoUrl} alt="Agora logo" style={styles.logo} />
         <h1 style={styles.title}>{t.appTitle}</h1>
         <p style={styles.subtitle}>{t.appSubtitle}</p>
         <button style={styles.btn} onClick={onOpen}>
@@ -68,15 +69,8 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     width: 64,
     height: 64,
     borderRadius: radius.md,
-    background: colors.accentDim,
-    color: colors.bg,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: typography.heroTitle.weight,
-    fontSize: typography.heroTitle.size,
     margin: `0 auto ${spacing.lg}px`,
-    boxShadow: brandGlow,
+    boxShadow: shadow.card,
   },
   title: {
     fontSize: typography.heroTitle.size,

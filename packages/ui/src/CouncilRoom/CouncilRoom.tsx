@@ -103,13 +103,14 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
     if (nearBottom) setNewMsgCount(0);
   };
 
-  // Check actual scroll position when messages change (e.g. entering a room)
+  // Auto-scroll to bottom when messages change (e.g. entering a room or new messages)
   useEffect(() => {
     requestAnimationFrame(() => {
       const el = scrollRef.current;
       if (!el) return;
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-      setIsNearBottom(nearBottom);
+      // Scroll to bottom on first load or when new messages arrive
+      el.scrollTop = el.scrollHeight;
+      setIsNearBottom(true);
     });
   }, [messages]);
 

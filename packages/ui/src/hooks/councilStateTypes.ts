@@ -73,6 +73,9 @@ export interface CouncilState {
     text: string,
     workspace: { path: string },
     selectedRefs: WorkspaceRef[],
+    targetedRoles?: any[],
+    composerParams?: { maxRoles?: number; autoInvite?: boolean },
+    overrideRoomMode?: RoomMode,
   ) => Promise<void>;
   handleDispatchContinue: (
     selectedRoleIds: string[],

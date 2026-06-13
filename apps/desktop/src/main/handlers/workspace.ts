@@ -6,7 +6,27 @@ import { assertInWorkspace, assertAllowedFileType, isAllowedExtension } from "./
 import { auditLog } from "./audit.js";
 import { assertSenderIsMain } from "./sender.js";
 
-const SCAN_EXTENSIONS = new Set([".md", ".txt", ".json", ".jsonl", ".yaml", ".yml", ".toml"]);
+const SCAN_EXTENSIONS = new Set([
+  // Docs
+  ".md", ".txt", ".rst", ".adoc",
+  // Config
+  ".json", ".jsonl", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
+  // Code
+  ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
+  ".py", ".pyi", ".pyx",
+  ".rs", ".go", ".java", ".kt", ".kts",
+  ".rb", ".php",
+  ".c", ".cpp", ".h", ".hpp", ".cc",
+  ".swift", ".m", ".mm",
+  ".sh", ".bash", ".zsh", ".fish",
+  ".sql", ".graphql", ".gql",
+  // Web
+  ".html", ".htm", ".css", ".scss", ".less", ".svg",
+  // Data
+  ".csv", ".tsv", ".xml",
+  // Build
+  ".lock", ".gradle", ".cmake", ".makefile",
+]);
 
 // --- Recent Workspaces ---
 

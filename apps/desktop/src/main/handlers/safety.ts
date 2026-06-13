@@ -1,7 +1,27 @@
 import { resolve, extname } from "node:path";
 
 // File types Agora is allowed to read/write
-const ALLOWED_EXTENSIONS = new Set([".md", ".txt", ".json", ".jsonl", ".yaml", ".yml", ".toml"]);
+const ALLOWED_EXTENSIONS = new Set([
+  // Docs
+  ".md", ".txt", ".rst", ".adoc",
+  // Config
+  ".json", ".jsonl", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
+  // Code
+  ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
+  ".py", ".pyi", ".pyx",
+  ".rs", ".go", ".java", ".kt", ".kts",
+  ".rb", ".php",
+  ".c", ".cpp", ".h", ".hpp", ".cc",
+  ".swift", ".m", ".mm",
+  ".sh", ".bash", ".zsh", ".fish",
+  ".sql", ".graphql", ".gql",
+  // Web
+  ".html", ".htm", ".css", ".scss", ".less", ".svg",
+  // Data
+  ".csv", ".tsv", ".xml",
+  // Build
+  ".lock", ".gradle", ".cmake", ".makefile",
+]);
 
 // Room ID format: alphanumeric, dash, underscore only
 const ROOM_ID_RE = /^[a-zA-Z0-9_-]+$/;
