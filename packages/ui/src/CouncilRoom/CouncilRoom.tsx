@@ -133,7 +133,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
   }, [streamingRoleId, messages, isNearBottom]);
 
   return (
-    <div className="thread" ref={scrollRef} onScroll={handleScroll}>
+    <div className="thread" ref={scrollRef} onScroll={handleScroll} style={{ flex: 1 }}>
       <div className="thread-inner">
         {messages.length === 0 && !isLoading && (
           <div style={styles.empty}>{t.sendToStart}</div>
