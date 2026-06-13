@@ -77,7 +77,8 @@ html, body {
 
 .app-window {
   width: 100vw;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   background: var(--bg);
   overflow: hidden;
   display: flex;
@@ -638,7 +639,6 @@ html, body {
 
 .composer textarea {
   width: 100%;
-  height: 70px;
   resize: none;
   border: 0;
   outline: 0;
@@ -925,7 +925,6 @@ html, body {
 }
 
 .chat-composer-wrap .composer textarea {
-  height: 58px;
 }
 
 /* --- Inspector --- */
@@ -1295,8 +1294,11 @@ html, body {
   position: relative;
   z-index: 10;
 }
-.resize-handle:hover, .resize-handle[data-resize-handle-state="drag"] {
-  background-color: transparent;
+.resize-handle:hover,
+.resize-handle:active,
+.resize-handle[data-separator="active"],
+.resize-handle[data-separator="focus"] {
+  background-color: var(--accent);
 }
 
 .resize-handle-h {
@@ -1307,8 +1309,11 @@ html, body {
   position: relative;
   z-index: 10;
 }
-.resize-handle-h:hover, .resize-handle-h[data-resize-handle-state="drag"] {
-  background-color: transparent;
+.resize-handle-h:hover,
+.resize-handle-h:active,
+.resize-handle-h[data-separator="active"],
+.resize-handle-h[data-separator="focus"] {
+  background-color: var(--accent);
 }
 
 /* --- Scrollbars --- */
