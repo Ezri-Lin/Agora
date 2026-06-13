@@ -37,6 +37,7 @@ interface AppShellProps {
   isLoading?: boolean;
   onDeleteRoom?: (roomId: string) => void;
   onRenameRoom?: (roomId: string, title: string) => void;
+  onOpenContextGraph?: () => void;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -45,6 +46,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   workspaceName,
   onOpenWorkspace,
   home,
+  contextGraph,
   main,
   document,
   floatingPanel,
@@ -62,11 +64,69 @@ export const AppShell: React.FC<AppShellProps> = ({
   isLoading,
   onDeleteRoom,
   onRenameRoom,
+  onOpenContextGraph,
 }) => {
   const isDocsVisible = view === "document";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+
+  // Navigation history (browser-style back/forward)
+  const [history, setHistory] = useState<AppView[]>(["room"]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const historyIndexRef = useRef(0);
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < history.length - 1;
+
+  const navigateTo = useCallback((target: AppView) => {
+    if (target === view) return;
+    isInternalNavRef.current = true;
+    setHistory(prev => {
+      const truncated = prev.slice(0, historyIndexRef.current + 1);
+      const next = [...truncated, target];
+      historyIndexRef.current = next.length - 1;
+      setHistoryIndex(next.length - 1);
+      return next;
+    });
+    onViewChange?.(target);
+  }, [view, onViewChange]);
+
+  const goBack = useCallback(() => {
+    if (!canGoBack) return;
+    const newIndex = historyIndex - 1;
+    isInternalNavRef.current = true;
+    historyIndexRef.current = newIndex;
+    setHistoryIndex(newIndex);
+    onViewChange?.(history[newIndex]);
+  }, [canGoBack, historyIndex, history, onViewChange]);
+
+  const goForward = useCallback(() => {
+    if (!canGoForward) return;
+    const newIndex = historyIndex + 1;
+    isInternalNavRef.current = true;
+    historyIndexRef.current = newIndex;
+    setHistoryIndex(newIndex);
+    onViewChange?.(history[newIndex]);
+  }, [canGoForward, historyIndex, history, onViewChange]);
+
+  // Track external view changes (from App.tsx) in history
+  const isInternalNavRef = useRef(false);
+  const prevViewRef = useRef(view);
+  useEffect(() => {
+    if (view === prevViewRef.current) return;
+    prevViewRef.current = view;
+    if (isInternalNavRef.current) {
+      isInternalNavRef.current = false;
+      return;
+    }
+    setHistory(prev => {
+      const truncated = prev.slice(0, historyIndexRef.current + 1);
+      const next = [...truncated, view];
+      historyIndexRef.current = next.length - 1;
+      setHistoryIndex(next.length - 1);
+      return next;
+    });
+  }, [view]);
 
   // Panel refs for imperative collapse/expand
   const sidebarRef = usePanelRef();
@@ -141,20 +201,24 @@ export const AppShell: React.FC<AppShellProps> = ({
           className="sidebar-panel"
           style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}
         >
-          <header className="sidebar-topbar" style={{ display: "flex", alignItems: "center", height: "40px", paddingLeft: "80px", paddingRight: "8px", gap: "4px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
-            {/* Back button */}
-            {(view === "room" || view === "document") && (
-              <label className="tool" title="Back to Home" onClick={() => onViewChange?.("home")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any }}>
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-              </label>
-            )}
-            {/* Collapse button */}
+          <header className="sidebar-topbar" style={{ display: "flex", alignItems: "center", height: "40px", paddingLeft: "80px", paddingRight: "8px", gap: "2px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
+            {/* Collapse */}
             <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 <line x1="9" y1="3" x2="9" y2="21" />
+              </svg>
+            </label>
+            {/* Back */}
+            <label className="tool" title="Back" onClick={goBack} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoBack ? "pointer" : "default", color: canGoBack ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any, opacity: canGoBack ? 1 : 0.4 }}>
+              <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </label>
+            {/* Forward */}
+            <label className="tool" title="Forward" onClick={goForward} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoForward ? "pointer" : "default", color: canGoForward ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any, opacity: canGoForward ? 1 : 0.4 }}>
+              <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             </label>
           </header>
@@ -175,6 +239,19 @@ export const AppShell: React.FC<AppShellProps> = ({
                 </svg>
                 Search
               </div>
+              {onOpenContextGraph && (
+                <div className="side-action" onClick={onOpenContextGraph}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <circle cx="5" cy="6" r="2" />
+                    <circle cx="19" cy="6" r="2" />
+                    <circle cx="5" cy="18" r="2" />
+                    <circle cx="19" cy="18" r="2" />
+                    <path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3" />
+                  </svg>
+                  Context Graph
+                </div>
+              )}
             </div>
             <div className="projects">
               <div className="side-label">PROJECTS</div>
@@ -231,13 +308,16 @@ export const AppShell: React.FC<AppShellProps> = ({
                         <line x1="9" y1="3" x2="9" y2="21" />
                       </svg>
                     </label>
-                    {(view === "room" || view === "document") && (
-                      <label className="tool" title="Back to Home" onClick={() => onViewChange?.("home")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
-                        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                          <path d="M19 12H5M12 19l-7-7 7-7"/>
-                        </svg>
-                      </label>
-                    )}
+                    <label className="tool" title="Back" onClick={goBack} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoBack ? "pointer" : "default", color: canGoBack ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoBack ? 1 : 0.4 }}>
+                      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                      </svg>
+                    </label>
+                    <label className="tool" title="Forward" onClick={goForward} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoForward ? "pointer" : "default", color: canGoForward ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoForward ? 1 : 0.4 }}>
+                      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                      </svg>
+                    </label>
                   </>
                 )}
 
@@ -296,6 +376,12 @@ export const AppShell: React.FC<AppShellProps> = ({
                       </span>
                     </>
                   )}
+                  {view === "contextGraph" && (
+                    <>
+                      <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
+                      <span style={{ opacity: 0.6 }}>Context Graph</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -337,6 +423,9 @@ export const AppShell: React.FC<AppShellProps> = ({
 
             <section className="workspace" style={{ display: "flex", width: "100%", flex: 1, overflow: "hidden" }}>
               {view === "home" && home}
+              {view === "contextGraph" && (
+                <div style={{ flex: 1, overflow: "hidden" }}>{contextGraph}</div>
+              )}
               {(view === "room" || view === "document") && (
                 <PanelGroup id="agora-docs" orientation="horizontal">
                   {/* Chat Panel */}

@@ -1,1 +1,1 @@
-export type AppView = "home" | "room" | "document";
+export type AppView = "home" | "room" | "document" | "contextGraph";

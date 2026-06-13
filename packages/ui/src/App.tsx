@@ -166,13 +166,25 @@ export const App: React.FC = () => {
         />
       }
       contextGraph={
-        <ContextGraph
-          messages={council.messages}
-          selectedRefs={workspace.selectedRefs}
-          roles={council.allRoles}
-          roomId={council.roomIdRef.current}
-          onNodeClick={handleNodeClick}
-        />
+        <div className="graph-field" style={{ position: "relative", width: "100%", height: "100%" }}>
+          <div className="graph-controls">
+            <h3>Graph display</h3>
+            <div className="layer-row"><span>Documents / backlinks</span><span className="switch on" /></div>
+            <div className="layer-row"><span>Rooms</span><span className="switch" /></div>
+            <div className="layer-row"><span>Role red / green links</span><span className="switch on" /></div>
+            <div className="layer-row"><span>Claims / memory</span><span className="switch" /></div>
+            <div className="layer-row"><span>Density</span><span className="pill">Clean ▾</span></div>
+          </div>
+          <div style={{ position: "absolute", inset: 0 }}>
+            <ContextGraph
+              messages={council.messages}
+              selectedRefs={workspace.selectedRefs}
+              roles={council.allRoles}
+              roomId={council.roomIdRef.current}
+              onNodeClick={handleNodeClick}
+            />
+          </div>
+        </div>
       }
       main={
         <>
@@ -262,6 +274,7 @@ export const App: React.FC = () => {
       onNewRoom={handleNewRoom}
       onDeleteRoom={handleDeleteRoom}
       onRenameRoom={handleRenameRoom}
+      onOpenContextGraph={() => setActiveView("contextGraph")}
       panelVisible={panels.panelVisible}
       onTogglePanel={panels.togglePanel}
       roomMode={council.roomMode}
