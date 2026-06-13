@@ -149,9 +149,12 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
           </div>
         )}
       </div>
-      {!isNearBottom && newMsgCount > 0 && (
-        <button style={styles.jumpBtn} onClick={jumpToLatest}>
-          {t.jumpToLatest} ({newMsgCount})
+      {!isNearBottom && (
+        <button style={styles.jumpBtn} onClick={jumpToLatest} title={t.jumpToLatest}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+          {newMsgCount > 0 && <span style={styles.jumpBadge}>{newMsgCount}</span>}
         </button>
       )}
     </div>
@@ -211,17 +214,34 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     bottom: spacing.lg,
     left: "50%",
     transform: "translateX(-50%)",
-    background: colors.accent,
-    color: "#fff",
-    border: "none",
-    borderRadius: radius.pill,
-    padding: `${spacing.xs + 2}px ${spacing.lg}px`,
-    fontSize: typography.meta.size,
-    fontWeight: 600,
+    background: colors.surface,
+    color: colors.textMuted,
+    border: `1px solid ${colors.border}`,
+    borderRadius: "50%",
+    width: 36,
+    height: 36,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     cursor: "pointer",
     boxShadow: shadow.popover,
     transition: `transform ${motion.fast}`,
     zIndex: zIndex.chat,
-    whiteSpace: "nowrap",
+  },
+  jumpBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    background: colors.accent,
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: 700,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "0 4px",
   },
 });
