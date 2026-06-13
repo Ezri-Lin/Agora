@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { useTheme } from "../theme/ThemeContext.js";
 import { ActiveRolesSection } from "./ActiveRolesSection.js";
 import type { RunInspectorProps } from "./types.js";
@@ -12,8 +12,10 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
   onStopRole,
   onRemoveRole,
   onJumpToMessage,
+  roleHistories,
 }) => {
   const { colors } = useTheme();
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const activeRoleIds = useMemo(() => {
     const ids = new Set(roleStreamStates.keys());
@@ -33,7 +35,7 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
   if (!visible) return null;
 
   return (
-    <aside className="inspector" style={{ display: visible ? "block" : "none" }}>
+    <aside ref={panelRef} className="inspector" style={{ display: visible ? "block" : "none" }}>
       <div className="inspector-head">
         <b>Roles</b>
         <label className="close" onClick={onToggle} style={{ cursor: "pointer" }}>×</label>
@@ -47,6 +49,8 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
           onStopRole={onStopRole}
           onRemoveRole={onRemoveRole}
           onJumpToMessage={onJumpToMessage}
+          roleHistories={roleHistories}
+          panelRef={panelRef}
         />
       </div>
     </aside>

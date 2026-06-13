@@ -39,6 +39,7 @@ interface AppShellProps {
   onDeleteRoom?: (roomId: string) => void;
   onRenameRoom?: (roomId: string, title: string) => void;
   onOpenContextGraph?: () => void;
+  scrollToBottomBtn?: React.ReactNode;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -66,6 +67,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onDeleteRoom,
   onRenameRoom,
   onOpenContextGraph,
+  scrollToBottomBtn,
 }) => {
   const isDocsVisible = view === "document";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -438,6 +440,8 @@ export const AppShell: React.FC<AppShellProps> = ({
                           </div>
 
                           {floatingPanel}
+
+                          {scrollToBottomBtn}
 
                           <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px" }}>
                             {composer}

@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
+import type { RoleRoundHistory } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { getRoleColor } from "../theme/palettes.js";
 import { SpiralLoader } from "../AgentTools/SpiralLoader.js";
+import { RoleHistoryPopover } from "./RoleHistoryPopover.js";
 
 interface RoleCardItemProps {
   roleId: string;
@@ -13,6 +15,8 @@ interface RoleCardItemProps {
   onRemove?: () => void;
   onJumpToMessage?: (messageId: string) => void;
   colors: ColorPalette;
+  history?: RoleRoundHistory[];
+  panelRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export const RoleCardItem: React.FC<RoleCardItemProps> = ({
@@ -24,23 +28,43 @@ export const RoleCardItem: React.FC<RoleCardItemProps> = ({
   onRemove,
   onJumpToMessage,
   colors,
+  history,
+  panelRef,
 }) => {
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const isActive = state?.status === "thinking" || state?.status === "streaming";
   const isDone = state?.status === "done";
   const accentColor = getRoleColor(roleId);
 
+  const handleMouseEnter = () => {
+    if (!history || history.length === 0) return;
+    clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => setShowHistory(true), 300);
+  };
+
+  const handleMouseLeave = () => {
+    clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => setShowHistory(false), 200);
+  };
+
+  const handleClick = () => {
+    if (history && history.length > 0) {
+      setShowHistory((v) => !v);
+    } else if (state?.messageId && onJumpToMessage) {
+      onJumpToMessage(state.messageId);
+    }
+  };
+
   return (
-    <div style={cardStyle(colors)}>
+    <div style={cardStyle(colors)} ref={anchorRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <div
         className="role-row"
-        style={{ cursor: onJumpToMessage ? "pointer" : "default" }}
-        onClick={() => {
-          if (state?.messageId && onJumpToMessage) {
-            onJumpToMessage(state.messageId);
-          }
-        }}
+        style={{ cursor: "pointer" }}
+        onClick={handleClick}
       >
         {/* Avatar */}
         <div className="role-dot" style={{ borderColor: accentColor }}>
@@ -87,6 +111,18 @@ export const RoleCardItem: React.FC<RoleCardItemProps> = ({
           )}
         </div>
       </div>
+      {showHistory && history && history.length > 0 && (
+        <RoleHistoryPopover
+          roleName={roleName}
+          roleId={roleId}
+          history={history}
+          onJumpToMessage={onJumpToMessage}
+          onClose={() => setShowHistory(false)}
+          colors={colors}
+          anchorRef={anchorRef}
+          panelRef={panelRef}
+        />
+      )}
     </div>
   );
 };

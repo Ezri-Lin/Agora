@@ -15,15 +15,22 @@ interface CouncilRoomProps {
   onStop?: () => void;
   streamingRoleId?: string | null;
   /** Called by parent to get jump/highlight functions */
-  onRegisterJumpFns?: (fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void }) => void;
+  onRegisterJumpFns?: (fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void; scrollToBottom: () => void }) => void;
+  /** Called when near-bottom state changes */
+  onNearBottomChange?: (isNearBottom: boolean) => void;
+  /** Called when new message count changes while scrolled up */
+  onNewMsgCountChange?: (count: number) => void;
 }
 
-export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, loadingStatus, onStop, streamingRoleId, onRegisterJumpFns }) => {
+export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, loadingStatus, onStop, streamingRoleId, onRegisterJumpFns, onNearBottomChange, onNewMsgCountChange }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const scrollRef = useRef<HTMLDivElement>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [newMsgCount, setNewMsgCount] = useState(0);
+  const prevCountRef = useRef(0);
 
   // Jump-to-message support
   const scrollToMessage = useCallback((messageId: string) => {
@@ -44,13 +51,20 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
     }, ms);
   }, [colors.accent]);
 
+  const scrollToBottom = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    setNewMsgCount(0);
+    setIsNearBottom(true);
+  }, []);
+
   // Register jump functions with parent
   useEffect(() => {
-    onRegisterJumpFns?.({ scrollToMessage, highlightMessage });
-  }, [onRegisterJumpFns, scrollToMessage, highlightMessage]);
-  const [isNearBottom, setIsNearBottom] = useState(true);
-  const [newMsgCount, setNewMsgCount] = useState(0);
-  const prevCountRef = useRef(0);
+    onRegisterJumpFns?.({ scrollToMessage, highlightMessage, scrollToBottom });
+  }, [onRegisterJumpFns, scrollToMessage, highlightMessage, scrollToBottom]);
+
+  // Notify parent of scroll state changes
+  useEffect(() => { onNearBottomChange?.(isNearBottom); }, [isNearBottom, onNearBottomChange]);
+  useEffect(() => { onNewMsgCountChange?.(newMsgCount); }, [newMsgCount, onNewMsgCountChange]);
 
   // Expansion management: expanded message IDs
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -108,12 +122,6 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
     }
   }, [streamingRoleId, messages, isNearBottom]);
 
-  const jumpToLatest = () => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    setNewMsgCount(0);
-    setIsNearBottom(true);
-  };
-
   return (
     <div className="thread" ref={scrollRef} onScroll={handleScroll}>
       <div className="thread-inner">
@@ -149,14 +157,6 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
           </div>
         )}
       </div>
-      {!isNearBottom && (
-        <button style={styles.jumpBtn} onClick={jumpToLatest} title={t.jumpToLatest}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-          {newMsgCount > 0 && <span style={styles.jumpBadge}>{newMsgCount}</span>}
-        </button>
-      )}
     </div>
   );
 };
