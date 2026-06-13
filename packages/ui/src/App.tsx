@@ -280,48 +280,50 @@ export const App: React.FC = () => {
       onRenameRoom={handleRenameRoom}
       onOpenContextGraph={() => setActiveView("contextGraph")}
       scrollToBottomBtn={!isNearBottom ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "4px 0", position: "relative", zIndex: 5 }}>
-          <button
-            onClick={() => jumpFnsRef.current?.scrollToBottom()}
-            style={{
-              background: "var(--panel)",
-              border: "1px solid var(--line)",
-              borderRadius: "50%",
-              width: 32,
-              height: 32,
+        <button
+          onClick={() => jumpFnsRef.current?.scrollToBottom()}
+          style={{
+            position: "absolute",
+            bottom: 80,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "var(--panel)",
+            border: "1px solid var(--line)",
+            borderRadius: "50%",
+            width: 32,
+            height: 32,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "var(--muted)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            zIndex: 10,
+          }}
+          title="Scroll to bottom"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
+            <path d="M12 5v14M19 12l-7 7-7-7" />
+          </svg>
+          {newMsgCount > 0 && (
+            <span style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              background: "var(--blue)",
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 700,
+              minWidth: 14,
+              height: 14,
+              borderRadius: 7,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              cursor: "pointer",
-              color: "var(--muted)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              position: "relative",
-            }}
-            title="Scroll to bottom"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
-              <path d="M12 5v14M19 12l-7 7-7-7" />
-            </svg>
-            {newMsgCount > 0 && (
-              <span style={{
-                position: "absolute",
-                top: -4,
-                right: -4,
-                background: "var(--blue)",
-                color: "#fff",
-                fontSize: 9,
-                fontWeight: 700,
-                minWidth: 14,
-                height: 14,
-                borderRadius: 7,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0 3px",
-              }}>{newMsgCount}</span>
-            )}
-          </button>
-        </div>
+              padding: "0 3px",
+            }}>{newMsgCount}</span>
+          )}
+        </button>
       ) : undefined}
       panelVisible={panels.panelVisible}
       onTogglePanel={panels.togglePanel}

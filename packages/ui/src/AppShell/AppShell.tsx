@@ -434,7 +434,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                     <PanelGroup id="agora-term" orientation="vertical">
                       {/* Chat Content */}
                       <Panel id="content" defaultSize="75%">
-                        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                        <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
                           {main}
 
                           {floatingPanel}
