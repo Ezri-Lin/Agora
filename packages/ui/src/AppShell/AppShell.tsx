@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { SpiralLoader } from "../AgentTools/SpiralLoader.js";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle, usePanelRef } from "react-resizable-panels";
 import { TerminalPanel } from "../Terminal/TerminalPanel.js";
 import type { AppView } from "./AppShell.types.js";
@@ -265,9 +266,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   >
                     <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled Room"}</span>
                     {r.id === activeRoomId && isLoading && (
-                      <svg style={{ width: 12, height: 12, flexShrink: 0, opacity: 0.5, animation: "spin 1s linear infinite" }} viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="2">
-                        <circle cx="8" cy="8" r="6" strokeDasharray="28" strokeDashoffset="8" strokeLinecap="round" />
-                      </svg>
+                      <SpiralLoader size={12} style={{ opacity: 0.5, color: "var(--text-muted)" }} />
                     )}
                     {onDeleteRoom && (
                       <span
