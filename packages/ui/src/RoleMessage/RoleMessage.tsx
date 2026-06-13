@@ -64,7 +64,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
       ? (roleMetaMap.get(message.targetRoleId)?.name ?? message.targetRoleId)
       : "Unknown";
     return (
-      <div className="message" id={message.id}>
+      <div className={`message ${isUser ? "user-message" : ""}`} id={message.id}>
         <div className="avatar" style={{ borderColor: colors.danger }}>!</div>
         <div className="bubble">
           <div className="meta"><b>{roleName} - {message.errorCode ?? "error"}</b></div>
@@ -81,6 +81,29 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
   };
   const preview = message.graphSummary || truncate(message.content, 200);
 
+  if (isUser) {
+    return (
+      <div className="message user-message" id={message.id}>
+        <div className="avatar" style={{ borderColor: meta.color }}>
+          {meta.name.charAt(0)}
+        </div>
+        <div className="bubble" style={{ background: "var(--accent)", color: "#fff", borderColor: "var(--accent)", borderBottomRightRadius: "4px" }}>
+          {expanded && (
+            <div onClick={onToggle} style={{ cursor: onToggle ? "pointer" : "default" }}>
+              <MessageContent content={message.content} colors={colors} />
+            </div>
+          )}
+          {!expanded && (
+            <div style={{ cursor: "pointer", fontSize: 13 }} onClick={onToggle}>
+              {preview}
+              {onToggle && <span style={{ marginLeft: 8 }}>v</span>}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="message" id={message.id}>
       <div className={`avatar ${streaming ? "speaking" : ""}`} style={{ borderColor: meta.color }}>
@@ -93,7 +116,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
           {streaming && <span>speaking</span>}
         </div>
         
-        {!expanded && !isUser && (
+        {!expanded && (
           <div style={{ cursor: "pointer", color: colors.textMuted, fontSize: 13 }} onClick={onToggle}>
             {message.graphSummary && <span style={{ marginRight: 8, background: "#333", padding: "2px 6px", borderRadius: 4 }}>Summary</span>}
             {preview}

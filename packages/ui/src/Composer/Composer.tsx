@@ -1,17 +1,17 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import getCaretCoordinates from "textarea-caret";
 import { createComposerStyles } from "./composerStyles.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import {
   ChipsRow,
-  AddMenu,
   ParametersPopover,
   SpeakersPopover,
   type ComposerChip,
   type ComposerParameters,
 } from "./Composer.parts.js";
-
-// ─── Legacy types (kept for backward compatibility) ──────────────────
+import { MentionPicker, type MentionItem } from "./MentionPicker.js";
+import { PromptBox } from "./PromptBox.js";
 
 interface SourceRef {
   path: string;
@@ -24,28 +24,27 @@ export interface PendingPerspectiveChip {
   roleName: string;
 }
 
-// ─── Props ───────────────────────────────────────────────────────────
-
 interface ComposerProps {
   onSend: (message: string) => void;
   isLoading: boolean;
-  // References
   references: SourceRef[];
   onRemoveRef: (path: string) => void;
-  // Perspective / role chips
   perspectiveChips?: PendingPerspectiveChip[];
   onRemovePerspectiveChip?: (id: string) => void;
-  // Toolbar callbacks
+  
+  // Available items for Mentions
+  availableDocs?: any[];
+  availableRoles?: any[];
+  onAddRef?: (doc: any) => void;
+  onAddRole?: (role: any) => void;
+
   onOpenRefPicker?: () => void;
   onOpenDispatchGate?: () => void;
-  // Context state
   workspaceName?: string;
   roomMode?: "single" | "council";
   onRoomModeChange?: (mode: "single" | "council") => void;
   roleCount?: number;
 }
-
-// ─── Default parameters ──────────────────────────────────────────────
 
 const DEFAULT_PARAMS: ComposerParameters = {
   discussionMode: "deep",
@@ -54,8 +53,6 @@ const DEFAULT_PARAMS: ComposerParameters = {
   searchPolicy: "auto",
 };
 
-// ─── Component ───────────────────────────────────────────────────────
-
 export const Composer: React.FC<ComposerProps> = ({
   onSend,
   isLoading,
@@ -63,6 +60,10 @@ export const Composer: React.FC<ComposerProps> = ({
   onRemoveRef,
   perspectiveChips,
   onRemovePerspectiveChip,
+  availableDocs = [],
+  availableRoles = [],
+  onAddRef,
+  onAddRole,
   onOpenRefPicker,
   onOpenDispatchGate,
   workspaceName = "Workspace",
@@ -73,32 +74,26 @@ export const Composer: React.FC<ComposerProps> = ({
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createComposerStyles(colors);
+  
   const [text, setText] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showParams, setShowParams] = useState(false);
   const [showSpeakers, setShowSpeakers] = useState(false);
   const [params, setParams] = useState<ComposerParameters>(DEFAULT_PARAMS);
 
-  // Build unified chips array
+  // Mention State
+  const [mentionState, setMentionState] = useState<{ active: boolean; query: string; triggerIdx: number }>({ active: false, query: "", triggerIdx: -1 });
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [caretPos, setCaretPos] = useState({ top: 0, left: 0 });
+
   const chips: ComposerChip[] = [
-    ...(perspectiveChips ?? []).map((c): ComposerChip => ({
-      type: "role" as const,
-      id: c.id,
-      label: c.roleName,
-    })),
-    ...references.map((r): ComposerChip => ({
-      type: "document" as const,
-      id: r.path,
-      title: r.label,
-    })),
+    ...(perspectiveChips ?? []).map((c): ComposerChip => ({ type: "role" as const, id: c.id, label: c.roleName })),
+    ...references.map((r): ComposerChip => ({ type: "document" as const, id: r.path, title: r.label })),
   ];
 
   const handleRemoveChip = useCallback((chip: ComposerChip) => {
-    if (chip.type === "role") {
-      onRemovePerspectiveChip?.(chip.id);
-    } else {
-      onRemoveRef(chip.id);
-    }
+    if (chip.type === "role") onRemovePerspectiveChip?.(chip.id);
+    else onRemoveRef(chip.id);
   }, [onRemovePerspectiveChip, onRemoveRef]);
 
   const handleSend = useCallback(() => {
@@ -106,54 +101,160 @@ export const Composer: React.FC<ComposerProps> = ({
     if (!trimmed || isLoading) return;
     onSend(trimmed);
     setText("");
+    setMentionState({ active: false, query: "", triggerIdx: -1 });
   }, [text, isLoading, onSend]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  // Build mention items
+  const mentionItems = useMemo(() => {
+    const items: MentionItem[] = [];
+    availableDocs.forEach(d => items.push({ id: d.path, type: "document", title: d.name, subtitle: d.ext }));
+    availableRoles.forEach(r => items.push({ id: r.id, type: "role", title: r.name, subtitle: r.description }));
+    
+    if (!mentionState.query) return items;
+    const lowerQ = mentionState.query.toLowerCase();
+    return items.filter(i => i.title.toLowerCase().includes(lowerQ));
+  }, [availableDocs, availableRoles, mentionState.query]);
+
+  // Update caret pos
+  const updateCaret = useCallback(() => {
+    if (textareaRef.current) {
+      const caret = getCaretCoordinates(textareaRef.current, textareaRef.current.selectionEnd);
+      setCaretPos({ top: caret.top, left: caret.left + 44 }); // offset for padding
     }
-  }, [handleSend]);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const cursor = e.target.selectionStart;
+    setText(val);
+
+    // Detect @
+    if (!mentionState.active) {
+      const lastChar = val[cursor - 1];
+      if (lastChar === "@") {
+        setMentionState({ active: true, query: "", triggerIdx: cursor - 1 });
+        setMentionIndex(0);
+        updateCaret();
+      }
+    } else {
+      if (cursor <= mentionState.triggerIdx) {
+        setMentionState({ active: false, query: "", triggerIdx: -1 });
+      } else {
+        const query = val.slice(mentionState.triggerIdx + 1, cursor);
+        // If there's a space, cancel mention (unless we want to support spaces in search)
+        if (query.includes(" ")) {
+          setMentionState({ active: false, query: "", triggerIdx: -1 });
+        } else {
+          setMentionState(prev => ({ ...prev, query }));
+          setMentionIndex(0);
+          updateCaret();
+        }
+      }
+    }
+  };
+
+  const insertMention = (item: MentionItem) => {
+    if (item.type === "document") {
+      const doc = availableDocs.find(d => d.path === item.id);
+      if (doc && onAddRef) onAddRef(doc);
+    } else {
+      const role = availableRoles.find(r => r.id === item.id);
+      if (role && onAddRole) onAddRole(role);
+    }
+
+    // Remove @query from text
+    const before = text.slice(0, mentionState.triggerIdx);
+    const after = text.slice(textareaRef.current?.selectionEnd || mentionState.triggerIdx + mentionState.query.length + 1);
+    setText(before + after);
+    setMentionState({ active: false, query: "", triggerIdx: -1 });
+    
+    setTimeout(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(before.length, before.length);
+    }, 10);
+  };
+
+  const handleAddClick = () => {
+    if (mentionState.active) {
+      setMentionState({ active: false, query: "", triggerIdx: -1 });
+    } else {
+      setMentionState({ active: true, query: "", triggerIdx: text.length });
+      setMentionIndex(0);
+      updateCaret();
+      textareaRef.current?.focus();
+    }
+  };
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionState.active) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMentionIndex(prev => (prev < mentionItems.length - 1 ? prev + 1 : prev));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMentionIndex(prev => (prev > 0 ? prev - 1 : 0));
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (mentionItems[mentionIndex]) {
+          insertMention(mentionItems[mentionIndex]);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        setMentionState({ active: false, query: "", triggerIdx: -1 });
+        return;
+      }
+    } else {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    }
+  }, [mentionState.active, mentionItems, mentionIndex, handleSend]);
 
   return (
-    <div className="composer" style={{ position: "relative" }}>
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "8px", maxWidth: "860px", margin: "0 auto", width: "100%" }}>
       {chips.length > 0 && (
-        <div style={{ padding: "8px 16px 0", borderBottom: "1px solid #383838", background: "#252525" }}>
+        <div style={{ padding: "0 8px" }}>
           <ChipsRow chips={chips} onRemove={handleRemoveChip} styles={styles} />
         </div>
       )}
 
-      <div style={{ position: "relative" }}>
-        <textarea
+      <div style={{ position: "relative", display: "flex", alignItems: "center", width: "100%" }}>
+        <PromptBox
+          ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onSend={handleSend}
           placeholder={t.sendMessagePlaceholder}
-          style={{ width: "100%", height: "70px", resize: "none", border: "0", outline: "none", background: "transparent", color: "#e9e9e3", padding: "14px 50px 14px 16px", font: "inherit", fontSize: "14px" }}
+          style={{ width: "100%" }}
         />
-        <button
-          className="send"
-          onClick={handleSend}
-          disabled={!text.trim() || isLoading}
-          title={isLoading ? t.stop : t.sendMessage}
-          style={{ position: "absolute", right: "12px", bottom: "14px", marginLeft: "auto", cursor: (!text.trim() || isLoading) ? "not-allowed" : "pointer", opacity: (!text.trim() || isLoading) ? 0.5 : 1 }}
-        >
-          {isLoading ? "■" : "↑"}
-        </button>
+
+        <MentionPicker
+          visible={mentionState.active}
+          position={caretPos}
+          query={mentionState.query}
+          items={mentionItems}
+          selectedIndex={mentionIndex}
+          onSelect={insertMention}
+          onClose={() => setMentionState({ active: false, query: "", triggerIdx: -1 })}
+          colors={colors}
+        />
       </div>
       
-      <div className="composer-bottom" style={{ height: "auto", paddingBottom: "12px" }}>
+      <div className="composer-bottom" style={{ display: "flex", gap: "6px", flexWrap: "wrap", padding: "0 8px" }}>
         <label className="pill dropdown" style={{ cursor: "pointer" }}>
           Project: {workspaceName} ▾
         </label>
         <label className="pill" style={{ cursor: "pointer" }}>
           Work locally
         </label>
-        <label 
-          className="pill dropdown" 
-          style={{ cursor: "pointer" }}
-          onClick={() => onRoomModeChange?.(roomMode === "single" ? "council" : "single")}
-        >
+        <label className="pill dropdown" style={{ cursor: "pointer" }} onClick={() => onRoomModeChange?.(roomMode === "single" ? "council" : "single")}>
           {roomMode === "council" ? "多人" : "单人"} ▾
         </label>
         {roomMode === "council" && (
@@ -168,33 +269,8 @@ export const Composer: React.FC<ComposerProps> = ({
         )}
       </div>
 
-      {/* Popovers */}
-      <AddMenu
-        visible={showAdd}
-        onClose={() => setShowAdd(false)}
-        onAddDocument={() => onOpenRefPicker?.()}
-        onAddRole={() => onOpenDispatchGate?.()}
-        t={t}
-        styles={styles}
-        colors={colors}
-      />
-      <ParametersPopover
-        visible={showParams}
-        params={params}
-        onChange={setParams}
-        onClose={() => setShowParams(false)}
-        t={t}
-        styles={styles}
-        colors={colors}
-      />
-      <SpeakersPopover
-        visible={showSpeakers}
-        onClose={() => setShowSpeakers(false)}
-        onOpenDispatch={() => onOpenDispatchGate?.()}
-        styles={styles}
-        colors={colors}
-        t={t}
-      />
+      <ParametersPopover visible={showParams} params={params} onChange={setParams} onClose={() => setShowParams(false)} t={t} styles={styles} colors={colors} />
+      <SpeakersPopover visible={showSpeakers} onClose={() => setShowSpeakers(false)} onOpenDispatch={() => onOpenDispatchGate?.()} styles={styles} colors={colors} t={t} />
     </div>
   );
 };
