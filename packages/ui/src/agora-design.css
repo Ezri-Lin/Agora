@@ -86,10 +86,19 @@ html, body {
 
 /* --- Sidebar --- */
 
+.sidebar-panel {
+  background: var(--panel2);
+  border-right: 1px solid var(--line);
+}
+
+.sidebar-topbar {
+  background: var(--topbar);
+  border-bottom: 1px solid var(--line);
+}
+
 .sidebar {
   background: var(--panel2);
   color: var(--text);
-  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -276,6 +285,11 @@ html, body {
   background: var(--bg);
   min-width: 0;
   min-height: 0;
+}
+
+.main-topbar {
+  background: var(--topbar);
+  border-bottom: 1px solid var(--line) !important;
 }
 
 .topbar {

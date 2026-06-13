@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle, usePanelRef } from "react-resizable-panels";
 import { TerminalPanel } from "../Terminal/TerminalPanel.js";
 import type { AppView } from "./AppShell.types.js";
@@ -62,8 +62,18 @@ export const AppShell: React.FC<AppShellProps> = ({
 
   // Panel refs for imperative collapse/expand
   const sidebarRef = usePanelRef();
-  const docsRef = usePanelRef();
-  const terminalRef = usePanelRef();
+  const docsHandle = useRef<any>(null);
+  const terminalHandle = useRef<any>(null);
+
+  // Collapse panels on mount (deferred so group is registered first)
+  const onDocsPanelRef = useCallback((handle: any) => {
+    docsHandle.current = handle;
+    if (handle) requestAnimationFrame(() => handle.collapse());
+  }, []);
+  const onTerminalPanelRef = useCallback((handle: any) => {
+    terminalHandle.current = handle;
+    if (handle) requestAnimationFrame(() => handle.collapse());
+  }, []);
 
   // Sidebar: starts expanded, collapse/expand on toggle
   useEffect(() => {
@@ -81,24 +91,18 @@ export const AppShell: React.FC<AppShellProps> = ({
     }
   }, [sidebarCollapsed]);
 
-  // Docs: starts collapsed (home view), expand when document view
+  // Docs: expand/collapse on toggle
   useEffect(() => {
-    if (!docsRef.current) return;
-    if (isDocsVisible) {
-      docsRef.current.expand();
-    } else {
-      docsRef.current.collapse();
-    }
+    if (!docsHandle.current) return;
+    if (isDocsVisible) docsHandle.current.expand();
+    else docsHandle.current.collapse();
   }, [isDocsVisible]);
 
-  // Terminal: starts collapsed, expand when visible
+  // Terminal: expand/collapse on toggle
   useEffect(() => {
-    if (!terminalRef.current) return;
-    if (terminalVisible) {
-      terminalRef.current.expand();
-    } else {
-      terminalRef.current.collapse();
-    }
+    if (!terminalHandle.current) return;
+    if (terminalVisible) terminalHandle.current.expand();
+    else terminalHandle.current.collapse();
   }, [terminalVisible]);
 
   // Ctrl+` toggles terminal
@@ -185,7 +189,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         {/* Main Area */}
         <Panel id="main" defaultSize="85%" minSize="20%">
           <main className="main" style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-            <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, borderBottom: "1px solid transparent", WebkitAppRegion: "drag" as any }}>
+            <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
               <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" as any }}>
                 {/* Collapse Button (only if sidebar is collapsed) */}
                 {sidebarCollapsed && (
@@ -280,7 +284,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                       <PanelResizeHandle className="resize-handle-h" />
                       <Panel
                         id="terminal"
-                        panelRef={terminalRef}
+                        panelRef={onTerminalPanelRef}
                         defaultSize="25%"
                         minSize="15%"
                         collapsedSize="0%"
@@ -300,7 +304,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   <PanelResizeHandle className="resize-handle" />
                   <Panel
                     id="docs"
-                    panelRef={docsRef}
+                    panelRef={onDocsPanelRef}
                     defaultSize="30%"
                     minSize="20%"
                     collapsedSize="0%"
