@@ -5,6 +5,7 @@ import type { ColorPalette } from "../theme/palettes.js";
 import { getRoleColor } from "../theme/palettes.js";
 import { spacing, typography, radius } from "../theme/tokens.js";
 import { Section } from "./Section.js";
+import { TextShimmer } from "../AgentTools/TextShimmer.js";
 import { mutedTextStyle } from "./runInspectorStyles.js";
 
 interface ProgressSectionProps {
@@ -32,7 +33,13 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({ roles, roleSta
                 <span style={statusStyle(colors)}>{state.status}</span>
               </div>
               {state.microSummary && (
-                <div style={mutedTextStyle(colors)}>{state.microSummary}</div>
+                state.status === "thinking" || state.status === "streaming" ? (
+                  <TextShimmer style={{ ...mutedTextStyle(colors), margin: 0 }} duration={2.5}>
+                    {state.microSummary}
+                  </TextShimmer>
+                ) : (
+                  <div style={mutedTextStyle(colors)}>{state.microSummary}</div>
+                )
               )}
             </div>
           </div>
