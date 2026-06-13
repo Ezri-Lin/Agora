@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { RoleMessage } from "../RoleMessage/RoleMessage.js";
+import { TextShimmer } from "../AgentTools/TextShimmer.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
@@ -139,7 +140,9 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
         })}
         {isLoading && (
           <div style={styles.loadingRow}>
-            <span style={styles.loadingText}>{loadingStatus || t.rolesAreThinking}</span>
+            <TextShimmer style={styles.loadingText} duration={2.5}>
+              {loadingStatus || t.rolesAreThinking}
+            </TextShimmer>
             {onStop && (
               <button style={styles.stopBtn} onClick={onStop}>{t.stop}</button>
             )}
