@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import type { ScannedDoc } from "./AgoraBridge.js";
 import { AppShell } from "./AppShell/AppShell.js";
 import type { AppView } from "./AppShell/AppShell.types.js";
@@ -37,10 +37,13 @@ export const App: React.FC = () => {
     setActiveView("room");
   }, [workspace.workspace, council.handleSelectRoom]);
 
-  const handleSend = useCallback(async (text: string) => {
-    if (!workspace.workspace) return;
-    await council.handleSend(text, workspace.workspace, workspace.selectedRefs);
-  }, [workspace.workspace, workspace.selectedRefs, council.handleSend]);
+  const handleSend = useCallback(async (text: string, params: { roomMode: string; maxRoles: number; autoInvite: boolean }, targetedRoles?: any[]) => {
+    council.setRoomMode(params.roomMode as any);
+    await (council.handleSend as any)(text, workspace.workspace, workspace.selectedRefs, targetedRoles, {
+      maxRoles: params.maxRoles,
+      autoInvite: params.autoInvite,
+    });
+  }, [workspace.workspace, workspace.selectedRefs, council.handleSend, council.setRoomMode]);
 
   const handleDispatchContinue = useCallback(async (selectedRoleIds: string[]) => {
     if (!workspace.workspace) return;
@@ -78,6 +81,16 @@ export const App: React.FC = () => {
   const handleRegisterJumpFns = useCallback((fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void }) => {
     jumpFnsRef.current = fns;
   }, []);
+
+  // Memoize to avoid creating a new Set on every render
+  const activeRoleIds = useMemo(
+    () => new Set(council.messages.filter((m) => m.senderType === "role").map((m) => m.senderId)),
+    [council.messages]
+  );
+
+  if (workspace.isLoading) {
+    return null;
+  }
 
   if (!workspace.workspace) {
     return (
@@ -118,16 +131,16 @@ export const App: React.FC = () => {
               <Composer
                 onSend={handleSend}
                 isLoading={council.isLoading}
+                onStop={council.handleStop}
                 references={workspace.selectedRefs}
                 onRemoveRef={workspace.removeRef}
                 perspectiveChips={council.pendingPerspectiveChips}
                 onRemovePerspectiveChip={council.handleRemovePerspectiveChip}
-                onOpenRefPicker={workspace.toggleRefPicker}
-                onOpenDispatchGate={undefined}
+                availableDocs={workspace.availableDocs}
+                availableRoles={council.allRoles}
+                onAddRef={workspace.addRef}
+                onAddRole={(role: any) => council.handleAddPerspective(role.id, role.name)}
                 workspaceName={workspace.workspace.name}
-                roomMode={council.roomMode}
-                onRoomModeChange={council.setRoomMode}
-                roleCount={council.allRoles?.length || 0}
               />
             </>
           }
@@ -183,7 +196,7 @@ export const App: React.FC = () => {
           references={workspace.selectedRefs}
           workspacePath={workspace.workspace.path}
           userMessage={council.messages.filter((m) => m.senderType === "user").slice(-1)[0]?.content}
-          activeRoleIdsFromMessages={new Set(council.messages.filter((m) => m.senderType === "role").map((m) => m.senderId))}
+          activeRoleIdsFromMessages={activeRoleIds}
           roleHistories={council.roleHistories}
           contextDebug={workspace.contextDebug}
           onToggle={panels.togglePanel}
@@ -209,16 +222,16 @@ export const App: React.FC = () => {
           <Composer
             onSend={handleSend}
             isLoading={council.isLoading}
+            onStop={council.handleStop}
             references={workspace.selectedRefs}
             onRemoveRef={workspace.removeRef}
             perspectiveChips={council.pendingPerspectiveChips}
             onRemovePerspectiveChip={council.handleRemovePerspectiveChip}
-            onOpenRefPicker={workspace.toggleRefPicker}
-            onOpenDispatchGate={undefined}
+            availableDocs={workspace.availableDocs}
+            availableRoles={council.allRoles}
+            onAddRef={workspace.addRef}
+            onAddRole={(role: any) => council.handleAddPerspective(role.id, role.name)}
             workspaceName={workspace.workspace.name}
-            roomMode={council.roomMode}
-            onRoomModeChange={council.setRoomMode}
-            roleCount={council.allRoles?.length || 0}
           />
         </>
       }

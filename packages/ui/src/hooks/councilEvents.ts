@@ -8,6 +8,7 @@ interface CouncilEventHandlerParams {
   streamingRoleIdRef: MutableRefObject<string | null>;
   setMessages: Dispatch<SetStateAction<CouncilMessage[]>>;
   setRoleStreamStates: Dispatch<SetStateAction<Map<string, RoleStreamState>>>;
+  moderatorPlaceholderId?: string;
 }
 
 export function createCouncilEventHandler({
@@ -15,6 +16,7 @@ export function createCouncilEventHandler({
   streamingRoleIdRef,
   setMessages,
   setRoleStreamStates,
+  moderatorPlaceholderId,
 }: CouncilEventHandlerParams): (event: CouncilEvent) => void {
   const streamingMsgIds = new Map<string, string>();
 
@@ -101,7 +103,14 @@ export function createCouncilEventHandler({
       }
       case "moderator_done": {
         if (event.message) {
-          setMessages((prev) => [...prev, event.message!]);
+          if (moderatorPlaceholderId) {
+            // Replace the thinking placeholder with the real moderator message
+            setMessages((prev) => prev.map(m =>
+              m.id === moderatorPlaceholderId ? event.message! : m
+            ));
+          } else {
+            setMessages((prev) => [...prev, event.message!]);
+          }
         }
         break;
       }

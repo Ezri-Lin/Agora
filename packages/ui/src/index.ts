@@ -1,5 +1,6 @@
 import './agora-design.css';
 import './room-actions.css';
+import './AgentTools/agent-tools.css';
 export { App } from "./App.js";
 export { AppShell } from "./AppShell/AppShell.js";
 export { TitleBar } from "./AppShell/TitleBar.js";
@@ -13,3 +14,19 @@ export { EmptyState } from "./EmptyState.js";
 export { RefPicker } from "./RefPicker.js";
 export { CouncilDispatchGate } from "./CouncilDispatchGate/CouncilDispatchGate.js";
 export type { CouncilDispatchGateProps, CouncilDispatchPreviewViewModel, RoleViewModel } from "./CouncilDispatchGate/CouncilDispatchGate.js";
+
+// AgentTools
+export { TextShimmer } from "./AgentTools/TextShimmer.js";
+export { SpiralLoader } from "./AgentTools/SpiralLoader.js";
+export { ToolRowBase } from "./AgentTools/ToolRowBase.js";
+export { ToolApprovalFooter } from "./AgentTools/ToolApprovalFooter.js";
+export { ThinkingTool } from "./AgentTools/ThinkingTool.js";
+export { BashTool, BashToolCard } from "./AgentTools/BashTool.js";
+export { EditTool, EditToolCard } from "./AgentTools/EditTool.js";
+export { SearchTool } from "./AgentTools/SearchTool.js";
+export { PlanTool } from "./AgentTools/PlanTool.js";
+export { TodoTool } from "./AgentTools/TodoTool.js";
+export { useToolComplete } from "./AgentTools/useToolComplete.js";
+export { mapToolInvocationToStep, mapToolStateToStepState } from "./AgentTools/toolAdapters.js";
+export { createToolStyles } from "./AgentTools/toolStyles.js";
+export type * from "./AgentTools/types.js";

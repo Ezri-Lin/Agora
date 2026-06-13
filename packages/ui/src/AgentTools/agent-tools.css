@@ -1,0 +1,209 @@
+/* ============================================================
+   Agent Tools — CSS for tool cards, animations, and effects
+   ============================================================ */
+
+/* --- Tool Card Base --- */
+
+.ag-tool-card {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.ag-tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  height: 28px;
+}
+
+.ag-tool-body {
+  border-top: 1px solid var(--line);
+  padding: 6px 10px;
+  font-family: var(--font-mono, "SF Mono", "Fira Code", monospace);
+  font-size: 12px;
+  line-height: 16px;
+  background: var(--bg);
+}
+
+/* --- TextShimmer Animation --- */
+
+@keyframes ag-shimmer {
+  from {
+    background-position: 100% center;
+  }
+  to {
+    background-position: 0% center;
+  }
+}
+
+@keyframes ag-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes ag-ellipsis {
+  0% {
+    width: 0;
+  }
+  33% {
+    width: 0.33em;
+  }
+  66% {
+    width: 0.66em;
+  }
+  100% {
+    width: 1em;
+  }
+}
+
+@keyframes ag-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ag-text-shimmer {
+  display: inline-block;
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--faint, #73736d) 0%,
+    var(--faint, #73736d) 40%,
+    var(--muted, #a3a39c) 50%,
+    var(--faint, #73736d) 60%,
+    var(--faint, #73736d) 100%
+  );
+  background-repeat: no-repeat;
+}
+
+.ag-text-shimmer--active {
+  animation: ag-shimmer var(--ag-shimmer-duration, 2s) linear infinite;
+}
+
+.ag-ellipsis {
+  display: inline-block;
+  overflow: hidden;
+  width: 0;
+  vertical-align: bottom;
+  animation: ag-ellipsis 1.2s steps(1, end) infinite;
+}
+
+.ag-spin {
+  animation: ag-spin 1s linear infinite;
+}
+
+/* --- Diff Colors --- */
+
+.ag-diff-added {
+  background: rgba(34, 197, 94, 0.1);
+  border-left: 3px solid rgba(34, 197, 94, 0.5);
+  color: #15803d;
+}
+
+.ag-diff-removed {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid rgba(239, 68, 68, 0.5);
+  color: #dc2626;
+}
+
+[data-theme="light"] .ag-diff-added {
+  background: rgba(34, 197, 94, 0.08);
+  color: #15803d;
+}
+
+[data-theme="light"] .ag-diff-removed {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+}
+
+/* --- Tool Approval Footer --- */
+
+.ag-approval-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+  background: var(--panel2);
+}
+
+.ag-approval-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  transition: background 0.15s ease;
+}
+
+.ag-approval-btn:hover {
+  background: var(--hover);
+}
+
+.ag-approval-btn--primary {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.ag-approval-btn--primary:hover {
+  opacity: 0.9;
+}
+
+/* --- Markdown Code Block --- */
+
+.ag-markdown pre code {
+  counter-reset: none !important;
+}
+
+.ag-markdown pre code > span::before {
+  content: none !important;
+  display: none !important;
+}
+
+.ag-markdown pre code > span {
+  padding-left: 0 !important;
+}
+
+/* --- Collapsed Preview --- */
+
+.ag-preview {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ag-preview:hover {
+  color: var(--text);
+}
+
+.ag-preview-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--panel2);
+  font-size: 11px;
+  color: var(--muted);
+}

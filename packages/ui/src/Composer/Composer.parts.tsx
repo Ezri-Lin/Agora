@@ -1,6 +1,4 @@
 import React from "react";
-import type { ColorPalette } from "../theme/palettes.js";
-import { motion } from "../theme/tokens.js";
 
 // ─── Chip types ──────────────────────────────────────────────────────
 
@@ -16,35 +14,20 @@ export interface DocumentChip {
   title: string;
 }
 
-export type ComposerChip = RoleChip | DocumentChip;
+export interface TargetedRoleChip {
+  type: "targeted-role";
+  id: string;
+  label: string;
+}
+
+export type ComposerChip = RoleChip | DocumentChip | TargetedRoleChip;
 
 // ─── Parameter types ─────────────────────────────────────────────────
 
-export interface DiscussionMode {
-  id: string;
-  label: string;
-}
-
-export interface ContextScope {
-  id: string;
-  label: string;
-}
-
-export interface WritePolicy {
-  id: string;
-  label: string;
-}
-
-export interface SearchPolicy {
-  id: string;
-  label: string;
-}
-
 export interface ComposerParameters {
-  discussionMode: string;
-  contextScope: string;
-  writePolicy: string;
-  searchPolicy: string;
+  roomMode: "single" | "council";
+  maxRoles: number;
+  autoInvite: boolean;
 }
 
 // ─── Chips row ───────────────────────────────────────────────────────
@@ -64,18 +47,19 @@ export const ChipsRow: React.FC<ChipsRowProps> = ({ chips, onRemove, styles }) =
           key={`${chip.type}-${chip.id}`}
           style={{
             ...styles.chip,
+            ...(chip.type === "targeted-role" ? { background: "var(--accent)", color: "#fff", borderColor: "var(--accent)" } : {}),
             ...(chip.type === "role" ? styles.chipRole : {}),
           }}
         >
           <span style={styles.chipIcon}>
-            {chip.type === "role" ? "+" : "#"}
+            {chip.type === "targeted-role" ? "@" : chip.type === "role" ? "+" : "#"}
           </span>
-          {chip.type === "role" ? chip.label : chip.title}
+          {chip.type === "document" ? chip.title : chip.label}
           <button
-            style={styles.chipRemove}
+            style={{ ...styles.chipRemove, ...(chip.type === "targeted-role" ? { color: "#fff", opacity: 0.8 } : {}) }}
             onClick={() => onRemove(chip)}
           >
-            x
+            ✕
           </button>
         </span>
       ))}
@@ -83,213 +67,204 @@ export const ChipsRow: React.FC<ChipsRowProps> = ({ chips, onRemove, styles }) =
   );
 };
 
+// ─── Popover wrapper ─────────────────────────────────────────────────
+
+interface PopoverWrapperProps {
+  visible: boolean;
+  onClose: () => void;
+  bottom: string;
+  left: string;
+  children: React.ReactNode;
+  styles: Record<string, React.CSSProperties>;
+}
+
+const PopoverWrapper: React.FC<PopoverWrapperProps> = ({ visible, onClose, bottom, left, children, styles }) => {
+  if (!visible) return null;
+  return (
+    <>
+      <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={onClose} />
+      <div style={{ ...styles.popover, bottom, left }}>
+        {children}
+      </div>
+    </>
+  );
+};
+
+// ─── Menu item component ─────────────────────────────────────────────
+
+interface MenuItemProps {
+  children: React.ReactNode;
+  onClick: () => void;
+  selected?: boolean;
+  styles: Record<string, React.CSSProperties>;
+}
+
+const MenuItem: React.FC<MenuItemProps> = ({ children, onClick, selected, styles }) => (
+  <button
+    style={{
+      ...styles.popoverOption,
+      ...(selected ? styles.popoverOptionSelected : {}),
+    }}
+    onClick={onClick}
+  >
+    {children}
+  </button>
+);
+
 // ─── Add menu ────────────────────────────────────────────────────────
 
-interface AddMenuProps {
+export const AddMenu: React.FC<{
   visible: boolean;
   onClose: () => void;
   onAddDocument: () => void;
   onAddRole: () => void;
-  t: {
-    addDocumentRef: string;
-    addRole: string;
-    uploadFile: string;
-    pasteLongText: string;
-  };
   styles: Record<string, React.CSSProperties>;
-  colors: ColorPalette;
-}
+}> = ({ visible, onClose, onAddDocument, onAddRole, styles }) => (
+  <PopoverWrapper visible={visible} onClose={onClose} bottom="40px" left="8px" styles={styles}>
+    <div style={styles.popoverTitle}>添加</div>
+    <MenuItem onClick={() => { onAddDocument(); onClose(); }} styles={styles}>
+      📄 照片和文件
+    </MenuItem>
+    <MenuItem onClick={() => { onAddRole(); onClose(); }} styles={styles}>
+      👤 人物
+    </MenuItem>
+  </PopoverWrapper>
+);
 
-export const AddMenu: React.FC<AddMenuProps> = ({
-  visible,
-  onClose,
-  onAddDocument,
-  onAddRole,
-  t,
-  styles,
-  colors,
-}) => {
-  if (!visible) return null;
+// ─── Project menu ────────────────────────────────────────────────────
+
+export const ProjectMenu: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  workspaceName: string;
+  recentWorkspaces: any[];
+  styles: Record<string, React.CSSProperties>;
+}> = ({ visible, onClose, workspaceName, recentWorkspaces, styles }) => {
+  const otherProjects = recentWorkspaces.filter(p => {
+    const pName = p.name || (p.path ? p.path.split('/').pop() : p);
+    return pName !== workspaceName;
+  }).slice(0, 3);
+
   return (
-    <>
-      <div
-        style={{ position: "fixed", inset: 0, zIndex: 49 }}
-        onClick={onClose}
-      />
-      <div style={styles.addMenu}>
-        <button
-          style={styles.addMenuItem}
-          onClick={() => { onAddDocument(); onClose(); }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = `${colors.accent}08`; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
-        >
-          <span>#</span> {t.addDocumentRef}
-        </button>
-        <button
-          style={styles.addMenuItem}
-          onClick={() => { onAddRole(); onClose(); }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = `${colors.accent}08`; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
-        >
-          <span>+</span> {t.addRole}
-        </button>
-      </div>
-    </>
+    <PopoverWrapper visible={visible} onClose={onClose} bottom="40px" left="50px" styles={styles}>
+      <div style={styles.popoverTitle}>项目</div>
+      <MenuItem onClick={onClose} selected styles={styles}>
+        ✓ {workspaceName}
+      </MenuItem>
+      {otherProjects.map((p, i) => {
+        const pName = p.name || (p.path ? p.path.split('/').pop() : p);
+        return (
+          <MenuItem key={i} onClick={onClose} styles={styles}>
+            {pName}
+          </MenuItem>
+        );
+      })}
+      <div style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
+      <MenuItem onClick={onClose} styles={styles}>
+        + New Project...
+      </MenuItem>
+    </PopoverWrapper>
   );
 };
 
-// ─── Parameters popover ──────────────────────────────────────────────
+// ─── Number stepper ──────────────────────────────────────────────────
 
-interface ParametersPopoverProps {
+const Stepper: React.FC<{
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}> = ({ value, min, max, onChange }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+    <button
+      onClick={() => onChange(Math.max(min, value - 1))}
+      disabled={value <= min}
+      style={{
+        width: 22, height: 22, borderRadius: 4,
+        border: "1px solid var(--line)", background: "transparent",
+        color: value <= min ? "var(--faint)" : "var(--text)",
+        cursor: value <= min ? "default" : "pointer",
+        fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >−</button>
+    <span style={{ width: 24, textAlign: "center", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
+      {value}
+    </span>
+    <button
+      onClick={() => onChange(Math.min(max, value + 1))}
+      disabled={value >= max}
+      style={{
+        width: 22, height: 22, borderRadius: 4,
+        border: "1px solid var(--line)", background: "transparent",
+        color: value >= max ? "var(--faint)" : "var(--text)",
+        cursor: value >= max ? "default" : "pointer",
+        fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >+</button>
+  </div>
+);
+
+// ─── Toggle ──────────────────────────────────────────────────────────
+
+const Toggle: React.FC<{
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}> = ({ checked, onChange }) => (
+  <button
+    onClick={() => onChange(!checked)}
+    style={{
+      width: 36, height: 20, borderRadius: 10, border: "none",
+      background: checked ? "var(--blue)" : "var(--line)",
+      cursor: "pointer", position: "relative", transition: "background 0.2s",
+    }}
+  >
+    <span style={{
+      width: 16, height: 16, borderRadius: "50%", background: "#fff",
+      position: "absolute", top: 2, left: checked ? 18 : 2,
+      transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+    }} />
+  </button>
+);
+
+// ─── Participation menu ──────────────────────────────────────────────
+
+export const ParticipationMenu: React.FC<{
   visible: boolean;
+  onClose: () => void;
   params: ComposerParameters;
-  onChange: (params: ComposerParameters) => void;
-  onClose: () => void;
-  t: {
-    discussionMode: string;
-    contextScope: string;
-    writePolicy: string;
-    searchPolicy: string;
-    quickAnswer: string;
-    deepDiscussion: string;
-    counterFirst: string;
-    summarySink: string;
-    currentRoom: string;
-    currentDocument: string;
-    currentSelection: string;
-    workspaceGraph: string;
-    discussOnly: string;
-    generateSummary: string;
-    writeToDocument: string;
-    generateMemories: string;
-    noSearch: string;
-    searchWhenNeeded: string;
-  };
+  onChange: (p: ComposerParameters) => void;
   styles: Record<string, React.CSSProperties>;
-  colors: ColorPalette;
-}
-
-export const ParametersPopover: React.FC<ParametersPopoverProps> = ({
-  visible,
-  params,
-  onChange,
-  onClose,
-  t,
-  styles,
-  colors,
-}) => {
-  if (!visible) return null;
-
-  const discussionModes: DiscussionMode[] = [
-    { id: "quick", label: t.quickAnswer },
-    { id: "deep", label: t.deepDiscussion },
-    { id: "counter", label: t.counterFirst },
-    { id: "summary", label: t.summarySink },
-  ];
-  const contextScopes: ContextScope[] = [
-    { id: "room", label: t.currentRoom },
-    { id: "document", label: t.currentDocument },
-    { id: "selection", label: t.currentSelection },
-    { id: "graph", label: t.workspaceGraph },
-  ];
-  const writePolicies: WritePolicy[] = [
-    { id: "none", label: t.discussOnly },
-    { id: "summary", label: t.generateSummary },
-    { id: "document", label: t.writeToDocument },
-    { id: "memory", label: t.generateMemories },
-  ];
-  const searchPolicies: SearchPolicy[] = [
-    { id: "none", label: t.noSearch },
-    { id: "auto", label: t.searchWhenNeeded },
+}> = ({ visible, onClose, params, onChange, styles }) => {
+  const modes = [
+    { id: "single", label: "单人助手" },
+    { id: "council", label: "多人议事" },
   ];
 
-  const optionBtn = (
-    options: Array<{ id: string; label: string }>,
-    selected: string,
-    onSelect: (id: string) => void,
-  ) => (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-      {options.map((opt) => (
-        <button
-          key={opt.id}
-          style={{
-            ...styles.popoverOption,
-            display: "inline-block",
-            width: "auto",
-            ...(opt.id === selected ? styles.popoverOptionSelected : {}),
-          }}
-          onClick={() => onSelect(opt.id)}
+  return (
+    <PopoverWrapper visible={visible} onClose={onClose} bottom="40px" left="180px" styles={styles}>
+      {modes.map(m => (
+        <MenuItem
+          key={m.id}
+          onClick={() => onChange({ ...params, roomMode: m.id as ComposerParameters["roomMode"] })}
+          selected={params.roomMode === m.id}
+          styles={styles}
         >
-          {opt.label}
-        </button>
+          {m.label}
+        </MenuItem>
       ))}
-    </div>
-  );
 
-  return (
-    <>
-      <div
-        style={{ position: "fixed", inset: 0, zIndex: 49 }}
-        onClick={onClose}
-      />
-      <div style={styles.popover}>
-        <div style={styles.popoverTitle}>{t.discussionMode}</div>
-        {optionBtn(discussionModes, params.discussionMode, (id) => onChange({ ...params, discussionMode: id }))}
-
-        <div style={{ ...styles.popoverTitle, marginTop: 12 }}>{t.contextScope}</div>
-        {optionBtn(contextScopes, params.contextScope, (id) => onChange({ ...params, contextScope: id }))}
-
-        <div style={{ ...styles.popoverTitle, marginTop: 12 }}>{t.writePolicy}</div>
-        {optionBtn(writePolicies, params.writePolicy, (id) => onChange({ ...params, writePolicy: id }))}
-
-        <div style={{ ...styles.popoverTitle, marginTop: 12 }}>{t.searchPolicy}</div>
-        {optionBtn(searchPolicies, params.searchPolicy, (id) => onChange({ ...params, searchPolicy: id }))}
-      </div>
-    </>
-  );
-};
-
-// ─── Speakers popover ────────────────────────────────────────────────
-
-interface SpeakersPopoverProps {
-  visible: boolean;
-  onClose: () => void;
-  onOpenDispatch: () => void;
-  styles: Record<string, React.CSSProperties>;
-  colors: ColorPalette;
-  t: {
-    speakers: string;
-    addRole: string;
-  };
-}
-
-export const SpeakersPopover: React.FC<SpeakersPopoverProps> = ({
-  visible,
-  onClose,
-  onOpenDispatch,
-  styles,
-  colors,
-  t,
-}) => {
-  if (!visible) return null;
-  return (
-    <>
-      <div
-        style={{ position: "fixed", inset: 0, zIndex: 49 }}
-        onClick={onClose}
-      />
-      <div style={styles.popover}>
-        <div style={styles.popoverTitle}>{t.speakers}</div>
-        <button
-          style={{
-            ...styles.popoverOption,
-            marginTop: 4,
-          }}
-          onClick={() => { onOpenDispatch(); onClose(); }}
-        >
-          + {t.addRole}
-        </button>
-      </div>
-    </>
+      {params.roomMode === "council" && (
+        <div style={{ borderTop: "1px solid var(--line)", margin: "6px 0", paddingTop: 6 }}>
+          <div style={{ ...styles.popoverRow, padding: "4px 8px" }}>
+            <span>角色数</span>
+            <Stepper value={params.maxRoles} min={1} max={8} onChange={v => onChange({ ...params, maxRoles: v })} />
+          </div>
+          <div style={{ ...styles.popoverRow, padding: "4px 8px" }}>
+            <span>跳过确认</span>
+            <Toggle checked={params.autoInvite} onChange={v => onChange({ ...params, autoInvite: v })} />
+          </div>
+        </div>
+      )}
+    </PopoverWrapper>
   );
 };

@@ -73,7 +73,7 @@ export function useCouncilSend({
   setDispatchGate,
   setDispatchSelectedRoleIds,
 }: UseCouncilSendParams) {
-  return useCallback(async (text: string, workspace: { path: string }, selectedRefs: WorkspaceRef[]) => {
+  return useCallback(async (text: string, workspace: { path: string }, selectedRefs: WorkspaceRef[], targetedRoles?: any[], composerParams?: { maxRoles?: number; autoInvite?: boolean }) => {
     const bridge = getBridge();
     if (!bridge) return;
 
@@ -112,7 +112,19 @@ export function useCouncilSend({
       createdAt: nowISO(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    // Insert moderator thinking placeholder immediately
+    const moderatorPlaceholderId = `msg_moderator_thinking_${Date.now()}`;
+    const moderatorPlaceholder: CouncilMessage = {
+      id: moderatorPlaceholderId,
+      roomId: roomIdRef.current!,
+      senderType: "moderator",
+      senderId: "moderator",
+      content: "",
+      thinking: "Analyzing...",
+      status: "ok",
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, userMsg, moderatorPlaceholder]);
     setIsLoading(true);
     setLoadingStatus("Preparing context...");
     setRoleStreamStates(new Map());
@@ -138,6 +150,39 @@ export function useCouncilSend({
         // Memory loading failure should not block the round.
       }
 
+      // ── Single mode: direct chat, no analysis/roles/summary ──────
+      if (roomMode === "single") {
+        setLoadingStatus(`Calling ${llmConfig.provider} (${llmConfig.model})...`);
+        const provider = new IPCProvider(llmConfig, (status) => setLoadingStatus(status));
+
+        const contextLines: string[] = [
+          "You are a helpful assistant. Respond directly and concisely.",
+          "Respond in the same language as the user's message.",
+        ];
+        if (docContents.size > 0) {
+          contextLines.push("", "## Reference Materials");
+          for (const [path, content] of docContents) {
+            contextLines.push("", `### ${path}`, content.slice(0, 4000));
+          }
+        }
+
+        const result = await provider.callModerator({
+          roomId: roomIdRef.current!,
+          task: "analyze",
+          context: contextLines.join("\n"),
+          messages: [...messages, userMsg],
+        });
+
+        setMessages((prev) => prev.map(m =>
+          m.id === moderatorPlaceholderId
+            ? { ...m, content: result.content, thinking: result.thinking ?? "" }
+            : m
+        ));
+        return;
+      }
+
+      const effectiveRoleCount = composerParams?.maxRoles ?? 3;
+
       const roomForCouncil: CouncilRoom = {
         id: roomIdRef.current!,
         title: text.slice(0, 60),
@@ -145,10 +190,10 @@ export function useCouncilSend({
         sourceRefs: selectedRefs,
         participants: [],
         settings: {
-          roleCount: roomMode === "single" ? 1 : 3,
+          roleCount: effectiveRoleCount,
           maxMessagesPerRoleBeforeUserReply: 2,
           allowAutoDocs: true,
-          allowCrossExamination: roomMode !== "single",
+          allowCrossExamination: true,
           generationMode: "multi_call_cached",
           contextMode: "standard",
         },
@@ -164,11 +209,10 @@ export function useCouncilSend({
         streamingRoleIdRef,
         setMessages,
         setRoleStreamStates,
+        moderatorPlaceholderId,
       });
 
-      const roleSettings = roomMode === "single"
-        ? { roleCount: 1, maxAutoInviteLenses: 0, allowAutoInviteLenses: false }
-        : undefined;
+      const roleSettings = undefined;
 
       const chipRequests: ExplicitRoleRequest[] = pendingPerspectiveChips.map((chip) => ({
         targetType: "persona",
@@ -190,6 +234,43 @@ export function useCouncilSend({
           explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
         });
 
+        // Auto-invite: skip confirmation, run directly with suggested roles
+        if (composerParams?.autoInvite) {
+          const result = await runCouncilRound({
+            room: roomForCouncil,
+            topic: preview.topic,
+            userMessage: userMsg,
+            availableRoles: allRoles,
+            llm: provider,
+            recentMessages: messages,
+            docContents,
+            onEvent,
+            roleSettings,
+            explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
+            selectedRoleIds: preview.defaultSelectedRoleIds,
+          });
+
+          if (result.routingDecision) {
+            setLastRoutingDecision({ messageId: userMsg.id, decision: result.routingDecision });
+          }
+          setLoadingStatus("Persisting...");
+          const outputFiles = await persistCouncilRunResult({
+            bridge,
+            workspacePath: workspace.path,
+            roomId: roomIdRef.current!,
+            roomForCouncil,
+            messages,
+            userMsg,
+            result,
+          });
+          if (result.crossExaminationMessages.length > 0) {
+            setMessages((prev) => [...prev, ...result.crossExaminationMessages]);
+          }
+          setOutputs(outputFiles);
+          return;
+        }
+
+        // Manual: show dispatch gate for user confirmation
         setDispatchGate({
           preview,
           userMsg,
@@ -243,6 +324,12 @@ export function useCouncilSend({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("Council round failed:", msg);
+      // Replace thinking placeholder with error
+      setMessages((prev) => prev.map(m =>
+        m.id === moderatorPlaceholderId
+          ? { ...m, content: `Error: ${msg}`, thinking: "" }
+          : m
+      ));
       setError(msg);
       setPanelPhase("error");
     } finally {
