@@ -31,7 +31,7 @@ export const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView>("home");
 
   const jumpFnsRef = useRef<{ scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void; scrollToBottom: () => void } | null>(null);
-  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [isNearBottom, setIsNearBottom] = useState(false);
   const [newMsgCount, setNewMsgCount] = useState(0);
 
   const handleSelectRoom = useCallback(async (roomId: string) => {
