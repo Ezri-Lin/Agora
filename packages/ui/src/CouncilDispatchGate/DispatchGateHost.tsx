@@ -59,7 +59,9 @@ function buildRoleViewModels(context: DispatchGateContext): RoleViewModel[] {
     if (entrant.reason) reasonMap.set(entrant.roleId, entrant.reason);
   }
 
-  return context.allRoles.map((role): RoleViewModel => {
+  return context.allRoles
+    .filter((role) => role.id !== "moderator")
+    .map((role): RoleViewModel => {
     const contract = getPersonaContract(role.id);
     return {
       id: role.id,

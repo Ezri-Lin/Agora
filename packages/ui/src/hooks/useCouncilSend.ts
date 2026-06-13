@@ -73,7 +73,8 @@ export function useCouncilSend({
   setDispatchGate,
   setDispatchSelectedRoleIds,
 }: UseCouncilSendParams) {
-  return useCallback(async (text: string, workspace: { path: string }, selectedRefs: WorkspaceRef[], targetedRoles?: any[], composerParams?: { maxRoles?: number; autoInvite?: boolean }) => {
+  return useCallback(async (text: string, workspace: { path: string }, selectedRefs: WorkspaceRef[], targetedRoles?: any[], composerParams?: { maxRoles?: number; autoInvite?: boolean }, overrideRoomMode?: RoomMode) => {
+    const effectiveRoomMode = overrideRoomMode ?? roomMode;
     const bridge = getBridge();
     if (!bridge) return;
 
@@ -151,7 +152,7 @@ export function useCouncilSend({
       }
 
       // ── Single mode: direct chat, no analysis/roles/summary ──────
-      if (roomMode === "single") {
+      if (effectiveRoomMode === "single") {
         setLoadingStatus(`Calling ${llmConfig.provider} (${llmConfig.model})...`);
         const provider = new IPCProvider(llmConfig, (status) => setLoadingStatus(status));
 
@@ -222,7 +223,7 @@ export function useCouncilSend({
       }));
       setPendingPerspectiveChips([]);
 
-      if (roomMode === "council") {
+      if (effectiveRoomMode === "council") {
         const preview = await prepareCouncilDispatch({
           room: roomForCouncil,
           topic: text,
@@ -271,6 +272,8 @@ export function useCouncilSend({
         }
 
         // Manual: show dispatch gate for user confirmation
+        // Remove moderator thinking placeholder — dispatch gate replaces it
+        setMessages((prev) => prev.filter((m) => m.id !== moderatorPlaceholderId));
         setDispatchGate({
           preview,
           userMsg,

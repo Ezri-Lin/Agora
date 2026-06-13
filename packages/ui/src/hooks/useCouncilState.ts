@@ -205,6 +205,10 @@ export function useCouncilState(): CouncilState {
   const handleDispatchCancel = useCallback(() => {
     setDispatchGate(null);
     setDispatchSelectedRoleIds([]);
+    // Remove moderator thinking placeholder if present
+    setMessages((prev) => prev.filter(
+      (m) => !(m.senderType === "moderator" && m.thinking === "Analyzing..." && !m.content)
+    ));
     setIsLoading(false);
     setLoadingStatus("");
     setPanelPhase("idle");
