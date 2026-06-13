@@ -435,9 +435,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                       {/* Chat Content */}
                       <Panel id="content" defaultSize="75%">
                         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                          <div className="thread" style={{ flex: 1, overflowY: "auto", paddingTop: "16px" }}>
-                            {main}
-                          </div>
+                          {main}
 
                           {floatingPanel}
 
