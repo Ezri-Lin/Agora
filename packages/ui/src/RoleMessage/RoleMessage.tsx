@@ -3,9 +3,10 @@ import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { getRoleColor, USER_COLOR } from "../theme/palettes.js";
-import { createRoleMessageStyles } from "./roleMessageStyles.js";
 import { MessageContent } from "../ChatBubble/MessageContent.js";
-import { ThinkingBlock, type RoleMeta } from "./RoleMessage.parts.js";
+import { ThinkingTool } from "../AgentTools/ThinkingTool.js";
+import { TextShimmer } from "../AgentTools/TextShimmer.js";
+import type { RoleMeta } from "./RoleMessage.parts.js";
 
 interface RoleMessageProps {
   message: CouncilMessage;
@@ -40,7 +41,6 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
 }) => {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const styles = createRoleMessageStyles(colors);
 
   const roleMetaMap = useMemo(() => {
     const map = new Map<string, RoleMeta>();
@@ -127,9 +127,26 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
         {expanded && (
           <div onClick={onToggle} style={{ cursor: onToggle ? "pointer" : "default" }}>
             {message.thinking?.trim() && (
-              <ThinkingBlock thinking={message.thinking} colors={colors} styles={styles} />
+              <ThinkingTool
+                step={{
+                  id: `${message.id}-thinking`,
+                  type: "tool-call",
+                  toolName: "Thinking",
+                  toolDetail: "",
+                  duration: 1500,
+                  thoughtContent: message.thinking,
+                }}
+                state={streaming ? "animating" : "complete"}
+                onComplete={() => {}}
+              />
             )}
-            <MessageContent content={message.content} colors={colors} />
+            {streaming && !message.content ? (
+              <TextShimmer style={{ color: colors.textMuted, fontSize: 13, padding: "4px 0" }}>
+                {meta.name} is thinking...
+              </TextShimmer>
+            ) : (
+              <MessageContent content={message.content} colors={colors} />
+            )}
           </div>
         )}
       </div>
