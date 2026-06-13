@@ -280,27 +280,26 @@ export const App: React.FC = () => {
       onRenameRoom={handleRenameRoom}
       onOpenContextGraph={() => setActiveView("contextGraph")}
       scrollToBottomBtn={!isNearBottom ? (
-        <div style={{ display: "flex", justifyContent: "center", position: "absolute", bottom: 80, left: 0, right: 0, pointerEvents: "none", zIndex: 10 }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "4px 0", flexShrink: 0 }}>
           <button
             onClick={() => jumpFnsRef.current?.scrollToBottom()}
             style={{
               background: "var(--panel)",
               border: "1px solid var(--line)",
               borderRadius: "50%",
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
               color: "var(--muted)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              pointerEvents: "auto",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
               position: "relative",
             }}
             title="Scroll to bottom"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
               <path d="M12 5v14M19 12l-7 7-7-7" />
             </svg>
             {newMsgCount > 0 && (
