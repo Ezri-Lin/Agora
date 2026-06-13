@@ -105,10 +105,12 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
 
   // Check actual scroll position when messages change (e.g. entering a room)
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-    setIsNearBottom(nearBottom);
+    requestAnimationFrame(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+      setIsNearBottom(nearBottom);
+    });
   }, [messages]);
 
   // Count new messages when user is scrolled up
