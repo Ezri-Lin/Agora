@@ -248,6 +248,7 @@ export const App: React.FC = () => {
       terminalVisible={panels.terminalVisible}
       onToggleTerminal={panels.toggleTerminal}
       workspacePath={workspace.workspace.path}
+      isLoading={council.isLoading}
     />
     <ReviewPanelHost
       showWriteProposalPanel={panels.showWriteProposalPanel}

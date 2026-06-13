@@ -34,6 +34,9 @@ interface AppShellProps {
   terminalVisible?: boolean;
   onToggleTerminal?: () => void;
   workspacePath?: string;
+  isLoading?: boolean;
+  onDeleteRoom?: (roomId: string) => void;
+  onRenameRoom?: (roomId: string, title: string) => void;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -56,9 +59,14 @@ export const AppShell: React.FC<AppShellProps> = ({
   terminalVisible,
   onToggleTerminal,
   workspacePath,
+  isLoading,
+  onDeleteRoom,
+  onRenameRoom,
 }) => {
   const isDocsVisible = view === "document";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   // Panel refs for imperative collapse/expand
   const sidebarRef = usePanelRef();
@@ -133,7 +141,16 @@ export const AppShell: React.FC<AppShellProps> = ({
           className="sidebar-panel"
           style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}
         >
-          <header className="sidebar-topbar" style={{ display: "flex", alignItems: "center", height: "40px", paddingLeft: "80px", paddingRight: "16px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
+          <header className="sidebar-topbar" style={{ display: "flex", alignItems: "center", height: "40px", paddingLeft: "80px", paddingRight: "8px", gap: "4px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
+            {/* Back button */}
+            {(view === "room" || view === "document") && (
+              <label className="tool" title="Back to Home" onClick={() => onViewChange?.("home")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any }}>
+                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+              </label>
+            )}
+            {/* Collapse button */}
             <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -167,8 +184,22 @@ export const AppShell: React.FC<AppShellProps> = ({
                     key={r.id}
                     className={`room-link ${r.id === activeRoomId ? "active" : ""}`}
                     onClick={() => onSelectRoom?.(r.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
                   >
-                    <span>{r.title || "Untitled Room"}</span>
+                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled Room"}</span>
+                    {r.id === activeRoomId && isLoading && (
+                      <svg style={{ width: 12, height: 12, flexShrink: 0, opacity: 0.5, animation: "spin 1s linear infinite" }} viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="2">
+                        <circle cx="8" cy="8" r="6" strokeDasharray="28" strokeDashoffset="8" strokeLinecap="round" />
+                      </svg>
+                    )}
+                    {onDeleteRoom && (
+                      <span
+                        className="room-delete"
+                        onClick={e => { e.stopPropagation(); onDeleteRoom(r.id); }}
+                        style={{ opacity: 0, cursor: "pointer", fontSize: 11, color: "var(--muted)", padding: "0 2px", flexShrink: 0 }}
+                        title="Delete room"
+                      >✕</span>
+                    )}
                   </a>
                 ))}
               </div>
@@ -193,21 +224,21 @@ export const AppShell: React.FC<AppShellProps> = ({
               <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" as any }}>
                 {/* Collapse Button (only if sidebar is collapsed) */}
                 {sidebarCollapsed && (
-                  <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <line x1="9" y1="3" x2="9" y2="21" />
-                    </svg>
-                  </label>
-                )}
-
-                {/* Back Button */}
-                {(view === "room" || view === "document") && (
-                  <label className="tool" title="Back to Home" onClick={() => onViewChange?.("home")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
-                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                      <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                  </label>
+                  <>
+                    <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <line x1="9" y1="3" x2="9" y2="21" />
+                      </svg>
+                    </label>
+                    {(view === "room" || view === "document") && (
+                      <label className="tool" title="Back to Home" onClick={() => onViewChange?.("home")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
+                        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                          <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                      </label>
+                    )}
+                  </>
                 )}
 
                 {/* Breadcrumb */}
@@ -216,7 +247,38 @@ export const AppShell: React.FC<AppShellProps> = ({
                   {(view === "room" || view === "document") && (
                     <>
                       <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
-                      <span>{rooms.find(r => r.id === activeRoomId)?.title || "Room"}</span>
+                      <span
+                        style={{ cursor: "pointer", borderRadius: 3, padding: "1px 4px", marginLeft: -4 }}
+                        onClick={() => {
+                          const room = rooms.find(r => r.id === activeRoomId);
+                          if (room) {
+                            setEditingRoomId(room.id);
+                            setEditingTitle(room.title || "");
+                          }
+                        }}
+                      >
+                        {editingRoomId === activeRoomId ? (
+                          <input
+                            autoFocus
+                            value={editingTitle}
+                            onChange={e => setEditingTitle(e.target.value)}
+                            onBlur={() => {
+                              if (editingTitle.trim() && onRenameRoom) onRenameRoom(activeRoomId!, editingTitle.trim());
+                              setEditingRoomId(null);
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === "Enter") {
+                                if (editingTitle.trim() && onRenameRoom) onRenameRoom(activeRoomId!, editingTitle.trim());
+                                setEditingRoomId(null);
+                              }
+                              if (e.key === "Escape") setEditingRoomId(null);
+                            }}
+                            style={{ background: "transparent", border: "1px solid var(--line)", borderRadius: 3, color: "var(--text)", fontSize: 13, fontWeight: 500, padding: "0 4px", width: `${Math.max(editingTitle.length, 4)}ch`, outline: "none", fontFamily: "inherit" }}
+                          />
+                        ) : (
+                          rooms.find(r => r.id === activeRoomId)?.title || "Room"
+                        )}
+                      </span>
                     </>
                   )}
                 </div>
@@ -274,7 +336,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
                           {floatingPanel}
 
-                          <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 18px 24px" }}>
+                          <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px" }}>
                             {composer}
                           </div>
                         </div>
