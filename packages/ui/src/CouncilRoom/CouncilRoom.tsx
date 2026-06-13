@@ -28,7 +28,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
   const styles = createStyles(colors);
   const scrollRef = useRef<HTMLDivElement>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [isNearBottom, setIsNearBottom] = useState(false);
   const [newMsgCount, setNewMsgCount] = useState(0);
   const prevCountRef = useRef(0);
 
