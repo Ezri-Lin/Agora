@@ -39,7 +39,9 @@ interface AppShellProps {
   onDeleteRoom?: (roomId: string) => void;
   onRenameRoom?: (roomId: string, title: string) => void;
   onOpenContextGraph?: () => void;
-  scrollToBottomBtn?: React.ReactNode;
+  showScrollToBottom?: boolean;
+  newMsgCount?: number;
+  onScrollToBottom?: () => void;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -67,7 +69,9 @@ export const AppShell: React.FC<AppShellProps> = ({
   onDeleteRoom,
   onRenameRoom,
   onOpenContextGraph,
-  scrollToBottomBtn,
+  showScrollToBottom,
+  newMsgCount,
+  onScrollToBottom,
 }) => {
   const isDocsVisible = view === "document";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -439,9 +443,53 @@ export const AppShell: React.FC<AppShellProps> = ({
 
                           {floatingPanel}
 
-                          {scrollToBottomBtn}
-
-                          <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px" }}>
+                          <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px", position: "relative" }}>
+                            {showScrollToBottom && (
+                              <button
+                                onClick={onScrollToBottom}
+                                style={{
+                                  position: "absolute",
+                                  top: -16,
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  background: "var(--panel)",
+                                  border: "1px solid var(--line)",
+                                  borderRadius: "50%",
+                                  width: 28,
+                                  height: 28,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  color: "var(--muted)",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                                  zIndex: 10,
+                                }}
+                                title="Scroll to bottom"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
+                                  <path d="M12 5v14M19 12l-7 7-7-7" />
+                                </svg>
+                                {(newMsgCount ?? 0) > 0 && (
+                                  <span style={{
+                                    position: "absolute",
+                                    top: -4,
+                                    right: -4,
+                                    background: "var(--blue)",
+                                    color: "#fff",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    minWidth: 14,
+                                    height: 14,
+                                    borderRadius: 7,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    padding: "0 3px",
+                                  }}>{newMsgCount}</span>
+                                )}
+                              </button>
+                            )}
                             {composer}
                           </div>
                         </div>

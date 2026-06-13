@@ -279,51 +279,9 @@ export const App: React.FC = () => {
       onDeleteRoom={handleDeleteRoom}
       onRenameRoom={handleRenameRoom}
       onOpenContextGraph={() => setActiveView("contextGraph")}
-      scrollToBottomBtn={!isNearBottom ? (
-        <div style={{ display: "flex", justifyContent: "center", position: "relative", height: 0, zIndex: 10 }}>
-          <button
-            onClick={() => jumpFnsRef.current?.scrollToBottom()}
-            style={{
-              position: "absolute",
-              bottom: 8,
-              background: "var(--panel)",
-              border: "1px solid var(--line)",
-              borderRadius: "50%",
-              width: 28,
-              height: 28,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              color: "var(--muted)",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-            }}
-            title="Scroll to bottom"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
-              <path d="M12 5v14M19 12l-7 7-7-7" />
-            </svg>
-            {newMsgCount > 0 && (
-              <span style={{
-                position: "absolute",
-                top: -4,
-                right: -4,
-                background: "var(--blue)",
-                color: "#fff",
-                fontSize: 9,
-                fontWeight: 700,
-                minWidth: 14,
-                height: 14,
-                borderRadius: 7,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0 3px",
-              }}>{newMsgCount}</span>
-            )}
-          </button>
-        </div>
-      ) : undefined}
+      showScrollToBottom={!isNearBottom}
+      newMsgCount={newMsgCount}
+      onScrollToBottom={() => jumpFnsRef.current?.scrollToBottom()}
       panelVisible={panels.panelVisible}
       onTogglePanel={panels.togglePanel}
       roomMode={council.roomMode}
