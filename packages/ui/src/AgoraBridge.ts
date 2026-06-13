@@ -84,6 +84,8 @@ export interface AgoraBridge {
     getMemories(workspaceRoot: string): Promise<Array<{ id: string; content: string; domains: string[]; tags: string[]; scope: string; status: string; createdAt: string }>>;
     getAllMemories(workspaceRoot: string): Promise<Array<{ id: string; content: string; domains: string[]; tags: string[]; scope: string; status: string; createdAt: string }>>;
     updateMemoryStatus(workspaceRoot: string, memoryId: string, status: "accepted" | "rejected"): Promise<void>;
+    delete(workspaceRoot: string, roomId: string): Promise<void>;
+    rename(workspaceRoot: string, roomId: string, title: string): Promise<void>;
   };
   llm: {
     chat(params: {

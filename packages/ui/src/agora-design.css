@@ -223,6 +223,12 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 0 8px 0 29px;
+  border-radius: 7px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .room-link:hover .room-delete {
@@ -232,12 +238,6 @@ html, body {
 .room-delete:hover {
   opacity: 1 !important;
   color: var(--red) !important;
-}  padding: 0 8px 0 29px;
-  border-radius: 7px;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 13px;
-  cursor: pointer;
 }
 
 .room-link:hover,

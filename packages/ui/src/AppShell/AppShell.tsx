@@ -258,22 +258,37 @@ export const AppShell: React.FC<AppShellProps> = ({
                         }}
                       >
                         {editingRoomId === activeRoomId ? (
-                          <input
-                            autoFocus
-                            value={editingTitle}
-                            onChange={e => setEditingTitle(e.target.value)}
-                            onBlur={() => {
-                              if (editingTitle.trim() && onRenameRoom) onRenameRoom(activeRoomId!, editingTitle.trim());
+                          <span
+                            ref={el => {
+                              if (el && !el.dataset.init) {
+                                el.dataset.init = "1";
+                                el.textContent = editingTitle;
+                                const range = window.document.createRange();
+                                range.selectNodeContents(el);
+                                range.collapse(false);
+                                const sel = window.getSelection();
+                                sel?.removeAllRanges();
+                                sel?.addRange(range);
+                              }
+                            }}
+                            contentEditable
+                            suppressContentEditableWarning
+                            onInput={e => setEditingTitle((e.target as HTMLElement).textContent || "")}
+                            onBlur={e => {
+                              const val = (e.target as HTMLElement).textContent?.trim() || "";
+                              if (val && onRenameRoom) onRenameRoom(activeRoomId!, val);
                               setEditingRoomId(null);
                             }}
                             onKeyDown={e => {
                               if (e.key === "Enter") {
-                                if (editingTitle.trim() && onRenameRoom) onRenameRoom(activeRoomId!, editingTitle.trim());
+                                e.preventDefault();
+                                const val = (e.target as HTMLElement).textContent?.trim() || "";
+                                if (val && onRenameRoom) onRenameRoom(activeRoomId!, val);
                                 setEditingRoomId(null);
                               }
                               if (e.key === "Escape") setEditingRoomId(null);
                             }}
-                            style={{ background: "transparent", border: "1px solid var(--line)", borderRadius: 3, color: "var(--text)", fontSize: 13, fontWeight: 500, padding: "0 4px", width: `${Math.max(editingTitle.length, 4)}ch`, outline: "none", fontFamily: "inherit" }}
+                            style={{ outline: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 500, minWidth: "1ch" }}
                           />
                         ) : (
                           rooms.find(r => r.id === activeRoomId)?.title || "Room"

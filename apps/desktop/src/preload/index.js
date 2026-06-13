@@ -41,6 +41,10 @@ contextBridge.exposeInMainWorld("agora", {
       ipcRenderer.invoke("room:getAllMemories", workspaceRoot),
     updateMemoryStatus: (workspaceRoot, memoryId, status) =>
       ipcRenderer.invoke("room:updateMemoryStatus", workspaceRoot, memoryId, status),
+    delete: (workspaceRoot, roomId) =>
+      ipcRenderer.invoke("room:delete", workspaceRoot, roomId),
+    rename: (workspaceRoot, roomId, title) =>
+      ipcRenderer.invoke("room:rename", workspaceRoot, roomId, title),
   },
 
   // Custom Roles

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import type { ScannedDoc } from "./AgoraBridge.js";
+import { getBridge } from "./AgoraBridge.js";
 import { AppShell } from "./AppShell/AppShell.js";
 import type { AppView } from "./AppShell/AppShell.types.js";
 import { ContextGraph } from "./ContextGraph/ContextGraph.js";
@@ -81,6 +82,24 @@ export const App: React.FC = () => {
   const handleRegisterJumpFns = useCallback((fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void }) => {
     jumpFnsRef.current = fns;
   }, []);
+
+  const handleDeleteRoom = useCallback(async (roomId: string) => {
+    const bridge = getBridge();
+    if (!bridge || !workspace.workspace) return;
+    await bridge.room.delete(workspace.workspace.path, roomId);
+    if (council.roomIdRef.current === roomId) {
+      council.newRoom();
+      setActiveView("home");
+    }
+    council.loadRooms(workspace.workspace.path);
+  }, [workspace.workspace, council.loadRooms, council.newRoom, council.roomIdRef]);
+
+  const handleRenameRoom = useCallback(async (roomId: string, title: string) => {
+    const bridge = getBridge();
+    if (!bridge || !workspace.workspace) return;
+    await bridge.room.rename(workspace.workspace.path, roomId, title);
+    council.loadRooms(workspace.workspace.path);
+  }, [workspace.workspace, council.loadRooms]);
 
   // Memoize to avoid creating a new Set on every render
   const activeRoleIds = useMemo(
@@ -241,6 +260,8 @@ export const App: React.FC = () => {
       activeRoomId={council.roomIdRef.current}
       onSelectRoom={handleSelectRoom}
       onNewRoom={handleNewRoom}
+      onDeleteRoom={handleDeleteRoom}
+      onRenameRoom={handleRenameRoom}
       panelVisible={panels.panelVisible}
       onTogglePanel={panels.togglePanel}
       roomMode={council.roomMode}

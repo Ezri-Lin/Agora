@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 import { join } from "node:path";
-import { mkdir, writeFile, readFile, readdir } from "node:fs/promises";
+import { mkdir, writeFile, readFile, readdir, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { assertInWorkspace, sanitizeRoomId } from "./safety.js";
 import { auditLog } from "./audit.js";
@@ -185,5 +185,27 @@ export function registerRoomHandlers(): void {
       }
     }
     return files;
+  });
+
+  ipcMain.handle("room:delete", async (_e: any, ws: string, roomId: string) => {
+    assertSenderIsMain(_e);
+    const rid = assertValidRoomPath(ws, roomId);
+    const dir = join(roomsRoot(ws), rid);
+    if (existsSync(dir)) {
+      await rm(dir, { recursive: true, force: true });
+      auditLog("room:delete", { target: `${ws}/${rid}` });
+    }
+  });
+
+  ipcMain.handle("room:rename", async (_e: any, ws: string, roomId: string, title: string) => {
+    assertSenderIsMain(_e);
+    const rid = assertValidRoomPath(ws, roomId);
+    const roomFile = join(roomsRoot(ws), rid, "room.json");
+    if (!existsSync(roomFile)) return;
+    const room = JSON.parse(await readFile(roomFile, "utf-8"));
+    room.title = title;
+    room.updatedAt = new Date().toISOString();
+    await writeFile(roomFile, JSON.stringify(room, null, 2));
+    auditLog("room:rename", { target: `${ws}/${rid}`, detail: title });
   });
 }
