@@ -113,7 +113,7 @@ export interface AgoraBridge {
     getLLM(): Promise<LLMSettingsView>;
     saveLLM(input: SaveLLMSettingsInput): Promise<LLMSettingsView>;
     clearApiKey(): Promise<LLMSettingsView>;
-    testConnection(): Promise<TestConnectionResult>;
+    testConnection(override?: { provider?: string; model?: string; baseUrl?: string; apiKey?: string }): Promise<TestConnectionResult>;
   };
   terminal: {
     create(options: { cwd?: string }): Promise<string>;

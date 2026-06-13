@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 import { randomUUID } from "node:crypto";
-import { getSessionApiKey } from "./llm-config.js";
+import { getApiKey } from "./llm-config.js";
 import { auditLog } from "./audit.js";
 
 interface ChatMessage {
@@ -37,7 +37,7 @@ export function registerLLMChatHandlers(): void {
 
     // Real provider — session key takes priority over env var
     const envKey = config.apiKeyEnv ?? "OPENAI_API_KEY";
-    const apiKey = getSessionApiKey() ?? process.env[envKey];
+    const apiKey = getApiKey() ?? process.env[envKey];
     if (!apiKey) {
       throw new Error(`missing_api_key: No API key found (set in Settings or env var ${envKey})`);
     }
@@ -118,7 +118,7 @@ export function registerLLMChatHandlers(): void {
 
     // Real provider — SSE streaming
     const envKey = config.apiKeyEnv ?? "OPENAI_API_KEY";
-    const apiKey = getSessionApiKey() ?? process.env[envKey];
+    const apiKey = getApiKey() ?? process.env[envKey];
     if (!apiKey) {
       throw new Error(`missing_api_key: No API key found (set in Settings or env var ${envKey})`);
     }

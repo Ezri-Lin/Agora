@@ -81,7 +81,7 @@ contextBridge.exposeInMainWorld("agora", {
     getLLM: () => ipcRenderer.invoke("settings:getLLM"),
     saveLLM: (input) => ipcRenderer.invoke("settings:saveLLM", input),
     clearApiKey: () => ipcRenderer.invoke("settings:clearApiKey"),
-    testConnection: () => ipcRenderer.invoke("settings:testConnection"),
+    testConnection: (override) => ipcRenderer.invoke("settings:testConnection", override),
   },
 
   // Terminal

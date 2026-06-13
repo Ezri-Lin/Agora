@@ -72,7 +72,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onConfigC
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
-    const result = await window.agora.settings.testConnection();
+    const result = await window.agora.settings.testConnection({
+      provider,
+      model,
+      baseUrl: baseUrl || undefined,
+      apiKey: apiKey.trim() || undefined,
+    });
     setTestResult(result);
     setTesting(false);
   };
