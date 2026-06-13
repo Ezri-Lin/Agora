@@ -1309,8 +1309,8 @@ html, body {
 
 /* --- Resizable Panels --- */
 .resize-handle {
-  width: 4px;
-  background-color: transparent;
+  width: 1px;
+  background-color: var(--line);
   cursor: col-resize;
   transition: background-color 0.2s ease;
   position: relative;

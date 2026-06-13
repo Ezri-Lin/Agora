@@ -1,1 +1,2 @@
-export type AppView = "home" | "room" | "document" | "contextGraph";
+export type AppView = "home" | "room" | "contextGraph";
+export type SidecarTab = "progress" | "docs";

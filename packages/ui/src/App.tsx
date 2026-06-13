@@ -22,6 +22,8 @@ import { usePanelState } from "./hooks/usePanelState.js";
 import { useWorkspaceState } from "./hooks/useWorkspaceState.js";
 import { useCouncilState } from "./hooks/useCouncilState.js";
 import { useDocumentState } from "./hooks/useDocumentState.js";
+import { Sidecar } from "./Sidecar/Sidecar.js";
+import { ProgressPanel } from "./Sidecar/ProgressPanel.js";
 
 export const App: React.FC = () => {
   const panels = usePanelState();
@@ -60,9 +62,17 @@ export const App: React.FC = () => {
 
   const handleOpenDocument = useCallback(async (doc: ScannedDoc) => {
     if (!workspace.workspace) return;
-    setActiveView("document");
+    panels.setSidecarTab("docs");
     await documentState.openDocument(workspace.workspace.path, doc);
-  }, [documentState.openDocument, workspace.workspace]);
+  }, [documentState.openDocument, workspace.workspace, panels.setSidecarTab]);
+
+  const handleOpenOutput = useCallback(async (path: string) => {
+    if (!workspace.workspace) return;
+    const name = path.replace(/\\/g, "/").split("/").pop() || path;
+    const ext = name.includes(".") ? name.split(".").pop()! : "";
+    panels.setSidecarTab("docs");
+    await documentState.openDocument(workspace.workspace.path, { path, name, ext });
+  }, [documentState.openDocument, workspace.workspace, panels.setSidecarTab]);
 
   const handleReferenceDocument = useCallback((doc: ScannedDoc) => {
     workspace.addRef(doc);
@@ -208,17 +218,36 @@ export const App: React.FC = () => {
           />
         </>
       }
-      document={
-        <DocumentSurface
-          docs={workspace.availableDocs}
-          activeDoc={documentState.activeDoc}
-          content={documentState.content}
-          isLoading={documentState.isLoading}
-          workspacePath={workspace.workspace.path}
-          onOpenDocument={handleOpenDocument}
-          onAddReference={handleReferenceDocument}
+      sidecar={
+        <Sidecar
+          tab={panels.sidecarTab}
+          onTabChange={panels.setSidecarTab}
+          progress={
+            <ProgressPanel
+              messages={council.messages}
+              loadingStatus={council.loadingStatus}
+              isLoading={council.isLoading}
+              outputs={council.outputs}
+              onOpenOutput={handleOpenOutput}
+            />
+          }
+          docs={
+            <DocumentSurface
+              docs={workspace.availableDocs}
+              activeDoc={documentState.activeDoc}
+              content={documentState.content}
+              isLoading={documentState.isLoading}
+              workspacePath={workspace.workspace.path}
+              onOpenDocument={handleOpenDocument}
+              onAddReference={handleReferenceDocument}
+            />
+          }
         />
       }
+      sidecarTab={panels.sidecarTab}
+      onSidecarTabChange={panels.setSidecarTab}
+      sidecarVisible={panels.sidecarVisible}
+      onToggleSidecar={panels.toggleSidecar}
       floatingPanel={
         <RunInspector
           visible={panels.panelVisible}

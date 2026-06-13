@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SpiralLoader } from "../AgentTools/SpiralLoader.js";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle, usePanelRef } from "react-resizable-panels";
 import { TerminalPanel } from "../Terminal/TerminalPanel.js";
-import type { AppView } from "./AppShell.types.js";
+import type { AppView, SidecarTab } from "./AppShell.types.js";
 
 interface RoomEntry {
   id: string;
@@ -19,7 +19,11 @@ interface AppShellProps {
   home?: React.ReactNode;
   contextGraph?: React.ReactNode;
   main: React.ReactNode;
-  document?: React.ReactNode;
+  sidecar?: React.ReactNode;
+  sidecarTab?: SidecarTab;
+  onSidecarTabChange?: (tab: SidecarTab) => void;
+  sidecarVisible?: boolean;
+  onToggleSidecar?: () => void;
   floatingPanel?: React.ReactNode;
   composer: React.ReactNode;
   onAddRef?: () => void;
@@ -52,7 +56,11 @@ export const AppShell: React.FC<AppShellProps> = ({
   home,
   contextGraph,
   main,
-  document,
+  sidecar,
+  sidecarTab = "progress",
+  onSidecarTabChange,
+  sidecarVisible = true,
+  onToggleSidecar,
   floatingPanel,
   composer,
   onOpenSettings,
@@ -73,7 +81,6 @@ export const AppShell: React.FC<AppShellProps> = ({
   newMsgCount,
   onScrollToBottom,
 }) => {
-  const isDocsVisible = view === "document";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -143,8 +150,10 @@ export const AppShell: React.FC<AppShellProps> = ({
   // Collapse panels on mount (deferred so group is registered first)
   const onDocsPanelRef = useCallback((handle: any) => {
     docsHandle.current = handle;
-    if (handle) requestAnimationFrame(() => handle.collapse());
-  }, []);
+    if (handle) requestAnimationFrame(() => {
+      if (!sidecarVisible) handle.collapse();
+    });
+  }, [sidecarVisible]);
   const onTerminalPanelRef = useCallback((handle: any) => {
     terminalHandle.current = handle;
     if (handle) requestAnimationFrame(() => handle.collapse());
@@ -166,12 +175,12 @@ export const AppShell: React.FC<AppShellProps> = ({
     }
   }, [sidebarCollapsed]);
 
-  // Docs: expand/collapse on toggle
+  // Sidecar (docs panel): expand/collapse on toggle
   useEffect(() => {
     if (!docsHandle.current) return;
-    if (isDocsVisible) docsHandle.current.expand();
+    if (sidecarVisible) docsHandle.current.expand();
     else docsHandle.current.collapse();
-  }, [isDocsVisible]);
+  }, [sidecarVisible]);
 
   // Terminal: expand/collapse on toggle
   useEffect(() => {
@@ -302,147 +311,163 @@ export const AppShell: React.FC<AppShellProps> = ({
         {/* Main Area */}
         <Panel id="main" defaultSize="85%" minSize="20%">
           <main className="main" style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-            <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
-              <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" as any }}>
-                {/* Collapse Button (only if sidebar is collapsed) */}
-                {sidebarCollapsed && (
-                  <>
-                    <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <line x1="9" y1="3" x2="9" y2="21" />
-                      </svg>
-                    </label>
-                    <label className="tool" title="Back" onClick={goBack} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoBack ? "pointer" : "default", color: canGoBack ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoBack ? 1 : 0.4 }}>
-                      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                      </svg>
-                    </label>
-                    <label className="tool" title="Forward" onClick={goForward} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoForward ? "pointer" : "default", color: canGoForward ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoForward ? 1 : 0.4 }}>
-                      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                    </label>
-                  </>
-                )}
-
-                {/* Breadcrumb */}
-                <div className="breadcrumb" style={{ display: "flex", alignItems: "center", fontSize: "13px", fontWeight: 500, color: "var(--text)", marginLeft: "4px" }}>
-                  <span style={{ opacity: 0.8 }}>{workspaceName}</span>
-                  {(view === "room" || view === "document") && (
-                    <>
-                      <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
-                      <span
-                        style={{ cursor: "pointer", borderRadius: 3, padding: "1px 4px", marginLeft: -4 }}
-                        onClick={() => {
-                          const room = rooms.find(r => r.id === activeRoomId);
-                          if (room) {
-                            setEditingRoomId(room.id);
-                            setEditingTitle(room.title || "");
-                          }
-                        }}
-                      >
-                        {editingRoomId === activeRoomId ? (
-                          <span
-                            ref={el => {
-                              if (el && !el.dataset.init) {
-                                el.dataset.init = "1";
-                                el.textContent = editingTitle;
-                                const range = window.document.createRange();
-                                range.selectNodeContents(el);
-                                range.collapse(false);
-                                const sel = window.getSelection();
-                                sel?.removeAllRanges();
-                                sel?.addRange(range);
-                              }
-                            }}
-                            contentEditable
-                            suppressContentEditableWarning
-                            onInput={e => setEditingTitle((e.target as HTMLElement).textContent || "")}
-                            onBlur={e => {
-                              const val = (e.target as HTMLElement).textContent?.trim() || "";
-                              if (val && onRenameRoom) onRenameRoom(activeRoomId!, val);
-                              setEditingRoomId(null);
-                            }}
-                            onKeyDown={e => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                const val = (e.target as HTMLElement).textContent?.trim() || "";
-                                if (val && onRenameRoom) onRenameRoom(activeRoomId!, val);
-                                setEditingRoomId(null);
-                              }
-                              if (e.key === "Escape") setEditingRoomId(null);
-                            }}
-                            style={{ outline: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 500, minWidth: "1ch" }}
-                          />
-                        ) : (
-                          rooms.find(r => r.id === activeRoomId)?.title || "Room"
-                        )}
-                      </span>
-                    </>
-                  )}
-                  {view === "contextGraph" && (
-                    <>
+            {view === "home" && (
+              <>
+                <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
+                  <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" as any }}>
+                    {sidebarCollapsed && (
+                      <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          <line x1="9" y1="3" x2="9" y2="21" />
+                        </svg>
+                      </label>
+                    )}
+                    <div className="breadcrumb" style={{ display: "flex", alignItems: "center", fontSize: "13px", fontWeight: 500, color: "var(--text)", marginLeft: "4px" }}>
+                      <span style={{ opacity: 0.8 }}>{workspaceName}</span>
+                    </div>
+                  </div>
+                </header>
+                <section className="workspace" style={{ flex: 1, overflow: "hidden" }}>{home}</section>
+              </>
+            )}
+            {view === "contextGraph" && (
+              <>
+                <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
+                  <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" as any }}>
+                    {sidebarCollapsed && (
+                      <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          <line x1="9" y1="3" x2="9" y2="21" />
+                        </svg>
+                      </label>
+                    )}
+                    <div className="breadcrumb" style={{ display: "flex", alignItems: "center", fontSize: "13px", fontWeight: 500, color: "var(--text)", marginLeft: "4px" }}>
+                      <span style={{ opacity: 0.8 }}>{workspaceName}</span>
                       <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
                       <span style={{ opacity: 0.6 }}>Context Graph</span>
-                    </>
-                  )}
-                </div>
-              </div>
+                    </div>
+                  </div>
+                </header>
+                <section className="workspace" style={{ flex: 1, overflow: "hidden" }}>{contextGraph}</section>
+              </>
+            )}
+            {view === "room" && (
+              <PanelGroup id="agora-docs" orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
+                {/* Chat Panel */}
+                <Panel id="chat" defaultSize="70%" className="chat-panel" style={{ position: "relative" }}>
+                  <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                    {/* Chat Topbar */}
+                    <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
+                      <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" as any }}>
+                        {sidebarCollapsed && (
+                          <>
+                            <label className="tool" title="Toggle Sidebar" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <line x1="9" y1="3" x2="9" y2="21" />
+                              </svg>
+                            </label>
+                            <label className="tool" title="Back" onClick={goBack} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoBack ? "pointer" : "default", color: canGoBack ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoBack ? 1 : 0.4 }}>
+                              <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                              </svg>
+                            </label>
+                            <label className="tool" title="Forward" onClick={goForward} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoForward ? "pointer" : "default", color: canGoForward ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoForward ? 1 : 0.4 }}>
+                              <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                              </svg>
+                            </label>
+                          </>
+                        )}
+                        <div className="breadcrumb" style={{ display: "flex", alignItems: "center", fontSize: "13px", fontWeight: 500, color: "var(--text)", marginLeft: "4px" }}>
+                          <span style={{ opacity: 0.8 }}>{workspaceName}</span>
+                          <span style={{ margin: "0 6px", opacity: 0.4 }}>/</span>
+                          <span
+                            style={{ cursor: "pointer", borderRadius: 3, padding: "1px 4px", marginLeft: -4 }}
+                            onClick={() => {
+                              const room = rooms.find(r => r.id === activeRoomId);
+                              if (room) {
+                                setEditingRoomId(room.id);
+                                setEditingTitle(room.title || "");
+                              }
+                            }}
+                          >
+                            {editingRoomId === activeRoomId ? (
+                              <span
+                                ref={el => {
+                                  if (el && !el.dataset.init) {
+                                    el.dataset.init = "1";
+                                    el.textContent = editingTitle;
+                                    const range = window.document.createRange();
+                                    range.selectNodeContents(el);
+                                    range.collapse(false);
+                                    const sel = window.getSelection();
+                                    sel?.removeAllRanges();
+                                    sel?.addRange(range);
+                                  }
+                                }}
+                                contentEditable
+                                suppressContentEditableWarning
+                                onInput={e => setEditingTitle((e.target as HTMLElement).textContent || "")}
+                                onBlur={e => {
+                                  const val = (e.target as HTMLElement).textContent?.trim() || "";
+                                  if (val && onRenameRoom) onRenameRoom(activeRoomId!, val);
+                                  setEditingRoomId(null);
+                                }}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const val = (e.target as HTMLElement).textContent?.trim() || "";
+                                    if (val && onRenameRoom) onRenameRoom(activeRoomId!, val);
+                                    setEditingRoomId(null);
+                                  }
+                                  if (e.key === "Escape") setEditingRoomId(null);
+                                }}
+                                style={{ outline: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 500, minWidth: "1ch" }}
+                              />
+                            ) : (
+                              rooms.find(r => r.id === activeRoomId)?.title || "Room"
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="main-topbar-right" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" as any }}>
+                        <label className="tool" title="Open Workspace" onClick={onOpenWorkspace} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </label>
+                        <label className={`tool ${panelVisible ? "active" : ""}`} title="Toggle Inspector" onClick={onTogglePanel} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: panelVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                          </svg>
+                        </label>
+                        <label className={`tool ${terminalVisible ? "active" : ""}`} title="Toggle Terminal (Ctrl+`)" onClick={onToggleTerminal} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: terminalVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
+                            <path d="M4 17l6-6-6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M12 19h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </label>
+                        <label className={`tool ${sidecarVisible ? "active" : ""}`} title="Toggle Sidecar" onClick={onToggleSidecar} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: sidecarVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M14 2v6h6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M16 13H8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M16 17H8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M10 9H8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </label>
+                      </div>
+                    </header>
 
-              <div className="main-topbar-right" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" as any }}>
-                {/* IDE Icon */}
-                <label className="tool" title="Open Workspace" onClick={onOpenWorkspace} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </label>
-
-                {/* Inspector Icon (List style) */}
-                <label className={`tool ${panelVisible ? "active" : ""}`} title="Toggle Inspector" onClick={onTogglePanel} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: panelVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-                    <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
-                  </svg>
-                </label>
-
-                {/* Terminal Icon */}
-                <label className={`tool ${terminalVisible ? "active" : ""}`} title="Toggle Terminal (Ctrl+`)" onClick={onToggleTerminal} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: terminalVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
-                    <path d="M4 17l6-6-6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M12 19h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </label>
-
-                {/* Docs Icon */}
-                <label className={`tool ${isDocsVisible ? "active" : ""}`} title="Toggle Docs" onClick={() => onViewChange?.(isDocsVisible ? "room" : "document")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: isDocsVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M14 2v6h6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M16 13H8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M16 17H8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M10 9H8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </label>
-              </div>
-            </header>
-
-            <section className="workspace" style={{ display: "flex", width: "100%", flex: 1, overflow: "hidden" }}>
-              {view === "home" && home}
-              {view === "contextGraph" && (
-                <div style={{ flex: 1, overflow: "hidden" }}>{contextGraph}</div>
-              )}
-              {(view === "room" || view === "document") && (
-                <PanelGroup id="agora-docs" orientation="horizontal">
-                  {/* Chat Panel */}
-                  <Panel id="chat" defaultSize="70%" className="chat-panel" style={{ position: "relative" }}>
-                    <PanelGroup id="agora-term" orientation="vertical">
-                      {/* Chat Content */}
+                    {/* Chat + Terminal */}
+                    <PanelGroup id="agora-term" orientation="vertical" style={{ flex: 1, minHeight: 0 }}>
                       <Panel id="content" defaultSize="75%">
                         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
                           {main}
-
                           {floatingPanel}
-
                           <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px", position: "relative" }}>
                             {showScrollToBottom && (
                               <button
@@ -494,8 +519,6 @@ export const AppShell: React.FC<AppShellProps> = ({
                           </div>
                         </div>
                       </Panel>
-
-                      {/* Terminal */}
                       <PanelResizeHandle className="resize-handle-h" />
                       <Panel
                         id="terminal"
@@ -513,26 +536,26 @@ export const AppShell: React.FC<AppShellProps> = ({
                         />
                       </Panel>
                     </PanelGroup>
-                  </Panel>
+                  </div>
+                </Panel>
 
-                  {/* Docs Panel */}
-                  <PanelResizeHandle className="resize-handle" />
-                  <Panel
-                    id="docs"
-                    panelRef={onDocsPanelRef}
-                    defaultSize="30%"
-                    minSize="20%"
-                    collapsedSize="0%"
-                    collapsible
-                    style={{ overflow: "hidden" }}
-                  >
-                    <div style={{ height: "100%", width: "100%" }}>
-                      {document}
-                    </div>
-                  </Panel>
-                </PanelGroup>
-              )}
-            </section>
+                {/* Sidecar Panel */}
+                <PanelResizeHandle className="resize-handle" />
+                <Panel
+                  id="docs"
+                  panelRef={onDocsPanelRef}
+                  defaultSize="30%"
+                  minSize="20%"
+                  collapsedSize="0%"
+                  collapsible
+                  style={{ overflow: "hidden" }}
+                >
+                  <div style={{ height: "100%", width: "100%" }}>
+                    {sidecar}
+                  </div>
+                </Panel>
+              </PanelGroup>
+            )}
           </main>
         </Panel>
       </PanelGroup>

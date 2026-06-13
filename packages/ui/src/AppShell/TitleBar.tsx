@@ -41,7 +41,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         </button>
       </div>
       <nav style={styles.center} aria-label="Primary">
-        {(["home", "room", "document"] as const).map((item) => (
+        {(["home", "room"] as const).map((item) => (
           <button
             key={item}
             type="button"
@@ -52,7 +52,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             aria-pressed={view === item}
             onClick={() => onViewChange?.(item)}
           >
-            {item === "home" ? "Home" : item === "room" ? "Room" : "Document"}
+            {item === "home" ? "Home" : "Room"}
           </button>
         ))}
       </nav>

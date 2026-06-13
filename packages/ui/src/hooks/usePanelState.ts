@@ -1,9 +1,12 @@
 import { useState, useCallback } from "react";
+import type { SidecarTab } from "../AppShell/AppShell.types.js";
 
 export interface PanelState {
   showSettings: boolean;
   terminalVisible: boolean;
   panelVisible: boolean;
+  sidecarVisible: boolean;
+  sidecarTab: SidecarTab;
   dispatchGateOpen: boolean;
   showWriteProposalPanel: boolean;
   showMemoryReviewPanel: boolean;
@@ -12,6 +15,8 @@ export interface PanelState {
   closeSettings: () => void;
   toggleTerminal: () => void;
   togglePanel: () => void;
+  toggleSidecar: () => void;
+  setSidecarTab: (tab: SidecarTab) => void;
   setDispatchGateOpen: (open: boolean) => void;
   openWriteProposalPanel: () => void;
   closeWriteProposalPanel: () => void;
@@ -25,6 +30,8 @@ export function usePanelState(): PanelState {
   const [showSettings, setShowSettings] = useState(false);
   const [terminalVisible, setTerminalVisible] = useState(false);
   const [panelVisible, setPanelVisible] = useState(false);
+  const [sidecarVisible, setSidecarVisible] = useState(true);
+  const [sidecarTab, setSidecarTab] = useState<SidecarTab>("progress");
   const [dispatchGateOpen, setDispatchGateOpen] = useState(false);
   const [showWriteProposalPanel, setShowWriteProposalPanel] = useState(false);
   const [showMemoryReviewPanel, setShowMemoryReviewPanel] = useState(false);
@@ -34,6 +41,7 @@ export function usePanelState(): PanelState {
   const closeSettings = useCallback(() => setShowSettings(false), []);
   const toggleTerminal = useCallback(() => setTerminalVisible((v) => !v), []);
   const togglePanel = useCallback(() => setPanelVisible((v) => !v), []);
+  const toggleSidecar = useCallback(() => setSidecarVisible((v) => !v), []);
   const openWriteProposalPanel = useCallback(() => setShowWriteProposalPanel(true), []);
   const closeWriteProposalPanel = useCallback(() => setShowWriteProposalPanel(false), []);
   const openMemoryReviewPanel = useCallback(() => setShowMemoryReviewPanel(true), []);
@@ -45,6 +53,8 @@ export function usePanelState(): PanelState {
     showSettings,
     terminalVisible,
     panelVisible,
+    sidecarVisible,
+    sidecarTab,
     dispatchGateOpen,
     showWriteProposalPanel,
     showMemoryReviewPanel,
@@ -53,6 +63,8 @@ export function usePanelState(): PanelState {
     closeSettings,
     toggleTerminal,
     togglePanel,
+    toggleSidecar,
+    setSidecarTab,
     setDispatchGateOpen,
     openWriteProposalPanel,
     closeWriteProposalPanel,
