@@ -9,6 +9,7 @@ export interface RoleStreamState {
   status: "thinking" | "streaming" | "done" | "error";
   startedAt: number;
   microSummary: string;
+  messageId?: string;
 }
 
 interface CouncilMonitorProps {

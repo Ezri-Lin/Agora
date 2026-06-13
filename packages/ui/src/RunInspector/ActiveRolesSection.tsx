@@ -1,5 +1,5 @@
 import React from "react";
-import type { RoleCard, RoleRoundHistory } from "@agora/shared";
+import type { RoleCard } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { RoleCardItem } from "../FloatingPanel/RoleCardItem.js";
@@ -9,9 +9,7 @@ import { mutedTextStyle } from "./runInspectorStyles.js";
 interface ActiveRolesSectionProps {
   roles: RoleCard[];
   roleStates: Map<string, RoleStreamState>;
-  roleHistories?: Map<string, RoleRoundHistory[]>;
   colors: ColorPalette;
-  panelRef: React.RefObject<HTMLDivElement | null>;
   onStopRole?: (roleId: string) => void;
   onRemoveRole?: (roleId: string) => void;
   onJumpToMessage?: (messageId: string) => void;
@@ -20,9 +18,7 @@ interface ActiveRolesSectionProps {
 export const ActiveRolesSection: React.FC<ActiveRolesSectionProps> = ({
   roles,
   roleStates,
-  roleHistories,
   colors,
-  panelRef,
   onStopRole,
   onRemoveRole,
   onJumpToMessage,
@@ -39,12 +35,10 @@ export const ActiveRolesSection: React.FC<ActiveRolesSectionProps> = ({
           roleName={role.name}
           description={role.subtitle}
           state={state}
-          history={roleHistories?.get(role.id) ?? []}
           onStopTurn={state?.status !== "done" ? () => onStopRole?.(role.id) : undefined}
           onRemove={() => onRemoveRole?.(role.id)}
           onJumpToMessage={onJumpToMessage}
           colors={colors}
-          panelRef={panelRef}
         />
       );
     })}

@@ -1,22 +1,18 @@
 import React, { useState } from "react";
-import type { RoleRoundHistory } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { getRoleColor } from "../theme/palettes.js";
-import { useI18n } from "../i18n/I18nContext.js";
-import { RoleHistoryPopover } from "./RoleHistoryPopover.js";
+import { SpiralLoader } from "../AgentTools/SpiralLoader.js";
 
 interface RoleCardItemProps {
   roleId: string;
   roleName: string;
   description?: string;
   state?: RoleStreamState;
-  history: RoleRoundHistory[];
   onStopTurn?: () => void;
   onRemove?: () => void;
   onJumpToMessage?: (messageId: string) => void;
   colors: ColorPalette;
-  panelRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export const RoleCardItem: React.FC<RoleCardItemProps> = ({
@@ -24,86 +20,73 @@ export const RoleCardItem: React.FC<RoleCardItemProps> = ({
   roleName,
   description,
   state,
-  history,
   onStopTurn,
   onRemove,
   onJumpToMessage,
   colors,
-  panelRef,
 }) => {
-  const { t } = useI18n();
-  const [showHistory, setShowHistory] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
-  const [hovered, setHovered] = useState(false);
-  const cardRef = React.useRef<HTMLDivElement>(null);
 
   const isActive = state?.status === "thinking" || state?.status === "streaming";
   const isDone = state?.status === "done";
-  const isError = state?.status === "error";
-  const elapsed = state ? Math.floor((Date.now() - state.startedAt) / 1000) : 0;
-  const latestSummary = state?.microSummary || history[0]?.summary || "";
-
-  const statusLabel = isActive ? (state?.status === "thinking" ? t.roleThinking : t.roleStreaming)
-    : isDone ? t.roleDone
-    : isError ? t.roleError
-    : "";
-
   const accentColor = getRoleColor(roleId);
 
   return (
-    <div
-      ref={cardRef}
-      style={cardStyle(colors)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div className="role-row" onClick={() => setShowHistory(!showHistory)} style={{ cursor: "pointer" }}>
+    <div style={cardStyle(colors)}>
+      <div
+        className="role-row"
+        style={{ cursor: onJumpToMessage ? "pointer" : "default" }}
+        onClick={() => {
+          if (state?.messageId && onJumpToMessage) {
+            onJumpToMessage(state.messageId);
+          }
+        }}
+      >
         {/* Avatar */}
         <div className="role-dot" style={{ borderColor: accentColor }}>
           {roleName.charAt(0).toUpperCase()}
         </div>
 
         {/* Name + description */}
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <b>{roleName}</b>
-          <p>{description}</p>
+          {description && <p style={{ margin: 0, fontSize: 10, color: colors.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{description}</p>}
         </div>
+
+        {/* Status indicator */}
+        {isActive && (
+          <SpiralLoader size={12} style={{ color: accentColor, opacity: 0.7 }} />
+        )}
 
         {/* Icon actions */}
         <div style={actionsCol}>
           {isActive && onStopTurn && (
-            <div style={iconBtnWrap} onMouseEnter={() => setHoveredBtn("stop")} onMouseLeave={() => setHoveredBtn(null)}>
-              <button style={iconBtnStyle(colors)} onClick={(e) => { e.stopPropagation(); onStopTurn(); }}>⏹</button>
-              {hoveredBtn === "stop" && <Tooltip text={t.stopTurn} colors={colors} />}
+            <div style={iconBtnWrap} onMouseEnter={() => setHoveredBtn("pause")} onMouseLeave={() => setHoveredBtn(null)}>
+              <button
+                style={iconBtnStyle(colors)}
+                title="Pause"
+                onClick={(e) => { e.stopPropagation(); onStopTurn(); }}
+              >
+                <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 10, height: 10 }}>
+                  <rect x="3" y="2" width="3.5" height="12" rx="1" />
+                  <rect x="9.5" y="2" width="3.5" height="12" rx="1" />
+                </svg>
+              </button>
+              {hoveredBtn === "pause" && <Tooltip text="Pause role" colors={colors} />}
             </div>
           )}
           {onRemove && (
             <div style={iconBtnWrap} onMouseEnter={() => setHoveredBtn("remove")} onMouseLeave={() => setHoveredBtn(null)}>
-              <button style={iconBtnStyle(colors)} onClick={(e) => { e.stopPropagation(); onRemove(); }}>✕</button>
-              {hoveredBtn === "remove" && <Tooltip text={t.removeFromRoom} colors={colors} />}
+              <button
+                style={iconBtnStyle(colors)}
+                title="Remove"
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              >✕</button>
+              {hoveredBtn === "remove" && <Tooltip text="Remove from room" colors={colors} />}
             </div>
           )}
         </div>
       </div>
-
-      {/* Summary snippet — shown on hover */}
-      {latestSummary && !showHistory && hovered && (
-        <div style={summaryStyle(colors)}>{latestSummary}</div>
-      )}
-
-      {/* History bubble — portal positioned to the left of the panel */}
-      {showHistory && (
-        <RoleHistoryPopover
-          roleName={roleName}
-          roleId={roleId}
-          history={history}
-          onJumpToMessage={onJumpToMessage}
-          onClose={() => setShowHistory(false)}
-          colors={colors}
-          anchorRef={cardRef}
-          panelRef={panelRef}
-        />
-      )}
     </div>
   );
 };
@@ -138,78 +121,6 @@ const cardStyle = (colors: ColorPalette): React.CSSProperties => ({
   position: "relative",
 });
 
-const cardTopRow: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-};
-
-const avatarStyle = (color: string, active: boolean): React.CSSProperties => ({
-  width: 28,
-  height: 28,
-  borderRadius: "50%",
-  background: active ? `${color}dd` : color,
-  color: "#fff",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: 12,
-  fontWeight: 700,
-  flexShrink: 0,
-  cursor: "pointer",
-  outline: active ? `2px solid ${color}` : "none",
-  outlineOffset: 1,
-  transition: "outline 0.15s",
-});
-
-const infoCol: React.CSSProperties = {
-  flex: 1,
-  minWidth: 0,
-  cursor: "pointer",
-};
-
-const nameStyle = (colors: ColorPalette): React.CSSProperties => ({
-  fontSize: 11,
-  fontWeight: 600,
-  color: colors.text,
-  display: "block",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-});
-
-const descStyle = (colors: ColorPalette): React.CSSProperties => ({
-  fontSize: 10,
-  color: colors.textMuted,
-  lineHeight: 1.3,
-  display: "block",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  marginTop: 1,
-});
-
-const statusRowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  marginTop: 2,
-};
-
-const statusBadgeStyle = (color: string, pulse: boolean): React.CSSProperties => ({
-  fontSize: 9,
-  fontWeight: 600,
-  color,
-  textTransform: "uppercase",
-  letterSpacing: 0.3,
-  animation: pulse ? "pulse 1.5s ease-in-out infinite" : undefined,
-});
-
-const elapsedStyle = (colors: ColorPalette): React.CSSProperties => ({
-  fontSize: 9,
-  color: colors.textMuted,
-});
-
 const actionsCol: React.CSSProperties = {
   display: "flex",
   gap: 2,
@@ -234,16 +145,4 @@ const iconBtnStyle = (colors: ColorPalette): React.CSSProperties => ({
   justifyContent: "center",
   width: 20,
   height: 20,
-});
-
-const summaryStyle = (colors: ColorPalette): React.CSSProperties => ({
-  fontSize: 10,
-  color: colors.textMuted,
-  lineHeight: 1.4,
-  marginTop: 4,
-  paddingLeft: 36,
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
 });

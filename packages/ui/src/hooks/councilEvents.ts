@@ -43,6 +43,7 @@ export function createCouncilEventHandler({
             status: "thinking",
             startedAt: Date.now(),
             microSummary: "",
+            messageId: msgId,
           });
           return next;
         });
