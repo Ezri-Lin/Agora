@@ -5,7 +5,11 @@ import { useI18n } from "../i18n/I18nContext.js";
 import { getRoleColor, USER_COLOR } from "../theme/palettes.js";
 import { MessageContent } from "../ChatBubble/MessageContent.js";
 import { ThinkingTool } from "../AgentTools/ThinkingTool.js";
+import { EditToolCard } from "../AgentTools/EditTool.js";
+import { BashToolCard } from "../AgentTools/BashTool.js";
 import { TextShimmer } from "../AgentTools/TextShimmer.js";
+import { mapToolInvocationToStep } from "../AgentTools/toolAdapters.js";
+import { parseToolCalls } from "../utils/parseToolCalls.js";
 import type { RoleMeta } from "./RoleMessage.parts.js";
 
 interface RoleMessageProps {
@@ -30,6 +34,52 @@ function formatTime(iso: string): string {
   } catch {
     return "";
   }
+}
+
+function renderToolCalls(message: CouncilMessage, streaming?: boolean): React.ReactNode {
+  // Use structured toolCalls if available, otherwise parse from content
+  const toolCalls = message.toolCalls?.length
+    ? message.toolCalls
+    : parseToolCalls(message.content, message.thinking);
+
+  if (toolCalls.length === 0) return null;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
+      {toolCalls.map((tc) => {
+        const step = mapToolInvocationToStep(tc.id, {
+          toolName: tc.name,
+          args: tc.args,
+          state: "result",
+          result: tc.result,
+        });
+
+        switch (tc.name) {
+          case "Edit":
+          case "Write":
+            return (
+              <EditToolCard
+                key={tc.id}
+                step={step}
+                state={streaming ? "animating" : "complete"}
+                onComplete={() => {}}
+              />
+            );
+          case "Bash":
+            return (
+              <BashToolCard
+                key={tc.id}
+                step={step}
+                state={streaming ? "animating" : "complete"}
+                onComplete={() => {}}
+              />
+            );
+          default:
+            return null;
+        }
+      })}
+    </div>
+  );
 }
 
 export const RoleMessage: React.FC<RoleMessageProps> = ({
@@ -140,6 +190,8 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
                 onComplete={() => {}}
               />
             )}
+            {/* Tool calls: from structured data or parsed from content */}
+            {renderToolCalls(message, streaming)}
             {streaming && !message.content ? (
               <TextShimmer style={{ color: colors.textMuted, fontSize: 13, padding: "4px 0" }}>
                 {meta.name} is thinking...

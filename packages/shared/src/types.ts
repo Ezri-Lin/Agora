@@ -62,6 +62,15 @@ export type SenderType = "user" | "moderator" | "role" | "system";
 
 export type ProviderErrorCode = "missing_api_key" | "invalid_api_key" | "rate_limited" | "model_not_found" | "network_error" | "timeout" | "empty_response" | "unknown";
 
+/** Structured tool call data attached to a message */
+export interface ToolCall {
+  id: string;
+  name: string;
+  args: Record<string, any>;
+  result?: string;
+  duration?: number;
+}
+
 export interface CouncilMessage {
   id: string;
   roomId: string;
@@ -81,6 +90,8 @@ export interface CouncilMessage {
   thinking?: string;
   /** One-line summary for graph display */
   graphSummary?: string;
+  /** Tool calls made during this message (Edit, Bash, Search, etc.) */
+  toolCalls?: ToolCall[];
 }
 
 // === Role ===
@@ -122,6 +133,7 @@ export interface RoleCallResult {
   tokenUsage?: { input: number; output: number };
   needsMoreContext?: boolean;
   contextRequests?: ContextRequest[];
+  toolCalls?: ToolCall[];
 }
 
 // === LLM Config ===

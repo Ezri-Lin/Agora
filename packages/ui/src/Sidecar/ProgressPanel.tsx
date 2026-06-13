@@ -3,6 +3,7 @@ import type { CouncilMessage } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { radius, spacing, typography } from "../theme/tokens.js";
+import { extractFileChanges, parseToolCalls } from "../utils/parseToolCalls.js";
 
 interface ProgressPanelProps {
   messages: CouncilMessage[];
@@ -31,12 +32,25 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({
     ? getRepliesAfter(latestTask, messages).length
     : 0;
 
-  // Changes: only project documents, exclude app-generated files
-  const projectOutputs = outputs.filter((p) => !isAppGenerated(p));
-  const changeMessages = messages.filter(
-    (m) => m.graphSummary && m.senderType !== "user"
+  // Changes: extract from toolCalls or outputs
+  const allToolCalls = messages.flatMap((m) =>
+    m.toolCalls?.length ? m.toolCalls : parseToolCalls(m.content, m.thinking)
   );
-  const fileChanges = buildFileChanges(projectOutputs, changeMessages);
+  const toolFileChanges = extractFileChanges(allToolCalls);
+  // Also include outputs (project documents only)
+  const projectOutputs = outputs.filter((p) => !isAppGenerated(p));
+  const outputChanges = projectOutputs.map((path) => ({
+    path,
+    additions: 0,
+    deletions: 0,
+  }));
+  // Merge: prefer toolCalls data, add outputs that aren't already tracked
+  const fileChanges = [...toolFileChanges];
+  for (const oc of outputChanges) {
+    if (!fileChanges.find((fc) => fc.path === oc.path)) {
+      fileChanges.push(oc);
+    }
+  }
 
   return (
     <div style={styles.container}>
@@ -97,7 +111,14 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({
                   {basename(change.path)}
                 </span>
                 <span style={styles.changeStats}>
-                  {change.summary || "modified"}
+                  {change.additions > 0 && (
+                    <span style={{ color: "#15803d" }}>+{change.additions}</span>
+                  )}
+                  {change.additions > 0 && change.deletions > 0 && " "}
+                  {change.deletions > 0 && (
+                    <span style={{ color: "#dc2626" }}>-{change.deletions}</span>
+                  )}
+                  {change.additions === 0 && change.deletions === 0 && "modified"}
                 </span>
               </button>
             ))}
@@ -109,11 +130,6 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({
 };
 
 /* ---- helpers ---- */
-
-interface FileChange {
-  path: string;
-  summary?: string;
-}
 
 /** Filter out app-generated files (room context, sessions, etc.) */
 function isAppGenerated(path: string): boolean {
@@ -156,25 +172,6 @@ function getRepliesAfter(
     }
   }
   return replies;
-}
-
-function buildFileChanges(outputs: string[], msgs: CouncilMessage[]): FileChange[] {
-  const map = new Map<string, FileChange>();
-  for (const path of outputs) {
-    map.set(path, { path });
-  }
-  for (const msg of msgs) {
-    const summary = msg.graphSummary || "";
-    for (const path of outputs) {
-      if (summary.includes(basename(path))) {
-        const existing = map.get(path);
-        if (existing && !existing.summary) {
-          existing.summary = summary;
-        }
-      }
-    }
-  }
-  return Array.from(map.values());
 }
 
 function truncate(s: string, max: number): string {
