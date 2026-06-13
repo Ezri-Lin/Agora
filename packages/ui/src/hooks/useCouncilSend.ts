@@ -14,6 +14,7 @@ import { generateId, nowISO } from "@agora/shared";
 import { prepareCouncilDispatch, runCouncilRound } from "@agora/kernel";
 import { getBridge } from "../AgoraBridge.js";
 import { IPCProvider } from "../IPCProvider.js";
+import { sendSingleMode } from "./councilSendSingle.js";
 import type { PendingPerspectiveChip } from "../Composer/Composer.js";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import type { WorkspaceRef } from "./useWorkspaceState.js";
@@ -153,32 +154,20 @@ export function useCouncilSend({
 
       // ── Single mode: direct chat, no analysis/roles/summary ──────
       if (effectiveRoomMode === "single") {
-        setLoadingStatus(`Calling ${llmConfig.provider} (${llmConfig.model})...`);
-        const provider = new IPCProvider(llmConfig, (status) => setLoadingStatus(status));
-
-        const contextLines: string[] = [
-          "You are a helpful assistant. Respond directly and concisely.",
-          "Respond in the same language as the user's message.",
-        ];
-        if (docContents.size > 0) {
-          contextLines.push("", "## Reference Materials");
-          for (const [path, content] of docContents) {
-            contextLines.push("", `### ${path}`, content.slice(0, 4000));
-          }
-        }
-
-        const result = await provider.callModerator({
+        await sendSingleMode({
+          llmConfig,
           roomId: roomIdRef.current!,
-          task: "analyze",
-          context: contextLines.join("\n"),
-          messages: [...messages, userMsg],
+          messages,
+          userMsg,
+          docContents,
+          placeholderId: moderatorPlaceholderId,
+          onResult: (id, content, thinking) => {
+            setMessages((prev) => prev.map(m =>
+              m.id === id ? { ...m, content, thinking } : m
+            ));
+          },
+          setLoadingStatus,
         });
-
-        setMessages((prev) => prev.map(m =>
-          m.id === moderatorPlaceholderId
-            ? { ...m, content: result.content, thinking: result.thinking ?? "" }
-            : m
-        ));
         return;
       }
 
