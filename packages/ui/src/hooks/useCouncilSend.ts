@@ -225,7 +225,6 @@ export function useCouncilSend({
         });
 
         // Moderator LLM analyzes the topic before showing dispatch gate
-        setLoadingStatus("Moderator analyzing...");
         let moderatorAnalysis = "";
         let moderatorThinking: string | undefined;
         try {
@@ -259,6 +258,42 @@ export function useCouncilSend({
           moderatorAnalysis,
           moderatorThinking,
         };
+
+        // No roles needed and no explicit requests → skip dispatch gate, run directly
+        if (preview.defaultSelectedRoleIds.length === 0 && chipRequests.length === 0) {
+          const result = await runCouncilRound({
+            room: roomForCouncil,
+            topic: preview.topic,
+            userMessage: userMsg,
+            availableRoles: allRoles,
+            llm: provider,
+            recentMessages: messages,
+            docContents,
+            onEvent,
+            roleSettings,
+            explicitRoleRequests: undefined,
+            selectedRoleIds: [],
+          });
+
+          if (result.routingDecision) {
+            setLastRoutingDecision({ messageId: userMsg.id, decision: result.routingDecision });
+          }
+          setLoadingStatus("Persisting...");
+          const outputFiles = await persistCouncilRunResult({
+            bridge,
+            workspacePath: workspace.path,
+            roomId: roomIdRef.current!,
+            roomForCouncil,
+            messages,
+            userMsg,
+            result,
+          });
+          if (result.crossExaminationMessages.length > 0) {
+            setMessages((prev) => [...prev, ...result.crossExaminationMessages]);
+          }
+          setOutputs(outputFiles);
+          return;
+        }
 
         // Auto-invite: skip confirmation, run directly with suggested roles
         if (composerParams?.autoInvite) {
