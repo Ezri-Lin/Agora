@@ -8,6 +8,7 @@ interface CustomRole {
   name: string;
   nameCN: string;
   subtitle: string;
+  subtitleCN: string;
   type: string;
   systemPrompt: string;
   tags: string[];
@@ -110,6 +111,7 @@ export const CustomRolesTab: React.FC<CustomRolesTabProps> = ({ workspacePath, t
         name: "",
         nameCN: "",
         subtitle: "",
+        subtitleCN: "",
         type: "lens",
         systemPrompt: "",
         tags: [],

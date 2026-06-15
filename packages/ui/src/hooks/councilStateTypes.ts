@@ -42,6 +42,7 @@ export interface CustomRole {
   name: string;
   nameCN: string;
   subtitle: string;
+  subtitleCN: string;
   type: string;
   systemPrompt: string;
   tags: string[];

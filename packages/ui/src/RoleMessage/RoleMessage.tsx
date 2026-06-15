@@ -90,7 +90,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
   onToggle,
 }) => {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const roleMetaMap = useMemo(() => {
     const map = new Map<string, RoleMeta>();

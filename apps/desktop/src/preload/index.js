@@ -45,6 +45,8 @@ contextBridge.exposeInMainWorld("agora", {
       ipcRenderer.invoke("room:delete", workspaceRoot, roomId),
     rename: (workspaceRoot, roomId, title) =>
       ipcRenderer.invoke("room:rename", workspaceRoot, roomId, title),
+    update: (workspaceRoot, roomId, patch) =>
+      ipcRenderer.invoke("room:update", workspaceRoot, roomId, patch),
   },
 
   // Custom Roles

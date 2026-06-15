@@ -23,6 +23,7 @@ const roles: RoleCard[] = [
     name: "Skeptic Critic",
     nameCN: "怀疑者",
     subtitle: "Challenges assumptions",
+    subtitleCN: "质疑假设",
     type: "critic",
     systemPrompt: "Challenge assumptions",
     tags: ["risk"],

@@ -86,6 +86,7 @@ export interface AgoraBridge {
     updateMemoryStatus(workspaceRoot: string, memoryId: string, status: "accepted" | "rejected"): Promise<void>;
     delete(workspaceRoot: string, roomId: string): Promise<void>;
     rename(workspaceRoot: string, roomId: string, title: string): Promise<void>;
+    update(workspaceRoot: string, roomId: string, patch: Record<string, unknown>): Promise<void>;
   };
   llm: {
     chat(params: {
@@ -102,11 +103,11 @@ export interface AgoraBridge {
   };
   customRoles: {
     list(workspaceRoot: string): Promise<Array<{
-      id: string; name: string; nameCN: string; subtitle: string;
+      id: string; name: string; nameCN: string; subtitle: string; subtitleCN: string;
       type: string; systemPrompt: string; tags: string[];
     }>>;
     save(workspaceRoot: string, role: {
-      id: string; name: string; nameCN: string; subtitle: string;
+      id: string; name: string; nameCN: string; subtitle: string; subtitleCN: string;
       type: string; systemPrompt: string; tags: string[];
     }): Promise<Array<{ id: string; name: string }>>;
     delete(workspaceRoot: string, roleId: string): Promise<Array<{ id: string; name: string }>>;

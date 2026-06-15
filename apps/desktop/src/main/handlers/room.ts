@@ -211,4 +211,15 @@ export function registerRoomHandlers(): void {
     await writeFile(roomFile, JSON.stringify(room, null, 2));
     auditLog("room:rename", { target: rid, detail: title });
   });
+
+  ipcMain.handle("room:update", async (_e: any, _ws: string, roomId: string, patch: Record<string, unknown>) => {
+    assertSenderIsMain(_e);
+    const rid = assertValidRoomId(roomId);
+    const roomFile = join(roomsRoot(), rid, "room.json");
+    if (!existsSync(roomFile)) return;
+    const room = JSON.parse(await readFile(roomFile, "utf-8"));
+    Object.assign(room, patch, { updatedAt: new Date().toISOString() });
+    await writeFile(roomFile, JSON.stringify(room, null, 2));
+    auditLog("room:update", { target: rid, detail: JSON.stringify(Object.keys(patch)) });
+  });
 }
