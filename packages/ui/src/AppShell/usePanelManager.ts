@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { usePanelRef } from "react-resizable-panels";
 
-export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boolean) {
+export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boolean, sidebarCollapsed?: boolean) {
   const sidebarRef = usePanelRef();
   const docsHandle = useRef<any>(null);
   const terminalHandle = useRef<any>(null);
@@ -17,6 +17,18 @@ export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boole
     terminalHandle.current = handle;
     if (handle) requestAnimationFrame(() => handle.collapse());
   }, []);
+
+  // Sidebar expand/collapse
+  useEffect(() => {
+    if (!sidebarRef.current) return;
+    if (sidebarRef.current.isCollapsed()) sidebarRef.current.expand();
+  }, []);
+
+  useEffect(() => {
+    if (!sidebarRef.current) return;
+    if (sidebarCollapsed) sidebarRef.current.collapse();
+    else sidebarRef.current.expand();
+  }, [sidebarCollapsed]);
 
   // Sidecar expand/collapse
   useEffect(() => {
@@ -37,7 +49,6 @@ export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boole
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "`") {
         e.preventDefault();
-        // Dispatch custom event for parent to handle
         window.dispatchEvent(new CustomEvent("toggle-terminal"));
       }
     };

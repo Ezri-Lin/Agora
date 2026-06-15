@@ -83,7 +83,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { canGoBack, canGoForward, goBack, goForward } = useNavigation(view, onViewChange);
-  const { sidebarRef, onDocsPanelRef, onTerminalPanelRef } = usePanelManager(sidecarVisible, terminalVisible);
+  const { sidebarRef, onDocsPanelRef, onTerminalPanelRef } = usePanelManager(sidecarVisible, terminalVisible, sidebarCollapsed);
 
   const toggleSidebar = useCallback(() => setSidebarCollapsed(v => !v), []);
 
@@ -111,7 +111,6 @@ export const AppShell: React.FC<AppShellProps> = ({
             onDeleteRoom={onDeleteRoom}
             onOpenContextGraph={onOpenContextGraph}
             onOpenSettings={onOpenSettings}
-            collapsed={sidebarCollapsed}
             onToggleCollapse={toggleSidebar}
           />
         </Panel>
