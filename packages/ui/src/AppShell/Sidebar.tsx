@@ -20,6 +20,10 @@ interface SidebarProps {
   onOpenContextGraph?: () => void;
   onOpenSettings?: () => void;
   onToggleCollapse: () => void;
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+  onGoBack?: () => void;
+  onGoForward?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -34,16 +38,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenContextGraph,
   onOpenSettings,
   onToggleCollapse,
+  canGoBack,
+  canGoForward,
+  onGoBack,
+  onGoForward,
 }) => {
   const [projectExpanded, setProjectExpanded] = useState(true);
 
   return (
     <>
-      <header className="sidebar-topbar" style={{ display: "flex", alignItems: "center", height: "40px", paddingLeft: "80px", paddingRight: "8px", gap: "2px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
+      <header className="sidebar-topbar" style={{ display: "flex", alignItems: "center", height: "40px", paddingLeft: "80px", paddingRight: "8px", gap: "8px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
         <label className="tool" title="Toggle Sidebar" onClick={onToggleCollapse} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
             <line x1="9" y1="3" x2="9" y2="21" />
+          </svg>
+        </label>
+        <label className="tool" title="Back" onClick={onGoBack} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoBack ? "pointer" : "default", color: canGoBack ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoBack ? 1 : 0.4, WebkitAppRegion: "no-drag" as any }}>
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </label>
+        <label className="tool" title="Forward" onClick={onGoForward} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoForward ? "pointer" : "default", color: canGoForward ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoForward ? 1 : 0.4, WebkitAppRegion: "no-drag" as any }}>
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+            <path d="M5 12h14M12 5l7 7-7 7"/>
           </svg>
         </label>
       </header>

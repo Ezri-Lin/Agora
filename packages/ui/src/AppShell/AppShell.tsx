@@ -162,6 +162,10 @@ export const AppShell: React.FC<AppShellProps> = ({
             onOpenContextGraph={onOpenContextGraph}
             onOpenSettings={onOpenSettings}
             onToggleCollapse={toggleSidebar}
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onGoBack={goBack}
+            onGoForward={goForward}
           />
         </Panel>
         <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
