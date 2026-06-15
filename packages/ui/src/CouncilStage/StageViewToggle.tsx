@@ -27,7 +27,6 @@ export const StageViewToggle: React.FC<StageViewToggleProps> = ({ active, onChan
       bottom: 6,
       width: 1,
       background: "repeating-linear-gradient(180deg, #bdbdb6 0 3px, transparent 3px 6px)",
-      transform: "skewX(-18deg)",
       opacity: 0.7,
       zIndex: 2,
     }} />
