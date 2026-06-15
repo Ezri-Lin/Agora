@@ -16,6 +16,7 @@ import { formatSessionBriefForPrompt } from "../compact/formatSessionBriefForPro
 import { buildSessionRunningBrief } from "../compact/buildSessionRunningBrief.js";
 import type { MemoryStore } from "../memory/MemoryStore.js";
 import { extractMemories } from "../memory/MemoryExtractor.js";
+import { parseLlmJson } from "../utils/parseLlmJson.js";
 import type { CouncilRunResult, RunCouncilRoundInput } from "./councilTypes.js";
 import { stopRole, runRolePhase } from "./runRolePhase.js";
 import { runCrossExam } from "./runCrossExam.js";
@@ -152,8 +153,7 @@ async function selectRolesForRound(input: {
 
   const selectPrompt = buildModeratorPrompt("select_roles", modPack);
   const selectResult = await llm.callModerator({ roomId: room.id, task: "select_roles", context: selectPrompt, availableRoles });
-  let selectedIds: string[];
-  try { selectedIds = JSON.parse(selectResult.content); } catch { selectedIds = []; }
+  const selectedIds = parseLlmJson<string[]>(selectResult.content, []);
 
   const selectedRoles = selectedIds
     .map((id) => availableRoles.find((r) => r.id === id))

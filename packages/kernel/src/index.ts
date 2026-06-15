@@ -61,3 +61,4 @@ export type {
   WriteAppliedCallback,
 } from "./documentWrite/index.js";
 export type { LLMProvider, CouncilSession } from "./types/index.js";
+export { parseLlmJson } from "./utils/parseLlmJson.js";
