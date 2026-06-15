@@ -6,14 +6,20 @@ import React, { useMemo } from "react";
 import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { GraphSurface } from "../GraphSurface/GraphSurface.js";
+import type { GraphViewMode } from "../GraphSurface/model/coreTypes.js";
 import { buildGraphViewModel } from "../GraphSurface/model/coreTypes.js";
-import { buildContextCoreGraph } from "../GraphSurface/adapters/ContextAdapter.js";
+import { buildContextCoreGraph, buildRoomGraphViewModel } from "../GraphSurface/adapters/ContextAdapter.js";
+import type { GraphMessageCompactLike } from "../GraphSurface/adapters/ContextAdapter.js";
+import { buildArgumentGraphFromCompacts } from "../GraphSurface/adapters/ArgumentGraphAdapter.js";
 
 interface ContextGraphProps {
   messages?: CouncilMessage[];
   selectedRefs?: Array<{ path: string; label: string }>;
   roles?: RoleCard[];
   roomId?: string | null;
+  graphMode?: GraphViewMode;
+  compacts?: GraphMessageCompactLike[];
+  decisions?: string[];
   onNodeClick?: (msgId: string) => void;
 }
 
@@ -21,15 +27,34 @@ export const ContextGraph: React.FC<ContextGraphProps> = ({
   messages,
   selectedRefs,
   roles,
+  graphMode,
+  compacts,
+  decisions,
   onNodeClick,
 }) => {
   const { colors } = useTheme();
 
   const viewModel = useMemo(() => {
     if (!messages || messages.length === 0) return null;
-    const graph = buildContextCoreGraph(messages, selectedRefs ?? [], roles ?? []);
-    return buildGraphViewModel(graph);
-  }, [messages, selectedRefs, roles]);
+
+    switch (graphMode) {
+      case "room_graph":
+        return buildRoomGraphViewModel(messages, selectedRefs ?? [], roles ?? [], compacts);
+
+      case "argument_graph":
+        if (!compacts || compacts.length === 0) {
+          const graph = buildContextCoreGraph(messages, selectedRefs ?? [], roles ?? []);
+          return buildGraphViewModel(graph);
+        }
+        return buildArgumentGraphFromCompacts(compacts, decisions);
+
+      case "project_world":
+      default: {
+        const graph = buildContextCoreGraph(messages, selectedRefs ?? [], roles ?? []);
+        return buildGraphViewModel(graph);
+      }
+    }
+  }, [messages, selectedRefs, roles, graphMode, compacts, decisions]);
 
   const handleNodeClick = onNodeClick
     ? (nodeId: string) => {

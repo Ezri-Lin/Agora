@@ -68,6 +68,10 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
   const fitTickRef = useRef(0);
   const hasFittedRef = useRef(false);
   const layersReadyRef = useRef(false);
+  const flightVisCacheRef = useRef<{
+    highlightedSet: Set<string> | null;
+    showAll: boolean;
+  }>({ highlightedSet: null, showAll: false });
 
   // Wire up event handlers (extracted hook)
   const interaction = useGraphInteraction({
@@ -140,6 +144,24 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
     nodeLayer.animate();
     edgeLayer.animate();
     labelLayer.animate();
+
+    // Flight overlay — render() combines alpha lerp + draw
+    const flightLayer = flightLayerRef.current;
+    if (flightLayer) {
+      const highlighted = sel.getHighlightedSet(graph);
+      const cache = flightVisCacheRef.current;
+      const highlightedChanged =
+        highlighted !== cache.highlightedSet &&
+        (!highlighted || !cache.highlightedSet ||
+          highlighted.size !== cache.highlightedSet.size ||
+          ![...highlighted].every((id) => cache.highlightedSet!.has(id)));
+      if (highlightedChanged) {
+        cache.highlightedSet = highlighted;
+        flightLayer.updateVisibility(highlighted, theme);
+      }
+      flightLayer.renderArcs(positions);
+    }
+
     sel.markSettled();
   }, []);
 
@@ -186,7 +208,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
         nodeLayer.build(graph.nodes, theme);
         edgeLayer.build(graph.edges, theme);
         const vm = viewModel;
-        if (vm) flightLayer.setEdges(vm.flightEdges);
+        if (vm) flightLayer.setEdges(vm.flightEdges, themeRef.current);
       }
 
       const renderLoop = new RenderLoop(stage.app, render);
@@ -248,7 +270,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
       if (nodeLayer && edgeLayer) {
         nodeLayer.build(graph.nodes, theme);
         edgeLayer.build(graph.edges, theme);
-        flightLayerRef.current?.setEdges(viewModel.flightEdges);
+        flightLayerRef.current?.setEdges(viewModel.flightEdges, themeRef.current);
       }
     }
 
@@ -274,6 +296,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
       nodeLayer.build(graph.nodes, themeRef.current);
       edgeLayer.build(graph.edges, themeRef.current);
     }
+    flightLayerRef.current?.updateTheme(themeRef.current);
     renderLoopRef.current?.wake();
   }, [colors]);
 

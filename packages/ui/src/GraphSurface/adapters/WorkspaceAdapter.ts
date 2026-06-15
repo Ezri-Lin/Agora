@@ -42,6 +42,11 @@ const DEFAULT_COLORS: GraphColors = {
   edgeWidth: 0.4,
 };
 
+function truncate(s: string, max: number): string {
+  const clean = s.replace(/[#*_`>\-\n]+/g, " ").trim();
+  return clean.length > max ? clean.slice(0, max) + "\u2026" : clean;
+}
+
 function normalize(name: string): string {
   return name.replace(/\.[^.]+$/, "").toLowerCase();
 }
@@ -202,6 +207,63 @@ export function buildCitationCoreGraph(
     const degree = degreeMap.get(node.id) ?? 0;
     const max = node.kind === "tag" || node.kind === "ghost" ? 6 : 12;
     (node as { size: number }).size = obsidianSize(degree, 3, max);
+  }
+
+  return buildCoreGraph(nodes, edges);
+}
+
+interface ProjectWorldExtras {
+  keyClaims?: string[];
+  decisions?: string[];
+  rooms?: Array<{ id: string; title: string }>;
+}
+
+/**
+ * Build project world graph — summary-level landmarks only.
+ * Shows rooms, key claims, and decisions as landmarks.
+ * Does NOT include message_turns, ordinary claims, or persona internals.
+ */
+export function buildProjectWorldGraph(
+  docs: ScannedDoc[],
+  parsed: ParsedDoc[],
+  extras: ProjectWorldExtras = {},
+  colors: Partial<GraphColors> = {},
+): CoreGraph {
+  const base = buildCitationCoreGraph(docs, parsed, colors);
+  const nodes = [...base.nodes] as CoreNode[];
+  const edges = [...base.edges] as CoreEdge[];
+
+  for (const room of extras.rooms ?? []) {
+    nodes.push({
+      id: `room:${room.id}`,
+      label: room.title || "Room",
+      kind: "room",
+      size: 6,
+      color: "#b8a642",
+      weight: 1,
+    });
+  }
+
+  for (let i = 0; i < (extras.keyClaims ?? []).length; i++) {
+    nodes.push({
+      id: `kc:${i}`,
+      label: truncate(extras.keyClaims![i], 40),
+      kind: "key_claim",
+      size: 4,
+      color: "#cccccc",
+      weight: 1,
+    });
+  }
+
+  for (let i = 0; i < (extras.decisions ?? []).length; i++) {
+    nodes.push({
+      id: `dec:${i}`,
+      label: truncate(extras.decisions![i], 40),
+      kind: "decision",
+      size: 5,
+      color: "#4a8c5c",
+      weight: 1,
+    });
   }
 
   return buildCoreGraph(nodes, edges);

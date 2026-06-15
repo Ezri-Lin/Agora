@@ -32,6 +32,7 @@ export interface ResolvedGraphTheme {
   stance: {
     supportTint: number;
     opposeTint: number;
+    contradictTint: number;
     questionTint: number;
     refineTint: number;
   };
@@ -96,6 +97,7 @@ export function resolveGraphTheme(palette: ColorPalette): ResolvedGraphTheme {
     stance: {
       supportTint: hexToPixiTint(graphTokens.edgeSupport),
       opposeTint: hexToPixiTint(graphTokens.edgeChallenge),
+      contradictTint: hexToPixiTint(graphTokens.edgeChallenge), // same red as oppose, thicker arc
       questionTint: hexToPixiTint("#d29922"),
       refineTint: hexToPixiTint("#a882ff"),
     },

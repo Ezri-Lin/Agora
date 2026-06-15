@@ -3,7 +3,7 @@
  * Operate on CoreGraph — no mutations, no Agora types.
  */
 
-import type { CoreGraph, CoreNode, CoreEdge, ReadonlyVec2 } from "./coreTypes.js";
+import type { CoreGraph, CoreNode, CoreEdge, CoreFlightEdge, ReadonlyVec2 } from "./coreTypes.js";
 
 /** Build a node id→node index (derived cache, not stored on CoreGraph). */
 export function buildNodeIndex(graph: CoreGraph): ReadonlyMap<string, CoreNode> {
@@ -63,4 +63,31 @@ export function computeCentroid(positions: ReadonlyMap<string, ReadonlyVec2>): R
     sx += x; sy += y; n++;
   }
   return n > 0 ? { x: sx / n, y: sy / n } : { x: 0, y: 0 };
+}
+
+/** Get flight edges connected to a node. */
+export function getConnectedFlightEdges(
+  flightEdges: ReadonlyArray<CoreFlightEdge>,
+  nodeId: string,
+): CoreFlightEdge[] {
+  return flightEdges.filter(
+    (e) => e.source === nodeId || e.target === nodeId,
+  );
+}
+
+/**
+ * Get highlighted set including flight edge neighbors.
+ * Extends base getHighlightedSet with flight edge connections.
+ */
+export function getFlightEdgeHighlightedSet(
+  graph: CoreGraph,
+  flightEdges: ReadonlyArray<CoreFlightEdge>,
+  nodeId: string,
+): Set<string> {
+  const set = getHighlightedSet(graph, nodeId);
+  for (const fe of flightEdges) {
+    if (fe.source === nodeId) set.add(fe.target);
+    else if (fe.target === nodeId) set.add(fe.source);
+  }
+  return set;
 }
