@@ -42,6 +42,7 @@ function makeRole(
     name,
     nameCN: name,
     subtitle: opts.subtitle ?? name,
+    subtitleCN: opts.subtitle ?? name,
     type: opts.type ?? "architect",
     systemPrompt: opts.prompt ?? `You are ${name}. ${opts.subtitle ?? name}.`,
     tags: opts.tags ?? [],

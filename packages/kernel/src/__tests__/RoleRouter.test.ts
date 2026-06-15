@@ -13,6 +13,7 @@ function makeRole(overrides: Partial<RoleCard> = {}): RoleCard {
     name: "Test Role",
     nameCN: "测试角色",
     subtitle: "A test role",
+    subtitleCN: "测试角色",
     type: "strategist",
     systemPrompt: "You are a test role.",
     tags: ["test"],

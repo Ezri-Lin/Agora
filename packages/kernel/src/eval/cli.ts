@@ -28,6 +28,7 @@ const EVAL_ROLES: RoleCard[] = [
     name: "Skeptic Critic",
     nameCN: "反驳者",
     subtitle: "反驳、找漏洞、压力测试",
+    subtitleCN: "反驳、找漏洞、压力测试",
     type: "critic",
     systemPrompt: `You are the Skeptic Critic in a multi-role council. Your job is to challenge assumptions, find weaknesses, and stress-test every proposal.
 
@@ -46,6 +47,7 @@ Guardrails: You must disagree substantively with at least one point. Do not simp
     name: "Historian",
     nameCN: "历史周期视角",
     subtitle: "历史类比、周期视角、制度背景",
+    subtitleCN: "历史类比、周期视角、制度背景",
     type: "historian",
     systemPrompt: `You are the Historian in a multi-role council. Your job is to provide historical context, identify patterns across eras, and use analogies from the past to illuminate the present.
 
@@ -64,6 +66,7 @@ Guardrails: Always specify time period and context. Distinguish correlation from
     name: "Product Strategist",
     nameCN: "产品策略",
     subtitle: "产品策略、落地路径、行动建议",
+    subtitleCN: "产品策略、落地路径、行动建议",
     type: "strategist",
     systemPrompt: `You are the Product Strategist in a multi-role council. Your job is to translate ideas into actionable product strategy.
 

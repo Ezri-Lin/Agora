@@ -1,3 +1,11 @@
+// === Council Types (barrel re-export) ===
+export type { InviteGateState, InputRoute, RouteInputContext, InputRouteKind, UserCommand, RoomPhase } from "./council/routingTypes.js";
+export type { TaskFrame, TaskType } from "./council/taskFrameTypes.js";
+export type { EngagementDecision, EngagementRecommendation } from "./council/engagementTypes.js";
+export type { RoleCandidate, DefaultSelectionResult, DispatchPreview, CouncilDispatchSettings, RoutingDecisionRecord } from "./council/dispatchTypes.js";
+export type { CouncilRuntimeState } from "./council/runtimeStateTypes.js";
+export type { UserNextAction, FinalizeAction } from "./council/finalizeTypes.js";
+
 // === Workspace ===
 
 export interface WorkspaceRoot {
@@ -37,6 +45,7 @@ export interface CouncilRoom {
   visibility: "private" | "public";
   createdAt: string;
   updatedAt: string;
+  inviteGateState?: import("./council/routingTypes.js").InviteGateState;
 }
 
 export type SourceRefImportance = "primary" | "supporting" | "memory" | "background";

@@ -5,14 +5,14 @@ import { DEFAULT_ROLE_ROUTING_SETTINGS, normalizeRoleRoutingSettings } from "@ag
 
 // Rich test roles with full data for scoring
 const ROLES: RoleCard[] = [
-  { id: "moderator", name: "Moderator", nameCN: "主持人", subtitle: "Facilitates discussion", type: "moderator", systemPrompt: "You are the moderator.", tags: ["facilitation"] },
-  { id: "critic", name: "Critic", nameCN: "批评者", subtitle: "Challenges assumptions", type: "critic", systemPrompt: "You challenge assumptions and find weaknesses.", tags: ["criticism", "risk", "assumption"] },
-  { id: "architect", name: "Architect", nameCN: "架构师", subtitle: "System design and scalability", type: "architect", systemPrompt: "You design scalable systems and evaluate architecture trade-offs.", tags: ["architecture", "system_design", "scalability", "infrastructure"] },
-  { id: "ux", name: "UX Research", nameCN: "UX研究", subtitle: "Usability and user research", type: "lens", systemPrompt: "You evaluate usability, cognitive load, and user comprehension.", tags: ["ux", "usability", "design", "user_research", "friction"] },
-  { id: "legal", name: "Legal", nameCN: "法律", subtitle: "Legal risk and compliance", type: "lens", systemPrompt: "You identify legal risks, compliance requirements, and contractual obligations.", tags: ["legal", "compliance", "contract", "privacy", "risk"] },
-  { id: "strategist", name: "Strategist", nameCN: "策略师", subtitle: "Product strategy and market", type: "strategist", systemPrompt: "You evaluate product decisions through market analysis and strategic positioning.", tags: ["product", "strategy", "market", "prioritization"] },
-  { id: "security", name: "Security", nameCN: "安全", subtitle: "Threat modeling", type: "lens", systemPrompt: "You identify security threats, vulnerabilities, and recommend protective measures.", tags: ["security", "threat", "vulnerability", "attack"] },
-  { id: "growth", name: "Growth", nameCN: "增长", subtitle: "Growth marketing", type: "lens", systemPrompt: "You apply growth frameworks for acquisition, activation, and retention.", tags: ["growth", "marketing", "acquisition", "retention", "funnel"] },
+  { id: "moderator", name: "Moderator", nameCN: "主持人", subtitle: "Facilitates discussion", subtitleCN: "主持讨论", type: "moderator", systemPrompt: "You are the moderator.", tags: ["facilitation"] },
+  { id: "critic", name: "Critic", nameCN: "批评者", subtitle: "Challenges assumptions", subtitleCN: "质疑假设", type: "critic", systemPrompt: "You challenge assumptions and find weaknesses.", tags: ["criticism", "risk", "assumption"] },
+  { id: "architect", name: "Architect", nameCN: "架构师", subtitle: "System design and scalability", subtitleCN: "系统设计与可扩展性", type: "architect", systemPrompt: "You design scalable systems and evaluate architecture trade-offs.", tags: ["architecture", "system_design", "scalability", "infrastructure"] },
+  { id: "ux", name: "UX Research", nameCN: "UX研究", subtitle: "Usability and user research", subtitleCN: "可用性与用户研究", type: "lens", systemPrompt: "You evaluate usability, cognitive load, and user comprehension.", tags: ["ux", "usability", "design", "user_research", "friction"] },
+  { id: "legal", name: "Legal", nameCN: "法律", subtitle: "Legal risk and compliance", subtitleCN: "法律风险与合规", type: "lens", systemPrompt: "You identify legal risks, compliance requirements, and contractual obligations.", tags: ["legal", "compliance", "contract", "privacy", "risk"] },
+  { id: "strategist", name: "Strategist", nameCN: "策略师", subtitle: "Product strategy and market", subtitleCN: "产品策略与市场", type: "strategist", systemPrompt: "You evaluate product decisions through market analysis and strategic positioning.", tags: ["product", "strategy", "market", "prioritization"] },
+  { id: "security", name: "Security", nameCN: "安全", subtitle: "Threat modeling", subtitleCN: "威胁建模", type: "lens", systemPrompt: "You identify security threats, vulnerabilities, and recommend protective measures.", tags: ["security", "threat", "vulnerability", "attack"] },
+  { id: "growth", name: "Growth", nameCN: "增长", subtitle: "Growth marketing", subtitleCN: "增长营销", type: "lens", systemPrompt: "You apply growth frameworks for acquisition, activation, and retention.", tags: ["growth", "marketing", "acquisition", "retention", "funnel"] },
 ];
 
 // Use lower threshold for local-only testing
