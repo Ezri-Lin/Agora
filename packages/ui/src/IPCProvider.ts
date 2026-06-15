@@ -119,11 +119,11 @@ export class IPCProvider implements LLMProvider {
     if (!bridge) throw new ProviderError("unknown", "Agora bridge not available");
 
     const taskLabel = {
-      analyze: "Moderator analyzing...",
+      analyze: "",
       select_roles: "Moderator selecting roles...",
       summarize: "Moderator summarizing...",
     }[params.task];
-    this.onStatus?.(taskLabel);
+    if (taskLabel) this.onStatus?.(taskLabel);
 
     const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
       { role: "system", content: params.context },
