@@ -155,27 +155,30 @@ export const graph = {
   edgeWidthMajor: 0.6,
   edgeWidthRole: 0.5,
   edgeWidthSemantic: 0.7,
-  // Obsidian-scale: small dots, not large circles
+  // Obsidian-style: sqrt(degree+1) * 3, clamped 8–30
   nodeCoreRadius: 8,
   nodeRoomRadius: 6,
   nodeDocRadius: 5,
   nodeClaimRadius: 4,
   nodeRoleRadius: 5,
   nodeMicroRadius: 3,
-  // Color tokens (light values; dark consumers should read from agoraDarkColors)
-  nodeFill:          "#ffffff",
-  nodeStroke:        "#111111",
-  nodeMutedFill:     "#fafaf8",
-  nodeMutedStroke:   "#aaaaa2",
-  edgeSupport:       "#2f8f5b",
-  edgeChallenge:     "#c2413d",
-  nodeSelectedRing:  "#111111",
-  nodeThinkingRing:  "#111111",
-  // Obsidian-style node colors
-  nodeGreen:         "#6abf69",
-  nodeYellow:        "#e5c07b",
-  nodeGray:          "#6b6b76",
-  nodeMuted:         "#4a4a52",
+  // Obsidian dark-mode palette — muted grays, not bright colors
+  nodeFill:          "#999999",
+  nodeStroke:        "#3f3f3f",
+  nodeMutedFill:     "#666666",
+  nodeMutedStroke:   "#3f3f3f",
+  edgeSupport:       "#4a8c5c",
+  edgeChallenge:     "#a04040",
+  nodeSelectedRing:  "#a882ff",
+  nodeThinkingRing:  "#a882ff",
+  // Obsidian-style node colors — muted, not saturated
+  nodeGreen:         "#4a8c5c",
+  nodeYellow:        "#b8a642",
+  nodeGray:          "#999999",
+  nodeMuted:         "#666666",
+  // Obsidian graph tags/attachments
+  nodeTag:           "#44cf6e",
+  nodeAttachment:    "#e0de71",
 } as const;
 
 // ─── Console tokens (always dark, independent of theme) ───────────────

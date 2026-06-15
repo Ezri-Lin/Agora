@@ -12,6 +12,7 @@ export interface DocumentMap {
   kind: "markdown" | "text" | "json" | "yaml" | "code";
   headings: DocumentHeading[];
   links: string[];
+  wikilinks: string[];
   tags: string[];
   frontmatter?: Record<string, unknown>;
   lastModified?: string;

@@ -25,7 +25,7 @@ export const WorkspaceHome: React.FC<WorkspaceHomeProps> = ({
   return (
     <section className="screen home-screen">
       <div className="graph-field">
-        <div className="graph-controls">
+        <div className="graph-controls" style={{ display: "none" }}>
           <h3>Graph display</h3>
           <div className="layer-row"><span>Documents / backlinks</span><span className="switch on"></span></div>
           <div className="layer-row"><span>Rooms</span><span className="switch"></span></div>

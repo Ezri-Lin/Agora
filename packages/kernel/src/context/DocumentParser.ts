@@ -81,6 +81,22 @@ function extractLinks(content: string): string[] {
   return [...new Set(links)];
 }
 
+/** Extract [[wikilinks]] — supports [[target]], [[target|alias]], [[target#heading]]. */
+function extractWikilinks(content: string): string[] {
+  const wikilinks: string[] = [];
+  // Match [[target]], [[target|alias]], [[target#heading]], [[target#heading|alias]]
+  // Exclude [[ ]] (empty) and images ![[...]]
+  const regex = /(?<!!)\[\[([^\]]+?)\]\]/g;
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    const raw = match[1].trim();
+    // Take only the target part (before | or #)
+    const target = raw.split("|")[0].split("#")[0].trim();
+    if (target) wikilinks.push(target);
+  }
+  return [...new Set(wikilinks)];
+}
+
 /** Extract tags: #tag or frontmatter tags. */
 function extractTags(content: string, frontmatter?: Record<string, unknown>): string[] {
   const tags: string[] = [];
@@ -296,6 +312,7 @@ export function parseDocument(input: ParseDocumentInput): ParseDocumentOutput {
 
   const headings = kind === "markdown" ? parseHeadings(body, docId) : [];
   const links = kind === "markdown" ? extractLinks(body) : [];
+  const wikilinks = kind === "markdown" ? extractWikilinks(body) : [];
   const tags = extractTags(body, frontmatter);
 
   const document: DocumentMap = {
@@ -305,6 +322,7 @@ export function parseDocument(input: ParseDocumentInput): ParseDocumentOutput {
     kind,
     headings,
     links,
+    wikilinks,
     tags,
     frontmatter,
     contentHash,

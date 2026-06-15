@@ -144,7 +144,7 @@ export const App: React.FC = () => {
       onOpenWorkspace={workspace.openWorkspace}
       home={
         <WorkspaceHome
-          graph={<WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} />}
+          graph={<WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} workspacePath={workspace.workspace.path} />}
           rooms={council.rooms}
           docs={workspace.availableDocs}
           workspacePath={workspace.workspace.path}
@@ -180,7 +180,7 @@ export const App: React.FC = () => {
       }
       contextGraph={
         <div className="graph-field" style={{ position: "relative", width: "100%", height: "100%" }}>
-          <div className="graph-controls">
+          <div className="graph-controls" style={{ display: "none" }}>
             <h3>Graph display</h3>
             <div className="layer-row"><span>Documents / backlinks</span><span className="switch on" /></div>
             <div className="layer-row"><span>Rooms</span><span className="switch" /></div>
@@ -192,6 +192,7 @@ export const App: React.FC = () => {
             <WorkspaceGraph
               docs={workspace.availableDocs}
               rooms={council.rooms}
+              workspacePath={workspace.workspace.path}
             />
           </div>
         </div>
