@@ -32,10 +32,10 @@ export class CameraController {
   }
 
   /** Pan target by screen-space delta (pixels). */
-  pan(dx: number, dy: number, viewportW: number): void {
-    const worldScale = this.current.scale;
-    this.target.x -= dx / (viewportW / worldScale);
-    this.target.y -= dy / (viewportW / worldScale);
+  pan(dx: number, dy: number): void {
+    const s = this.current.scale;
+    this.target.x -= dx / s;
+    this.target.y -= dy / s;
   }
 
   /** Zoom target around a screen-space anchor point. */
