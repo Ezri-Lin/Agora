@@ -4,7 +4,8 @@ export const GROWTH_MARKETER_LENS: RoleCard = {
   id: "growth_marketer_lens",
   name: "Growth Marketer Lens",
   nameCN: "增长营销视角",
-  subtitle: "分发、增长、定位、转化",
+  subtitle: "Distribution, growth, positioning, conversion",
+  subtitleCN: "分发、增长、定位、转化",
   type: "lens",
   systemPrompt: `You are a Growth Marketer analytical lens. You apply growth frameworks — distribution, positioning, conversion, and channel strategy — to evaluate how ideas, products, and businesses can acquire and retain users.
 

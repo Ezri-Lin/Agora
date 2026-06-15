@@ -3,6 +3,7 @@ import type { RoleCard } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useRoleDisplay } from "../hooks/useRoleDisplay.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import type { Translations } from "../i18n/translations.js";
 
@@ -16,6 +17,38 @@ const STATUS_CONFIG: Record<string, (t: Translations) => { color: string; label:
   streaming: (t) => ({ color: "#22c55e", label: t.roleStreaming }),
   done: (t) => ({ color: "#6b7280", label: t.roleDone }),
   error: (t) => ({ color: "#ef4444", label: t.roleError }),
+};
+
+const ProgressRoleCard: React.FC<{
+  role: RoleCard;
+  state: RoleStreamState;
+  t: Translations;
+  colors: ColorPalette;
+}> = ({ role, state, t, colors }) => {
+  const { displayName } = useRoleDisplay(role);
+  const cfg = STATUS_CONFIG[state.status]?.(t) ?? { color: "#6b7280", label: state.status };
+  const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
+  const isActive = state.status === "thinking" || state.status === "streaming";
+  return (
+    <div style={cardStyle(colors)}>
+      <div style={avatarWrapStyle}>
+        <div style={{ ...avatarStyle(colors), borderColor: cfg.color, boxShadow: isActive ? `0 0 6px ${cfg.color}40` : "none" }}>
+          {displayName.charAt(0)}
+        </div>
+        <div style={{ ...dotStyle, background: cfg.color }} />
+      </div>
+      <div style={infoStyle}>
+        <div style={nameRowStyle}>
+          <span style={nameStyle(colors)}>{displayName}</span>
+          <span style={statusStyle(cfg.color)}>{cfg.label}</span>
+          {isActive && <span style={elapsedStyle(colors)}>{elapsed}s</span>}
+        </div>
+        {state.microSummary && (
+          <div style={summaryStyle(colors)}>{state.microSummary}</div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export const ProgressSection: React.FC<ProgressSectionProps> = ({ roles, roleStates }) => {
@@ -37,28 +70,8 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({ roles, roleSta
     <div style={wrapStyle}>
       {activeRoles.map((role) => {
         const state = roleStates.get(role.id)!;
-        const cfg = STATUS_CONFIG[state.status]?.(t) ?? { color: "#6b7280", label: state.status };
-        const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
-        const isActive = state.status === "thinking" || state.status === "streaming";
         return (
-          <div key={role.id} style={cardStyle(colors)}>
-            <div style={avatarWrapStyle}>
-              <div style={{ ...avatarStyle(colors), borderColor: cfg.color, boxShadow: isActive ? `0 0 6px ${cfg.color}40` : "none" }}>
-                {role.name.charAt(0)}
-              </div>
-              <div style={{ ...dotStyle, background: cfg.color }} />
-            </div>
-            <div style={infoStyle}>
-              <div style={nameRowStyle}>
-                <span style={nameStyle(colors)}>{role.name}</span>
-                <span style={statusStyle(cfg.color)}>{cfg.label}</span>
-                {isActive && <span style={elapsedStyle(colors)}>{elapsed}s</span>}
-              </div>
-              {state.microSummary && (
-                <div style={summaryStyle(colors)}>{state.microSummary}</div>
-              )}
-            </div>
-          </div>
+          <ProgressRoleCard key={role.id} role={role} state={state} t={t} colors={colors} />
         );
       })}
     </div>

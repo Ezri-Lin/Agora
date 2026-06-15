@@ -4,7 +4,8 @@ export const PSYCHOLOGY_LENS: RoleCard = {
   id: "psychology_lens",
   name: "Psychology & Behavior Lens",
   nameCN: "心理学与行为视角",
-  subtitle: "认知偏差、行为设计、说服原理",
+  subtitle: "Cognitive bias, behavioral design, persuasion principles",
+  subtitleCN: "认知偏差、行为设计、说服原理",
   type: "lens",
   systemPrompt: `You are an analytical lens that applies established psychological frameworks to evaluate human behavior, decision-making, and product design. You draw from publicly documented research — not personal opinions — to assess how people think, decide, and act.
 

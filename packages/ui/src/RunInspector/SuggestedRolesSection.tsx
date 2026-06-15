@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import type { RoleCard, SuggestedPerspective } from "@agora/shared";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useRoleDisplay } from "../hooks/useRoleDisplay.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { radius, spacing, typography } from "../theme/tokens.js";
@@ -17,6 +18,38 @@ interface SuggestedRolesSectionProps {
 }
 
 const MAX_SUGGESTIONS = 4;
+
+const SuggestionCard: React.FC<{
+  role: RoleCard;
+  reason?: string;
+  colors: ColorPalette;
+  onAddPerspective?: (roleId: string, roleName: string) => void;
+  onInvite?: (roleId: string) => void;
+}> = ({ role, reason, colors, onAddPerspective, onInvite }) => {
+  const { t } = useI18n();
+  const { displayName, displaySubtitle } = useRoleDisplay(role);
+  return (
+    <div style={suggestionCardStyle(colors)}>
+      <div style={suggestionHeaderStyle}>
+        <div style={{ minWidth: 0 }}>
+          <div style={roleNameStyle(colors)}>{displayName}</div>
+          <div style={roleTypeStyle(colors)}>{role.type}</div>
+        </div>
+        {(onAddPerspective || onInvite) && (
+          <button
+            type="button"
+            aria-label={`Add ${displayName}`}
+            style={actionButtonStyle(colors)}
+            onClick={() => onAddPerspective?.(role.id, displayName) ?? onInvite?.(role.id)}
+          >
+            {t.addPerspective ?? "Add"}
+          </button>
+        )}
+      </div>
+      <div style={mutedTextStyle(colors)}>{reason || displaySubtitle}</div>
+    </div>
+  );
+};
 
 export const SuggestedRolesSection: React.FC<SuggestedRolesSectionProps> = ({
   allRoles,
@@ -39,25 +72,7 @@ export const SuggestedRolesSection: React.FC<SuggestedRolesSectionProps> = ({
     <Section title={t.suggestedPerspectives ?? "Suggested perspectives"} colors={colors}>
       <div style={suggestionListStyle}>
         {suggestions.map(({ role, reason }) => (
-          <div key={role.id} style={suggestionCardStyle(colors)}>
-            <div style={suggestionHeaderStyle}>
-              <div style={{ minWidth: 0 }}>
-                <div style={roleNameStyle(colors)}>{role.name}</div>
-                <div style={roleTypeStyle(colors)}>{role.type}</div>
-              </div>
-              {(onAddPerspective || onInvite) && (
-                <button
-                  type="button"
-                  aria-label={`Add ${role.name}`}
-                  style={actionButtonStyle(colors)}
-                  onClick={() => onAddPerspective?.(role.id, role.name) ?? onInvite?.(role.id)}
-                >
-                  {t.addPerspective ?? "Add"}
-                </button>
-              )}
-            </div>
-            <div style={mutedTextStyle(colors)}>{reason || role.subtitle}</div>
-          </div>
+          <SuggestionCard key={role.id} role={role} reason={reason} colors={colors} onAddPerspective={onAddPerspective} onInvite={onInvite} />
         ))}
       </div>
     </Section>

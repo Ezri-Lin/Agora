@@ -16,6 +16,15 @@ import { ECONOMICS_LENS } from "./cards/economicsLens.js";
 import { SECURITY_LENS } from "./cards/securityLens.js";
 import { SCIENCE_LENS } from "./cards/scienceLens.js";
 import { PSYCHOLOGY_LENS } from "./cards/psychologyLens.js";
+import { EVIDENCE_REVIEWER } from "./cards/evidenceReviewer.js";
+import { DECISION_SCRIBE } from "./cards/decisionScribe.js";
+import { INTERACTION_DESIGNER } from "./cards/interactionDesigner.js";
+import { IMPLEMENTATION_REVIEWER } from "./cards/implementationReviewer.js";
+import { RESEARCH_LIBRARIAN } from "./cards/researchLibrarian.js";
+import { WRITING_EDITOR } from "./cards/writingEditor.js";
+import { KNOWLEDGE_SYNTHESIZER } from "./cards/knowledgeSynthesizer.js";
+import { SIGNAL_ANALYST } from "./cards/signalAnalyst.js";
+import { RISK_SECOND_ORDER_ANALYST } from "./cards/riskSecondOrderAnalyst.js";
 
 export { BUILT_IN_DOMAINS } from "./domains.js";
 export { BUILT_IN_FAMILIES } from "./families.js";
@@ -25,17 +34,28 @@ export const DEFAULT_ROLES: RoleCard[] = [
   // Layer 1: Core Roles
   MODERATOR,
   SKEPTIC_CRITIC,
-  HISTORIAN,
+  EVIDENCE_REVIEWER,
+  DECISION_SCRIBE,
+  // Layer 2: Product & Design
   PRODUCT_STRATEGIST,
+  UX_RESEARCH_LENS,
+  INTERACTION_DESIGNER,
   SYSTEMS_ARCHITECT,
-  // Layer 2: Persona Seed Pack
+  IMPLEMENTATION_REVIEWER,
+  // Layer 3: Knowledge & Research
+  RESEARCH_LIBRARIAN,
+  WRITING_EDITOR,
+  KNOWLEDGE_SYNTHESIZER,
+  // Layer 4: Analysis (Argus / External)
+  SIGNAL_ANALYST,
+  RISK_SECOND_ORDER_ANALYST,
+  // Layer 5: Legacy Lenses (existing, pre-contract)
+  HISTORIAN,
   JOBS_PRODUCT_TASTE_LENS,
   BUFFETT_BUSINESS_LENS,
   MUNGER_MENTAL_MODELS_LENS,
   GROWTH_MARKETER_LENS,
-  // Layer 2b: Domain Lenses
   ETHICS_LENS,
-  UX_RESEARCH_LENS,
   LEGAL_LENS,
   NARRATIVE_LENS,
   ECONOMICS_LENS,

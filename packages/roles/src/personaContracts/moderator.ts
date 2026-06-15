@@ -109,6 +109,12 @@ export const COUNCIL_MODERATOR: PersonaContract = {
       "Every council round — the moderator is always present",
       "Multi-perspective discussion needed",
       "User asks for structured analysis",
+      "Session needs memory extraction or insight persistence",
+      "Discussion outcomes need to be recorded or written to documents",
+    ],
+    antiTriggers: [
+      "Smalltalk or connectivity tests (hi/你好/test)",
+      "User explicitly requests direct answer without council",
     ],
   },
 

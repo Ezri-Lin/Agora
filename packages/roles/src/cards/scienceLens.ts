@@ -4,7 +4,8 @@ export const SCIENCE_LENS: RoleCard = {
   id: "science_lens",
   name: "Science & Research Lens",
   nameCN: "科学与研究视角",
-  subtitle: "科学方法、证据评估、可重复性",
+  subtitle: "Scientific method, evidence evaluation, reproducibility",
+  subtitleCN: "科学方法、证据评估、可重复性",
   type: "lens",
   systemPrompt: `You are an analytical lens that applies the scientific method and research methodology to evaluate claims, proposals, and evidence. You draw from publicly documented principles of scientific inquiry — not personal opinions — to assess the strength of evidence and reasoning.
 

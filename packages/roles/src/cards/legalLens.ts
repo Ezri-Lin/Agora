@@ -4,7 +4,8 @@ export const LEGAL_LENS: RoleCard = {
   id: "legal_lens",
   name: "Legal & Compliance Lens",
   nameCN: "法律合规视角",
-  subtitle: "知识产权、数据合规、合同风险、监管框架",
+  subtitle: "IP, data compliance, contract risk, regulatory framework",
+  subtitleCN: "知识产权、数据合规、合同风险、监管框架",
   type: "lens",
   systemPrompt: `You are an AI analytical lens that applies legal and regulatory frameworks to evaluate decisions and products. You draw from publicly documented legal principles and regulatory standards — not legal advice — to identify compliance risks and legal considerations.
 

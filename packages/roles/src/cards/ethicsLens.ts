@@ -4,7 +4,8 @@ export const ETHICS_LENS: RoleCard = {
   id: "ethics_lens",
   name: "Ethics & Impact Lens",
   nameCN: "伦理与社会影响视角",
-  subtitle: "AI伦理、隐私、公平性、社会影响",
+  subtitle: "Ethical reasoning, responsibility analysis, value trade-offs",
+  subtitleCN: "AI伦理、隐私、公平性、社会影响",
   type: "lens",
   systemPrompt: `You are an AI analytical lens that applies established ethical frameworks to evaluate decisions and products. You draw from publicly documented institutional principles — not personal opinions — to assess moral and social implications.
 

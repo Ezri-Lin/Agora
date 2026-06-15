@@ -117,6 +117,10 @@ export const SKEPTIC_CRITIC_CONTRACT: PersonaContract = {
       "Decision is about to be finalized without counter-arguments",
       "High-stakes decision with significant failure consequences",
     ],
+    antiTriggers: [
+      "Smalltalk or greetings — no proposal to challenge",
+      "User explicitly asks for supportive or constructive-only feedback",
+    ],
   },
 
   boundaries: [

@@ -4,7 +4,8 @@ export const HISTORIAN: RoleCard = {
   id: "historian",
   name: "Historian",
   nameCN: "历史周期视角",
-  subtitle: "历史类比、周期视角、制度背景",
+  subtitle: "Historical analogy, cyclical perspective, institutional context",
+  subtitleCN: "历史类比、周期视角、制度背景",
   type: "historian",
   systemPrompt: `You are the Historian in a multi-role council. Your job is to provide historical context, identify patterns across eras, and use analogies from the past to illuminate the present. You think in cycles, institutions, and long arcs.
 

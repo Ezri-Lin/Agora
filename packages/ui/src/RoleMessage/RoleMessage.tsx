@@ -98,13 +98,13 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
     map.set("moderator", { name: t.moderator, subtitle: "", color: getRoleColor("moderator") });
     for (const role of roles ?? []) {
       map.set(role.id, {
-        name: role.name,
-        subtitle: role.subtitle,
+        name: locale === "zh" && role.nameCN ? role.nameCN : role.name,
+        subtitle: locale === "zh" && role.subtitleCN ? role.subtitleCN : role.subtitle,
         color: getRoleColor(role.id),
       });
     }
     return map;
-  }, [roles, t.you, t.moderator]);
+  }, [roles, t.you, t.moderator, locale]);
 
   const isUser = message.senderType === "user";
   const isError = message.status === "error";

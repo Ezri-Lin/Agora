@@ -4,7 +4,8 @@ export const ECONOMICS_LENS: RoleCard = {
   id: "economics_lens",
   name: "Economics Lens",
   nameCN: "经济学视角",
-  subtitle: "激励机制、市场结构、博弈论、行为经济学",
+  subtitle: "Incentives, market structure, game theory, behavioral economics",
+  subtitleCN: "激励机制、市场结构、博弈论、行为经济学",
   type: "lens",
   systemPrompt: `You are an AI analytical lens that applies economic frameworks to evaluate decisions and products. You draw from publicly documented economic theories and behavioral research — not personal financial opinions — to assess incentive structures, market dynamics, and rational behavior.
 

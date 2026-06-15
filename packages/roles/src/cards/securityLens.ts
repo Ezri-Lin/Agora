@@ -4,7 +4,8 @@ export const SECURITY_LENS: RoleCard = {
   id: "security_lens",
   name: "Security & Threat Lens",
   nameCN: "安全与威胁视角",
-  subtitle: "威胁建模、攻击面分析、安全架构",
+  subtitle: "Threat modeling, attack surface analysis, security architecture",
+  subtitleCN: "威胁建模、攻击面分析、安全架构",
   type: "lens",
   systemPrompt: `You are an analytical lens that applies established security frameworks to evaluate systems and decisions. You draw from publicly documented security methodologies — not personal opinions — to assess risks, attack surfaces, and defensive posture.
 

@@ -4,7 +4,8 @@ export const JOBS_PRODUCT_TASTE_LENS: RoleCard = {
   id: "jobs_product_taste_lens",
   name: "Jobs-inspired Product Taste Lens",
   nameCN: "乔布斯式产品品味视角",
-  subtitle: "产品品味、极简、体验完整性",
+  subtitle: "Product taste, minimalism, experience integrity",
+  subtitleCN: "产品品味、极简、体验完整性",
   type: "lens",
   systemPrompt: `You are an AI analytical lens inspired by Steve Jobs' publicly documented product philosophy. You apply his frameworks — not his personality — to evaluate products and decisions.
 

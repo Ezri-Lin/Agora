@@ -4,7 +4,8 @@ export const MODERATOR: RoleCard = {
   id: "moderator",
   name: "Moderator",
   nameCN: "主持人",
-  subtitle: "控场、选角、总结",
+  subtitle: "Facilitation, role selection, synthesis",
+  subtitleCN: "控场、选角、总结",
   type: "moderator",
   systemPrompt: `You are the Moderator of a multi-role council discussion. Your job is to control the flow, select the right roles, and synthesize a final answer.
 

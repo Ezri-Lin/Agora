@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { getPersonaContract } from "@agora/roles";
 import type { DispatchGateContext } from "../hooks/councilStateTypes.js";
+import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import { CouncilDispatchGate, type RoleViewModel } from "./CouncilDispatchGate.js";
 import { getDomainLabel } from "./roleAvatar.js";
@@ -22,7 +23,8 @@ export const DispatchGateHost: React.FC<DispatchGateHostProps> = ({
   onContinue,
 }) => {
   const { colors } = useTheme();
-  const roles = useMemo(() => buildRoleViewModels(context), [context]);
+  const { locale } = useI18n();
+  const roles = useMemo(() => buildRoleViewModels(context, locale), [context, locale]);
 
   return (
     <div style={overlayStyle(colors)} onClick={onCancel}>
@@ -50,7 +52,7 @@ export const DispatchGateHost: React.FC<DispatchGateHostProps> = ({
   );
 };
 
-function buildRoleViewModels(context: DispatchGateContext): RoleViewModel[] {
+function buildRoleViewModels(context: DispatchGateContext, locale: string): RoleViewModel[] {
   const reasonMap = new Map<string, string>();
   for (const score of context.preview.routingDecision.scores) {
     if (score.reason) reasonMap.set(score.personaId, score.reason);
@@ -65,8 +67,8 @@ function buildRoleViewModels(context: DispatchGateContext): RoleViewModel[] {
     const contract = getPersonaContract(role.id);
     return {
       id: role.id,
-      name: role.name,
-      subtitle: role.subtitle,
+      name: locale === "zh" && role.nameCN ? role.nameCN : role.name,
+      subtitle: locale === "zh" && role.subtitleCN ? role.subtitleCN : role.subtitle,
       domainId: role.domainId,
       domainLabel: role.domainId ? getDomainLabel(role.domainId) : undefined,
       familyId: role.familyId,

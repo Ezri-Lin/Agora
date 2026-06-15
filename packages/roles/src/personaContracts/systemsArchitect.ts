@@ -119,6 +119,7 @@ export const SYSTEMS_ARCHITECT_CONTRACT: PersonaContract = {
     antiTriggers: [
       "Pure UI/UX layout questions with no system implications",
       "Marketing or business strategy without technical component",
+      "Smalltalk or simple factual questions",
     ],
   },
 

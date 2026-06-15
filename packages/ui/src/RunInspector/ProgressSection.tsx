@@ -1,6 +1,7 @@
 import React from "react";
 import type { RoleCard } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
+import { useRoleDisplay } from "../hooks/useRoleDisplay.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { getRoleColor } from "../theme/palettes.js";
 import { spacing, typography, radius } from "../theme/tokens.js";
@@ -14,6 +15,35 @@ interface ProgressSectionProps {
   colors: ColorPalette;
 }
 
+const RunRoleRow: React.FC<{
+  role: RoleCard;
+  state: RoleStreamState;
+  colors: ColorPalette;
+}> = ({ role, state, colors }) => {
+  const { displayName } = useRoleDisplay(role);
+  const accent = getRoleColor(role.id);
+  return (
+    <div style={rowStyle(colors)}>
+      <span style={dotStyle(accent, state.status === "thinking" || state.status === "streaming")} />
+      <div style={bodyStyle}>
+        <div style={metaRowStyle}>
+          <span style={nameStyle(colors)}>{displayName}</span>
+          <span style={statusStyle(colors)}>{state.status}</span>
+        </div>
+        {state.microSummary && (
+          state.status === "thinking" || state.status === "streaming" ? (
+            <TextShimmer style={{ ...mutedTextStyle(colors), margin: 0 }} duration={2.5}>
+              {state.microSummary}
+            </TextShimmer>
+          ) : (
+            <div style={mutedTextStyle(colors)}>{state.microSummary}</div>
+          )
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const ProgressSection: React.FC<ProgressSectionProps> = ({ roles, roleStates, colors }) => {
   const activeRoles = roles.filter((role) => roleStates.has(role.id));
 
@@ -23,27 +53,7 @@ export const ProgressSection: React.FC<ProgressSectionProps> = ({ roles, roleSta
         <div style={mutedTextStyle(colors)}>Waiting for role activity.</div>
       ) : activeRoles.map((role) => {
         const state = roleStates.get(role.id)!;
-        const accent = getRoleColor(role.id);
-        return (
-          <div key={role.id} style={rowStyle(colors)}>
-            <span style={dotStyle(accent, state.status === "thinking" || state.status === "streaming")} />
-            <div style={bodyStyle}>
-              <div style={metaRowStyle}>
-                <span style={nameStyle(colors)}>{role.name}</span>
-                <span style={statusStyle(colors)}>{state.status}</span>
-              </div>
-              {state.microSummary && (
-                state.status === "thinking" || state.status === "streaming" ? (
-                  <TextShimmer style={{ ...mutedTextStyle(colors), margin: 0 }} duration={2.5}>
-                    {state.microSummary}
-                  </TextShimmer>
-                ) : (
-                  <div style={mutedTextStyle(colors)}>{state.microSummary}</div>
-                )
-              )}
-            </div>
-          </div>
-        );
+        return <RunRoleRow key={role.id} role={role} state={state} colors={colors} />;
       })}
     </Section>
   );

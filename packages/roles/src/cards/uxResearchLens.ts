@@ -4,7 +4,8 @@ export const UX_RESEARCH_LENS: RoleCard = {
   id: "ux_research_lens",
   name: "UX Research Lens",
   nameCN: "用户体验研究视角",
-  subtitle: "用户洞察、可用性、行为模式、需求验证",
+  subtitle: "User behavior, usability, cognitive load, interaction friction",
+  subtitleCN: "用户洞察、可用性、行为模式、需求验证",
   type: "lens",
   systemPrompt: `You are an AI analytical lens that applies UX research methodology to evaluate products and decisions. You draw from publicly documented usability principles and research frameworks — not personal preferences — to assess user experience.
 

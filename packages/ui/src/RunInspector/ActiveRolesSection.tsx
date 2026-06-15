@@ -1,6 +1,7 @@
 import React from "react";
 import type { RoleCard, RoleRoundHistory } from "@agora/shared";
 import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
+import { useRoleDisplay } from "../hooks/useRoleDisplay.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import { RoleCardItem } from "../FloatingPanel/RoleCardItem.js";
 import { Section } from "./Section.js";
@@ -16,6 +17,33 @@ interface ActiveRolesSectionProps {
   roleHistories?: Map<string, RoleRoundHistory[]>;
   panelRef?: React.RefObject<HTMLDivElement | null>;
 }
+
+const ActiveRoleRow: React.FC<{
+  role: RoleCard;
+  state?: RoleStreamState;
+  onStopRole?: (roleId: string) => void;
+  onRemoveRole?: (roleId: string) => void;
+  onJumpToMessage?: (messageId: string) => void;
+  colors: ColorPalette;
+  history?: RoleRoundHistory[];
+  panelRef?: React.RefObject<HTMLDivElement | null>;
+}> = ({ role, state, onStopRole, onRemoveRole, onJumpToMessage, colors, history, panelRef }) => {
+  const { displayName, displaySubtitle } = useRoleDisplay(role);
+  return (
+    <RoleCardItem
+      roleId={role.id}
+      roleName={displayName}
+      description={displaySubtitle}
+      state={state}
+      onStopTurn={state?.status !== "done" ? () => onStopRole?.(role.id) : undefined}
+      onRemove={() => onRemoveRole?.(role.id)}
+      onJumpToMessage={onJumpToMessage}
+      colors={colors}
+      history={history}
+      panelRef={panelRef}
+    />
+  );
+};
 
 export const ActiveRolesSection: React.FC<ActiveRolesSectionProps> = ({
   roles,
@@ -33,11 +61,17 @@ export const ActiveRolesSection: React.FC<ActiveRolesSectionProps> = ({
     ) : roles.map((role) => {
       const state = roleStates.get(role.id);
       return (
-        <RoleCardItem
+        <ActiveRoleRow
           key={role.id}
-          roleId={role.id}
-          roleName={role.name}
-          description={role.subtitle}
+          role={role}
+          state={state}
+          onStopRole={onStopRole}
+          onRemoveRole={onRemoveRole}
+          onJumpToMessage={onJumpToMessage}
+          colors={colors}
+          history={roleHistories?.get(role.id)}
+          panelRef={panelRef}
+        />
           state={state}
           onStopTurn={state?.status !== "done" ? () => onStopRole?.(role.id) : undefined}
           onRemove={() => onRemoveRole?.(role.id)}

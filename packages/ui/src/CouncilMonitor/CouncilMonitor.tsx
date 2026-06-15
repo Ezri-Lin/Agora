@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import type { RoleCard } from "@agora/shared";
 import { useTheme } from "../theme/ThemeContext.js";
 import { useI18n } from "../i18n/I18nContext.js";
+import { useRoleDisplay } from "../hooks/useRoleDisplay.js";
 import type { ColorPalette } from "../theme/palettes.js";
 import type { Translations } from "../i18n/translations.js";
 
@@ -77,6 +78,7 @@ const RoleCardEntry: React.FC<{
   onStop?: () => void;
 }> = ({ role, state, t, colors, onStop }) => {
   const styles = createStyles(colors);
+  const { displayName } = useRoleDisplay(role);
   const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
   const statusConfig = getStatusConfig(state.status, t);
 
@@ -91,12 +93,12 @@ const RoleCardEntry: React.FC<{
               ? `0 0 6px ${statusConfig.color}40`
               : "none",
           }}>
-            {role.name.charAt(0)}
+            {displayName.charAt(0)}
           </div>
           <div style={{ ...styles.statusDot, background: statusConfig.color }} />
         </div>
         <div style={styles.cardBody}>
-          <div style={styles.cardName}>{role.name}</div>
+          <div style={styles.cardName}>{displayName}</div>
           <div style={styles.cardStatus}>
             <span style={{ color: statusConfig.color }}>{statusConfig.label}</span>
             {(state.status === "thinking" || state.status === "streaming") && (

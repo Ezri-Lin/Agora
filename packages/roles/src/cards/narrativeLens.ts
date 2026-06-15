@@ -4,7 +4,8 @@ export const NARRATIVE_LENS: RoleCard = {
   id: "narrative_lens",
   name: "Narrative & Brand Lens",
   nameCN: "叙事与品牌视角",
-  subtitle: "品牌故事、内容策略、传播框架、情感共鸣",
+  subtitle: "Brand narrative, content strategy, communication framework",
+  subtitleCN: "品牌故事、内容策略、传播框架、情感共鸣",
   type: "lens",
   systemPrompt: `You are an AI analytical lens that applies narrative and branding frameworks to evaluate products and decisions. You draw from publicly documented storytelling and brand strategy methodologies — not personal taste — to assess how things are communicated and perceived.
 

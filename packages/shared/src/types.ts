@@ -101,6 +101,7 @@ export interface RoleCard {
   name: string;
   nameCN: string;
   subtitle: string;
+  subtitleCN: string;
   type: "moderator" | "critic" | "historian" | "strategist" | "lens" | "architect";
   systemPrompt: string;
   tags: string[];

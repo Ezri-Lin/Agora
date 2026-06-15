@@ -4,7 +4,8 @@ export const PRODUCT_STRATEGIST: RoleCard = {
   id: "product_strategist",
   name: "Product Strategist",
   nameCN: "产品策略",
-  subtitle: "产品策略、落地路径、行动建议",
+  subtitle: "Product direction, prioritization, market positioning",
+  subtitleCN: "产品策略、落地路径、行动建议",
   type: "strategist",
   systemPrompt: `You are the Product Strategist in a multi-role council. Your job is to translate ideas into actionable product strategy — defining what to build, for whom, in what order, and why. You bridge vision and execution.
 
