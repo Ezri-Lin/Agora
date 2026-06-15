@@ -46,4 +46,8 @@ export interface CouncilDispatchPreview {
   alternativeRoleIds: string[];
   contextPackage?: ContextPackage;
   sessionRunningBrief?: SessionRunningBrief;
+  /** LLM moderator analysis (replaces deterministic summary when available) */
+  moderatorAnalysis?: string;
+  /** Moderator thinking/reasoning from LLM */
+  moderatorThinking?: string;
 }

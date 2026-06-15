@@ -11,7 +11,7 @@ import type {
   RoomMode,
 } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
-import { prepareCouncilDispatch, runCouncilRound } from "@agora/kernel";
+import { prepareCouncilDispatch, runCouncilRound, buildModeratorContextPack, buildModeratorPrompt } from "@agora/kernel";
 import { getBridge } from "../AgoraBridge.js";
 import { IPCProvider } from "../IPCProvider.js";
 import { sendSingleMode } from "./councilSendSingle.js";
@@ -224,6 +224,42 @@ export function useCouncilSend({
           explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
         });
 
+        // Moderator LLM analyzes the topic before showing dispatch gate
+        setLoadingStatus("Moderator analyzing...");
+        let moderatorAnalysis = "";
+        let moderatorThinking: string | undefined;
+        try {
+          const modPack = buildModeratorContextPack(
+            roomForCouncil, text, [...messages, userMsg], docContents,
+          );
+          const analyzePrompt = buildModeratorPrompt("analyze", modPack);
+          const analysisResult = await provider.callModerator({
+            roomId: roomForCouncil.id,
+            task: "analyze",
+            context: analyzePrompt,
+            messages: [...messages, userMsg],
+          });
+          moderatorAnalysis = analysisResult.content;
+          moderatorThinking = analysisResult.thinking;
+
+          // Update moderator placeholder with real analysis
+          setMessages((prev) => prev.map(m =>
+            m.id === moderatorPlaceholderId
+              ? { ...m, content: moderatorAnalysis, thinking: moderatorThinking ?? "" }
+              : m
+          ));
+        } catch (err) {
+          console.warn("Moderator pre-analysis failed, using deterministic summary:", err);
+          moderatorAnalysis = preview.moderatorSummary;
+        }
+
+        // Enrich preview with LLM analysis
+        const enrichedPreview = {
+          ...preview,
+          moderatorAnalysis,
+          moderatorThinking,
+        };
+
         // Auto-invite: skip confirmation, run directly with suggested roles
         if (composerParams?.autoInvite) {
           const result = await runCouncilRound({
@@ -260,11 +296,11 @@ export function useCouncilSend({
           return;
         }
 
-        // Manual: show dispatch gate for user confirmation
+        // Manual: show dispatch gate for user confirmation with LLM analysis
         // Remove moderator thinking placeholder — dispatch gate replaces it
         setMessages((prev) => prev.filter((m) => m.id !== moderatorPlaceholderId));
         setDispatchGate({
-          preview,
+          preview: enrichedPreview,
           userMsg,
           roomForCouncil,
           allRoles,
@@ -272,6 +308,8 @@ export function useCouncilSend({
           onEvent,
           roleSettings,
           chipRequests,
+          moderatorAnalysis,
+          moderatorThinking,
         });
         setDispatchSelectedRoleIds(preview.defaultSelectedRoleIds);
         setIsLoading(false);

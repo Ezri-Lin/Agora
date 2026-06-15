@@ -29,6 +29,10 @@ export interface DispatchGateContext {
     allowAutoInviteLenses: boolean;
   };
   chipRequests: ExplicitRoleRequest[];
+  /** LLM moderator analysis result (shown in dispatch gate) */
+  moderatorAnalysis?: string;
+  /** Moderator thinking/reasoning (shown in dispatch gate) */
+  moderatorThinking?: string;
 }
 
 export interface CustomRole {
