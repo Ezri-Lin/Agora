@@ -60,7 +60,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   contextGraph,
   main,
   sidecar,
-  sidecarVisible = true,
+  sidecarVisible = false,
   onToggleSidecar,
   floatingPanel,
   composer,

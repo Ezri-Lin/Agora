@@ -71,6 +71,21 @@ export const Composer: React.FC<ComposerProps> = ({
 
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composingRef = useRef(false);
+
+  // Track IME composition state via native events
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const onStart = () => { composingRef.current = true; };
+    const onEnd = () => { composingRef.current = false; };
+    ta.addEventListener("compositionstart", onStart);
+    ta.addEventListener("compositionend", onEnd);
+    return () => {
+      ta.removeEventListener("compositionstart", onStart);
+      ta.removeEventListener("compositionend", onEnd);
+    };
+  }, []);
 
   // Menus state
   const [activeMenu, setActiveMenu] = useState<"add" | "project" | "participation" | null>(null);
@@ -208,7 +223,7 @@ export const Composer: React.FC<ComposerProps> = ({
         return;
       }
     } else {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === "Enter" && !e.shiftKey && !composingRef.current) {
         e.preventDefault();
         handleSend();
       }

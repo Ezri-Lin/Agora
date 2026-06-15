@@ -117,6 +117,10 @@ export function useCouncilState(): CouncilState {
   const handleStop = useCallback(() => {
     setIsLoading(false);
     setLoadingStatus("");
+    // Remove moderator thinking placeholder
+    setMessages((prev) => prev.filter((m) =>
+      !(m.senderType === "moderator" && m.content === "" && m.thinking)
+    ));
   }, []);
 
   const handleStopRole = useCallback((roleId: string) => {

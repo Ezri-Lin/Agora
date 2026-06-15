@@ -68,21 +68,36 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
 
   // Expansion management: expanded message IDs
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const autoExpandedRef = useRef<Set<string>>(new Set());
 
-  // Auto-expand streaming role message
+  // Auto-expand streaming role message; collapse when streaming ends
   useEffect(() => {
-    if (!streamingRoleId) return;
-    const streamingMsg = messages.find((m) => m.senderId === streamingRoleId && m.senderType === "role");
-    if (!streamingMsg) return;
-    setExpandedIds((prev) => {
-      if (prev.has(streamingMsg.id)) return prev;
-      const next = new Set(prev);
-      next.add(streamingMsg.id);
-      return next;
-    });
+    if (streamingRoleId) {
+      const streamingMsg = messages.find((m) => m.senderId === streamingRoleId && m.senderType === "role");
+      if (streamingMsg) {
+        setExpandedIds((prev) => {
+          if (prev.has(streamingMsg.id)) return prev;
+          autoExpandedRef.current.add(streamingMsg.id);
+          const next = new Set(prev);
+          next.add(streamingMsg.id);
+          return next;
+        });
+      }
+    } else {
+      // Streaming ended — collapse auto-expanded role messages
+      setExpandedIds((prev) => {
+        if (autoExpandedRef.current.size === 0) return prev;
+        const next = new Set(prev);
+        for (const id of autoExpandedRef.current) next.delete(id);
+        return next;
+      });
+      autoExpandedRef.current.clear();
+    }
   }, [streamingRoleId, messages]);
 
   const handleToggle = useCallback((msgId: string) => {
+    // User manual toggle — mark as no longer auto-expanded
+    autoExpandedRef.current.delete(msgId);
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(msgId)) {

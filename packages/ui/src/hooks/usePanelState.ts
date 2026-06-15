@@ -30,7 +30,9 @@ export function usePanelState(): PanelState {
   const [showSettings, setShowSettings] = useState(false);
   const [terminalVisible, setTerminalVisible] = useState(false);
   const [panelVisible, setPanelVisible] = useState(false);
-  const [sidecarVisible, setSidecarVisible] = useState(true);
+  const [sidecarVisible, setSidecarVisible] = useState(() => {
+    try { return localStorage.getItem("agora:sidecar-visible") === "true"; } catch { return false; }
+  });
   const [sidecarTab, setSidecarTab] = useState<SidecarTab>("progress");
   const [dispatchGateOpen, setDispatchGateOpen] = useState(false);
   const [showWriteProposalPanel, setShowWriteProposalPanel] = useState(false);
@@ -41,7 +43,13 @@ export function usePanelState(): PanelState {
   const closeSettings = useCallback(() => setShowSettings(false), []);
   const toggleTerminal = useCallback(() => setTerminalVisible((v) => !v), []);
   const togglePanel = useCallback(() => setPanelVisible((v) => !v), []);
-  const toggleSidecar = useCallback(() => setSidecarVisible((v) => !v), []);
+  const toggleSidecar = useCallback(() => {
+    setSidecarVisible((v) => {
+      const next = !v;
+      try { localStorage.setItem("agora:sidecar-visible", String(next)); } catch { /* ok */ }
+      return next;
+    });
+  }, []);
   const openWriteProposalPanel = useCallback(() => setShowWriteProposalPanel(true), []);
   const closeWriteProposalPanel = useCallback(() => setShowWriteProposalPanel(false), []);
   const openMemoryReviewPanel = useCallback(() => setShowMemoryReviewPanel(true), []);
