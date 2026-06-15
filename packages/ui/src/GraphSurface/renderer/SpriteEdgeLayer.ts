@@ -34,6 +34,7 @@ export class SpriteEdgeLayer extends Container implements EdgeLayer {
     for (const edge of edges) {
       const gfx = new Graphics();
       gfx.visible = false;
+      gfx.eventMode = "none";
       this.addChild(gfx);
 
       const view: EdgeView = {

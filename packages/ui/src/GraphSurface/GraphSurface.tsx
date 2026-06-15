@@ -278,19 +278,15 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
   }, [colors]);
 
   // ── Event wrappers ──
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
     const c = containerRef.current;
-    if (c) interaction.handlePointerDown(e, c);
+    if (c) interaction.handleMouseDown(e, c);
   }, [interaction]);
 
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
     const c = containerRef.current;
-    if (c) interaction.handlePointerMove(e, c);
+    if (c) interaction.handleMouseMove(e, c);
   }, [interaction]);
-
-  const onPointerUp = useCallback(() => {
-    // Handled by window listener in useGraphInteraction
-  }, []);
 
   // Native wheel listener (React onWheel is passive, can't preventDefault)
   useEffect(() => {
@@ -308,14 +304,14 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
     <div
       ref={containerRef}
       className={className}
-      style={{ position: "relative", width: "100%", height: "100%", touchAction: "none", ...style }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerLeave={(e) => {
+      style={{ position: "relative", width: "100%", height: "100%", ...style }}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={(e) => {
         const c = containerRef.current;
-        if (c) interaction.handlePointerLeave(e, c);
+        if (c) interaction.handleMouseUp(e, c);
       }}
+      onMouseLeave={interaction.handleMouseLeave}
     >
       <div
         ref={tooltipRef}

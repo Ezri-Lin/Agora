@@ -59,6 +59,9 @@ export function createGraphStage(
   const hanger = new PIXI.Container();
   app.stage.addChild(hanger);
 
+  // Disable PIXI's built-in interaction manager — we use our own HitTestIndex
+  app.renderer.events.destroy();
+
   function destroy() {
     if (destroyed) return;
     destroyed = true;

@@ -79,6 +79,7 @@ export class LabelLayer extends Container {
         });
         const text = new Text(node.label, style);
         text.anchor.set(0.5, 1);
+        text.eventMode = "none";
         this.addChild(text);
         view = { id: node.id, text, currentAlpha: 0, targetAlpha: 0 };
         this.labelMap.set(node.id, view);

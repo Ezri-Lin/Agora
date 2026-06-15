@@ -40,6 +40,7 @@ export class NodeLayer extends Container {
       glow.drawCircle(0, 0, node.size + 6);
       glow.endFill();
       glow.visible = false;
+      glow.eventMode = "none";
       this.addChild(glow);
 
       const gfx = new Graphics();
@@ -48,6 +49,7 @@ export class NodeLayer extends Container {
       gfx.endFill();
       gfx.tint = color;
       gfx.alpha = 1;
+      gfx.eventMode = "none";
       this.addChild(gfx);
 
       this.viewMap.set(node.id, {

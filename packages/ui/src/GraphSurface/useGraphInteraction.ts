@@ -1,6 +1,6 @@
 /**
- * useGraphInteraction — pointer/wheel event handlers for GraphSurface.
- * Window-level listeners registered on pointerDown, removed on pointerUp.
+ * useGraphInteraction — mouse/wheel event handlers for GraphSurface.
+ * 300ms long-press activates drag mode. Window-level mousemove/mouseup for reliable drag.
  */
 
 import { useRef, useCallback } from "react";
@@ -14,12 +14,15 @@ import type { HitTestIndex } from "./interaction/HitTestIndex.js";
 import type { RenderLoop } from "./renderer/RenderLoop.js";
 import type { ResolvedGraphTheme } from "./theme/ThemeBridge.js";
 
+const LONG_PRESS_MS = 300;
+
 interface DragState {
-  startX: number;
-  startY: number;
+  lastX: number;
+  lastY: number;
   nodeId: string | null;
   container: HTMLElement;
-  cleanup: () => void;
+  active: boolean;
+  timer: ReturnType<typeof setTimeout>;
 }
 
 export function useGraphInteraction(deps: {
@@ -38,12 +41,13 @@ export function useGraphInteraction(deps: {
 }) {
   const dragRef = useRef<DragState | null>(null);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent, container: HTMLElement) => {
-    e.preventDefault();
+  const handleMouseDown = useCallback((e: React.MouseEvent, container: HTMLElement) => {
+    // Only handle left button
+    if (e.button !== 0) return;
+
     const rect = container.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    deps.hasPointerRef.current = true;
 
     const graph = deps.graphRef.current;
     const runtime = deps.runtimeRef.current;
@@ -54,71 +58,82 @@ export function useGraphInteraction(deps: {
       sx, sy, graph.nodes, positions, deps.cameraRef.current, rect.width, rect.height,
     );
 
+    // If hovering a node, start drag immediately (no long-press needed)
     if (nodeId) {
       const pos = positions.get(nodeId);
       runtime.setNodeFixed(nodeId, pos ?? { x: 0, y: 0 });
       container.style.cursor = "default";
-    } else {
-      container.style.cursor = "grabbing";
-    }
+      deps.hasPointerRef.current = true;
 
-    // Register window listeners for this drag session
-    const onMove = (ev: PointerEvent) => {
-      ev.preventDefault();
-      const r = container.getBoundingClientRect();
-      if (nodeId) {
+      const onMove = (ev: MouseEvent) => {
+        const r = container.getBoundingClientRect();
         const [gx, gy] = deps.cameraRef.current.screenToGraph(
           ev.clientX - r.left, ev.clientY - r.top, r.width, r.height,
         );
         runtime.setNodeFixed(nodeId, { x: gx, y: gy });
-      } else {
-        const dx = ev.clientX - (dragRef.current?.startX ?? ev.clientX);
-        const dy = ev.clientY - (dragRef.current?.startY ?? ev.clientY);
-        deps.cameraRef.current.pan(dx, dy, r.width);
-        if (dragRef.current) {
-          dragRef.current.startX = ev.clientX;
-          dragRef.current.startY = ev.clientY;
-        }
-      }
-      deps.renderLoopRef.current?.wake();
-    };
+        deps.renderLoopRef.current?.wake();
+      };
 
-    const onUp = (ev: PointerEvent) => {
-      if (nodeId && runtime) {
+      const onUp = () => {
         runtime.releaseNode(nodeId, { clearVelocity: true });
-      } else if (!nodeId && deps.onNodeClick && runtime) {
-        const g = deps.graphRef.current;
-        if (g) {
-          const r = container.getBoundingClientRect();
-          const hitId = deps.hitTestRef.current.hitTest(
-            ev.clientX - r.left, ev.clientY - r.top,
-            g.nodes, runtime.getPositions(), deps.cameraRef.current, r.width, r.height,
-          );
-          if (hitId) deps.onNodeClick(hitId);
-        }
-      }
-      container.style.cursor = "";
-      deps.hasPointerRef.current = false;
-      dragRef.current = null;
-      deps.renderLoopRef.current?.wake();
+        container.style.cursor = "";
+        deps.hasPointerRef.current = false;
+        dragRef.current = null;
+        deps.renderLoopRef.current?.wake();
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
 
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
+      dragRef.current = {
+        lastX: e.clientX, lastY: e.clientY, nodeId, container,
+        active: true, timer: setTimeout(() => {}, 0),
+      };
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+      return;
+    }
 
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup", onUp);
+    // Empty area: wait for long-press before activating drag
+    deps.hasPointerRef.current = true;
+    container.style.cursor = "wait";
+
+    const timer = setTimeout(() => {
+      // Long-press reached — activate drag
+      if (!dragRef.current) return;
+      dragRef.current.active = true;
+      container.style.cursor = "grabbing";
+
+      const onMove = (ev: MouseEvent) => {
+        if (!dragRef.current?.active) return;
+        const r = container.getBoundingClientRect();
+        const dx = ev.clientX - dragRef.current.lastX;
+        const dy = ev.clientY - dragRef.current.lastY;
+        deps.cameraRef.current.pan(dx, dy, r.width);
+        dragRef.current.lastX = ev.clientX;
+        dragRef.current.lastY = ev.clientY;
+        deps.renderLoopRef.current?.wake();
+      };
+
+      const onUp = () => {
+        container.style.cursor = "";
+        deps.hasPointerRef.current = false;
+        dragRef.current = null;
+        deps.renderLoopRef.current?.wake();
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    }, LONG_PRESS_MS);
 
     dragRef.current = {
-      startX: e.clientX, startY: e.clientY, nodeId, container,
-      cleanup: () => {
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-      },
+      lastX: e.clientX, lastY: e.clientY, nodeId: null, container,
+      active: false, timer,
     };
   }, [deps]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent, container: HTMLElement) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent, container: HTMLElement) => {
     if (dragRef.current) return;
 
     const rect = container.getBoundingClientRect();
@@ -157,9 +172,32 @@ export function useGraphInteraction(deps: {
     deps.renderLoopRef.current?.wake();
   }, [deps]);
 
-  const handlePointerUp = useCallback(() => {
-    // Handled by window listener registered in handlePointerDown
-  }, []);
+  const handleMouseUp = useCallback((e: React.MouseEvent, container: HTMLElement) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    clearTimeout(drag.timer);
+
+    if (!drag.active) {
+      // Long-press not reached — treat as click
+      if (deps.onNodeClick) {
+        const graph = deps.graphRef.current;
+        const runtime = deps.runtimeRef.current;
+        if (graph && runtime) {
+          const rect = container.getBoundingClientRect();
+          const hitId = deps.hitTestRef.current.hitTest(
+            e.clientX - rect.left, e.clientY - rect.top,
+            graph.nodes, runtime.getPositions(), deps.cameraRef.current, rect.width, rect.height,
+          );
+          if (hitId) deps.onNodeClick(hitId);
+        }
+      }
+    }
+
+    container.style.cursor = "";
+    deps.hasPointerRef.current = false;
+    dragRef.current = null;
+  }, [deps]);
 
   const handleWheel = useCallback((e: React.WheelEvent, container: HTMLElement) => {
     e.preventDefault();
@@ -172,10 +210,14 @@ export function useGraphInteraction(deps: {
     deps.renderLoopRef.current?.wake();
   }, [deps]);
 
-  const handlePointerLeave = useCallback((e: React.PointerEvent, container: HTMLElement) => {
+  const handleMouseLeave = useCallback(() => {
+    const drag = dragRef.current;
+    if (drag) {
+      clearTimeout(drag.timer);
+      dragRef.current = null;
+    }
     deps.hasPointerRef.current = false;
     deps.selectionRef.current.setHovered(null);
-    container.style.cursor = "";
     const graph = deps.graphRef.current;
     if (graph) {
       const theme = deps.themeRef.current;
@@ -186,5 +228,5 @@ export function useGraphInteraction(deps: {
     deps.renderLoopRef.current?.wake();
   }, [deps]);
 
-  return { handlePointerDown, handlePointerMove, handlePointerUp, handleWheel, handlePointerLeave };
+  return { handleMouseDown, handleMouseMove, handleMouseUp, handleWheel, handleMouseLeave };
 }
