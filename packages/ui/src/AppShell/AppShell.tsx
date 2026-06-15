@@ -1,17 +1,34 @@
 import React, { useState, useCallback } from "react";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { TerminalPanel } from "../Terminal/TerminalPanel.js";
-import type { AppView, SidecarTab } from "./AppShell.types.js";
+import type { AppView, CouncilStageView, SidecarTab } from "./AppShell.types.js";
 import { useNavigation } from "./useNavigation.js";
 import { usePanelManager } from "./usePanelManager.js";
 import { Sidebar } from "./Sidebar.js";
 import { TopBar } from "./TopBar.js";
+import { CouncilStagePanel } from "../CouncilStage/CouncilStagePanel.js";
 
 interface RoomEntry {
   id: string;
   title: string;
   createdAt: string;
   settings?: any;
+}
+
+interface RoleCard {
+  id: string;
+  name: string;
+  shortName?: string;
+  label?: string;
+  avatar?: string;
+}
+
+interface CouncilMessage {
+  id: string;
+  senderId: string;
+  senderType: string;
+  content: string;
+  timestamp?: string;
 }
 
 interface AppShellProps {
@@ -49,6 +66,12 @@ interface AppShellProps {
   showScrollToBottom?: boolean;
   newMsgCount?: number;
   onScrollToBottom?: () => void;
+  stageVisible?: boolean;
+  onToggleStage?: () => void;
+  focusedRoleId?: string | null;
+  onRoleFocus?: (roleId: string | null) => void;
+  roles?: RoleCard[];
+  messages?: CouncilMessage[];
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -80,21 +103,48 @@ export const AppShell: React.FC<AppShellProps> = ({
   showScrollToBottom,
   newMsgCount,
   onScrollToBottom,
+  stageVisible = false,
+  onToggleStage,
+  focusedRoleId,
+  onRoleFocus,
+  roles = [],
+  messages = [],
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [stageView, setStageView] = useState<CouncilStageView>("meeting");
   const { canGoBack, canGoForward, goBack, goForward } = useNavigation(view, onViewChange);
-  const { sidebarRef, onDocsPanelRef, onTerminalPanelRef } = usePanelManager(sidecarVisible, terminalVisible, sidebarCollapsed);
+  const { sidebarRef, onStagePanelRef, onDocsPanelRef, onTerminalPanelRef } = usePanelManager(
+    sidecarVisible, terminalVisible, sidebarCollapsed, stageVisible,
+  );
 
-  const toggleSidebar = useCallback(() => setSidebarCollapsed(v => !v), []);
+  // Sidebar toggle: show/hide sidebar. Showing sidebar hides stage. Hiding sidebar does nothing to stage.
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      if (prev && stageVisible) onToggleStage?.(); // showing sidebar → hide stage
+      return !prev;
+    });
+  }, [stageVisible, onToggleStage]);
+
+  // Stage toggle: show/hide stage. Showing stage hides sidebar. Hiding stage does nothing to sidebar.
+  const handleToggleStage = useCallback(() => {
+    if (!stageVisible) setSidebarCollapsed(true); // showing stage → hide sidebar
+    onToggleStage?.();
+  }, [stageVisible, onToggleStage]);
+
+  const handleRoleFocus = useCallback((roleId: string | null) => {
+    onRoleFocus?.(roleId);
+  }, [onRoleFocus]);
 
   return (
     <div className="app-layout" style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", background: "var(--bg-app)" }}>
       <PanelGroup id="agora-main" orientation="horizontal" className="app-window" style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+        {/* Sidebar — always mounted, collapsed when stage is on */}
         <Panel
           id="sidebar"
           panelRef={sidebarRef}
-          defaultSize="15%"
-          minSize="10%"
+          defaultSize="20%"
+          minSize="15%"
+          maxSize="30%"
           collapsedSize="0%"
           collapsible
           className="sidebar-panel"
@@ -114,7 +164,31 @@ export const AppShell: React.FC<AppShellProps> = ({
             onToggleCollapse={toggleSidebar}
           />
         </Panel>
-        <PanelResizeHandle className="resize-handle" />
+        <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
+        {/* Stage — always mounted, collapsed when not visible */}
+        <Panel
+          id="stage"
+          panelRef={onStagePanelRef}
+          defaultSize="25%"
+          minSize="20%"
+          maxSize="35%"
+          collapsedSize="0%"
+          collapsible
+          className="stage-panel"
+          style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}
+        >
+          <CouncilStagePanel
+            stageView={stageView}
+            onStageViewChange={setStageView}
+            roles={roles}
+            messages={messages}
+            focusedRoleId={focusedRoleId}
+            onRoleFocus={handleRoleFocus}
+            activeRoomId={activeRoomId}
+            rooms={rooms}
+          />
+        </Panel>
+        <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
 
         <Panel id="main" defaultSize="85%" minSize="20%">
           <main className="main" style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
@@ -143,7 +217,17 @@ export const AppShell: React.FC<AppShellProps> = ({
                       onGoBack={goBack}
                       onGoForward={goForward}
                       breadcrumb={<RoomBreadcrumb rooms={rooms} activeRoomId={activeRoomId} />}
-                      actions={<RoomActions onOpenWorkspace={onOpenWorkspace} panelVisible={panelVisible} onTogglePanel={onTogglePanel} terminalVisible={terminalVisible} onToggleTerminal={onToggleTerminal} sidecarVisible={sidecarVisible} onToggleSidecar={onToggleSidecar} />}
+                      actions={
+                        <RoomActions
+                          onOpenWorkspace={onOpenWorkspace}
+                          stageVisible={stageVisible}
+                          onToggleStage={handleToggleStage}
+                          terminalVisible={terminalVisible}
+                          onToggleTerminal={onToggleTerminal}
+                          sidecarVisible={sidecarVisible}
+                          onToggleSidecar={onToggleSidecar}
+                        />
+                      }
                     />
                     <PanelGroup id="agora-term" orientation="vertical" style={{ flex: 1, minHeight: 0 }}>
                       <Panel id="content" defaultSize="75%">
@@ -209,22 +293,27 @@ const RoomBreadcrumb: React.FC<{ rooms: RoomEntry[]; activeRoomId?: string | nul
 
 const RoomActions: React.FC<{
   onOpenWorkspace: () => void;
-  panelVisible?: boolean;
-  onTogglePanel?: () => void;
+  stageVisible?: boolean;
+  onToggleStage?: () => void;
   terminalVisible?: boolean;
   onToggleTerminal?: () => void;
   sidecarVisible?: boolean;
   onToggleSidecar?: () => void;
-}> = ({ onOpenWorkspace, panelVisible, onTogglePanel, terminalVisible, onToggleTerminal, sidecarVisible, onToggleSidecar }) => (
+}> = ({ onOpenWorkspace, stageVisible, onToggleStage, terminalVisible, onToggleTerminal, sidecarVisible, onToggleSidecar }) => (
   <>
     <label className="tool" title="Open Workspace" onClick={onOpenWorkspace} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </label>
-    <label className={`tool ${panelVisible ? "active" : ""}`} title="Toggle Inspector" onClick={onTogglePanel} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: panelVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+    <label className={`tool ${stageVisible ? "active" : ""}`} title="Council Stage" onClick={onToggleStage} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: stageVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
-        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="3" />
+        <line x1="12" y1="2" x2="12" y2="6" />
+        <line x1="12" y1="18" x2="12" y2="22" />
+        <line x1="2" y1="12" x2="6" y2="12" />
+        <line x1="18" y1="12" x2="22" y2="12" />
       </svg>
     </label>
     <label className={`tool ${terminalVisible ? "active" : ""}`} title="Toggle Terminal (Ctrl+`)" onClick={onToggleTerminal} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: terminalVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
@@ -233,7 +322,7 @@ const RoomActions: React.FC<{
         <path d="M12 19h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </label>
-    <label className={`tool ${sidecarVisible ? "active" : ""}`} title="Toggle Sidecar" onClick={onToggleSidecar} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: sidecarVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+    <label className={`tool ${sidecarVisible ? "active" : ""}`} title="Toggle Docs/Progress" onClick={onToggleSidecar} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: sidecarVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M14 2v6h6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

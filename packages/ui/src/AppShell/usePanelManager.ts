@@ -1,10 +1,22 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { usePanelRef } from "react-resizable-panels";
 
-export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boolean, sidebarCollapsed?: boolean) {
+export function usePanelManager(
+  sidecarVisible: boolean,
+  terminalVisible?: boolean,
+  sidebarCollapsed?: boolean,
+  stageVisible?: boolean,
+) {
   const sidebarRef = usePanelRef();
+  const stageHandle = useRef<any>(null);
   const docsHandle = useRef<any>(null);
   const terminalHandle = useRef<any>(null);
+
+  const onStagePanelRef = useCallback((handle: any) => {
+    stageHandle.current = handle;
+    // Collapse on mount (stageVisible defaults to false)
+    if (handle) requestAnimationFrame(() => handle.collapse());
+  }, []);
 
   const onDocsPanelRef = useCallback((handle: any) => {
     docsHandle.current = handle;
@@ -19,16 +31,20 @@ export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boole
   }, []);
 
   // Sidebar expand/collapse
-  useEffect(() => {
-    if (!sidebarRef.current) return;
-    if (sidebarRef.current.isCollapsed()) sidebarRef.current.expand();
-  }, []);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!sidebarRef.current) return;
     if (sidebarCollapsed) sidebarRef.current.collapse();
     else sidebarRef.current.expand();
   }, [sidebarCollapsed]);
+
+  // Stage — useLayoutEffect runs synchronously before paint.
+  // When sidebar collapses, the library auto-expands stage; this effect
+  // re-collapses it before the browser paints, so it's invisible to the user.
+  useLayoutEffect(() => {
+    if (!stageHandle.current) return;
+    if (stageVisible) stageHandle.current.expand();
+    else stageHandle.current.collapse();
+  }, [stageVisible, sidebarCollapsed]);
 
   // Sidecar expand/collapse
   useEffect(() => {
@@ -56,5 +72,5 @@ export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boole
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  return { sidebarRef, onDocsPanelRef, onTerminalPanelRef };
+  return { sidebarRef, onStagePanelRef, onDocsPanelRef, onTerminalPanelRef };
 }

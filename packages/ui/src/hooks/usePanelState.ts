@@ -7,6 +7,8 @@ export interface PanelState {
   panelVisible: boolean;
   sidecarVisible: boolean;
   sidecarTab: SidecarTab;
+  stageVisible: boolean;
+  focusedRoleId: string | null;
   dispatchGateOpen: boolean;
   showWriteProposalPanel: boolean;
   showMemoryReviewPanel: boolean;
@@ -16,6 +18,8 @@ export interface PanelState {
   toggleTerminal: () => void;
   togglePanel: () => void;
   toggleSidecar: () => void;
+  toggleStage: () => void;
+  setFocusedRoleId: (id: string | null) => void;
   setSidecarTab: (tab: SidecarTab) => void;
   setDispatchGateOpen: (open: boolean) => void;
   openWriteProposalPanel: () => void;
@@ -38,6 +42,8 @@ export function usePanelState(): PanelState {
   const [showWriteProposalPanel, setShowWriteProposalPanel] = useState(false);
   const [showMemoryReviewPanel, setShowMemoryReviewPanel] = useState(false);
   const [showSessionSummaryPanel, setShowSessionSummaryPanel] = useState(false);
+  const [stageVisible, setStageVisible] = useState(false);
+  const [focusedRoleId, setFocusedRoleId] = useState<string | null>(null);
 
   const openSettings = useCallback(() => setShowSettings(true), []);
   const closeSettings = useCallback(() => setShowSettings(false), []);
@@ -56,6 +62,12 @@ export function usePanelState(): PanelState {
   const closeMemoryReviewPanel = useCallback(() => setShowMemoryReviewPanel(false), []);
   const openSessionSummaryPanel = useCallback(() => setShowSessionSummaryPanel(true), []);
   const closeSessionSummaryPanel = useCallback(() => setShowSessionSummaryPanel(false), []);
+  const toggleStage = useCallback(() => {
+    setStageVisible((v) => {
+      if (!v) setFocusedRoleId(null); // clear focus when closing stage
+      return !v;
+    });
+  }, []);
 
   return {
     showSettings,
@@ -63,6 +75,8 @@ export function usePanelState(): PanelState {
     panelVisible,
     sidecarVisible,
     sidecarTab,
+    stageVisible,
+    focusedRoleId,
     dispatchGateOpen,
     showWriteProposalPanel,
     showMemoryReviewPanel,
@@ -72,6 +86,8 @@ export function usePanelState(): PanelState {
     toggleTerminal,
     togglePanel,
     toggleSidecar,
+    toggleStage,
+    setFocusedRoleId,
     setSidecarTab,
     setDispatchGateOpen,
     openWriteProposalPanel,

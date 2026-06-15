@@ -14,6 +14,8 @@ interface CouncilRoomProps {
   loadingStatus?: string;
   onStop?: () => void;
   streamingRoleId?: string | null;
+  /** Focused role ID from Stage panel — enables focus mode */
+  focusedRoleId?: string | null;
   /** Called by parent to get jump/highlight functions */
   onRegisterJumpFns?: (fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void; scrollToBottom: () => void }) => void;
   /** Called when near-bottom state changes */
@@ -22,7 +24,7 @@ interface CouncilRoomProps {
   onNewMsgCountChange?: (count: number) => void;
 }
 
-export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, loadingStatus, onStop, streamingRoleId, onRegisterJumpFns, onNearBottomChange, onNewMsgCountChange }) => {
+export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, loadingStatus, onStop, streamingRoleId, focusedRoleId, onRegisterJumpFns, onNearBottomChange, onNewMsgCountChange }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -148,6 +150,21 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
     }
   }, [streamingRoleId, messages, isNearBottom]);
 
+  // Focus mode: scroll to focused role's latest message
+  useEffect(() => {
+    if (!focusedRoleId) return;
+    const roleMsgs = messages.filter(m => m.senderId === focusedRoleId && m.senderType === "role");
+    const latest = roleMsgs[roleMsgs.length - 1];
+    if (latest) {
+      requestAnimationFrame(() => {
+        const el = scrollRef.current?.querySelector(`[data-message-id="${latest.id}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }, [focusedRoleId, messages]);
+
+  const isFocusMode = !!focusedRoleId;
+
   return (
     <div className="thread" ref={scrollRef} onScroll={handleScroll} style={{ flex: 1 }}>
       <div className="thread-inner">
@@ -157,11 +174,33 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
         {messages.map((msg) => {
           const isStreaming = streamingRoleId === msg.senderId || (msg.senderType === "moderator" && msg.content === "" && !!msg.thinking);
           const isUser = msg.senderType === "user";
+          const isFocusedRole = focusedRoleId && msg.senderId === focusedRoleId && msg.senderType === "role";
+
+          // Focus mode: collapse non-focused messages
+          if (isFocusMode && !isFocusedRole && !isUser) {
+            return (
+              <div key={msg.id} data-message-id={msg.id} style={{ display: "flex", justifyContent: "center", margin: "4px 0" }}>
+                <span style={{
+                  display: "inline-grid",
+                  placeItems: "center",
+                  width: 42,
+                  height: 20,
+                  border: "1px solid var(--line)",
+                  borderRadius: 999,
+                  background: "var(--panel)",
+                  color: "var(--muted)",
+                  fontSize: 11,
+                  letterSpacing: 2,
+                }}>···</span>
+              </div>
+            );
+          }
+
           // Only user messages always expanded; moderator and role messages are collapsible
           const alwaysExpand = isUser;
-          const isExpanded = alwaysExpand || expandedIds.has(msg.id);
+          const isExpanded = !!(alwaysExpand || expandedIds.has(msg.id) || isFocusedRole);
           return (
-            <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>
+            <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id} style={isFocusedRole ? { boxShadow: "0 0 0 2px #111, 0 18px 48px rgba(0,0,0,.12)", borderRadius: 13, transition: "box-shadow .2s" } : undefined}>
               <RoleMessage
                 message={msg}
                 roles={roles}

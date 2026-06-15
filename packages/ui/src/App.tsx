@@ -142,6 +142,12 @@ export const App: React.FC = () => {
       onViewChange={setActiveView}
       workspaceName={workspace.workspace.name}
       onOpenWorkspace={workspace.openWorkspace}
+      stageVisible={panels.stageVisible}
+      onToggleStage={panels.toggleStage}
+      focusedRoleId={panels.focusedRoleId}
+      onRoleFocus={panels.setFocusedRoleId}
+      roles={council.allRoles}
+      messages={council.messages}
       home={
         <WorkspaceHome
           graph={<WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} workspacePath={workspace.workspace.path} />}
@@ -211,6 +217,7 @@ export const App: React.FC = () => {
             loadingStatus={council.loadingStatus}
             onStop={council.handleStop}
             streamingRoleId={council.streamingRoleIdRef.current}
+            focusedRoleId={panels.focusedRoleId}
             onRegisterJumpFns={handleRegisterJumpFns}
             onNearBottomChange={setIsNearBottom}
             onNewMsgCountChange={setNewMsgCount}
