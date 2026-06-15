@@ -117,17 +117,13 @@ export const AppShell: React.FC<AppShellProps> = ({
     sidecarVisible, terminalVisible, sidebarCollapsed, stageVisible,
   );
 
-  // Sidebar toggle: show/hide sidebar. Showing sidebar hides stage. Hiding sidebar does nothing to stage.
   const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed((prev) => {
-      if (prev && stageVisible) onToggleStage?.(); // showing sidebar → hide stage
-      return !prev;
-    });
-  }, [stageVisible, onToggleStage]);
+    setSidebarCollapsed((prev) => !prev);
+  }, []);
 
-  // Stage toggle: show/hide stage. Showing stage hides sidebar. Hiding stage does nothing to sidebar.
+  // Stage toggle: hide sidebar when opening, TopBar takes over sidebar buttons
   const handleToggleStage = useCallback(() => {
-    if (!stageVisible) setSidebarCollapsed(true); // showing stage → hide sidebar
+    if (!stageVisible) setSidebarCollapsed(true);
     onToggleStage?.();
   }, [stageVisible, onToggleStage]);
 
@@ -169,31 +165,6 @@ export const AppShell: React.FC<AppShellProps> = ({
           />
         </Panel>
         <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
-        {/* Stage — always mounted, collapsed when not visible */}
-        <Panel
-          id="stage"
-          panelRef={onStagePanelRef}
-          defaultSize="25%"
-          minSize="20%"
-          maxSize="35%"
-          collapsedSize="0%"
-          collapsible
-          className="stage-panel"
-          style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}
-        >
-          <CouncilStagePanel
-            stageView={stageView}
-            onStageViewChange={setStageView}
-            roles={roles}
-            messages={messages}
-            focusedRoleId={focusedRoleId}
-            onRoleFocus={handleRoleFocus}
-            activeRoomId={activeRoomId}
-            rooms={rooms}
-          />
-        </Panel>
-        <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
-
         <Panel id="main" defaultSize="85%" minSize="20%">
           <main className="main" style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
             {view === "home" && (
@@ -209,53 +180,74 @@ export const AppShell: React.FC<AppShellProps> = ({
               </>
             )}
             {view === "room" && (
-              <PanelGroup id="agora-docs" orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-                <Panel id="chat" defaultSize="70%" className="chat-panel" style={{ position: "relative" }}>
-                  <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                    <TopBar
-                      workspaceName={workspaceName}
-                      sidebarCollapsed={sidebarCollapsed}
-                      onToggleSidebar={toggleSidebar}
-                      canGoBack={canGoBack}
-                      canGoForward={canGoForward}
-                      onGoBack={goBack}
-                      onGoForward={goForward}
-                      breadcrumb={<RoomBreadcrumb rooms={rooms} activeRoomId={activeRoomId} />}
-                      actions={
-                        <RoomActions
-                          onOpenWorkspace={onOpenWorkspace}
-                          stageVisible={stageVisible}
-                          onToggleStage={handleToggleStage}
-                          terminalVisible={terminalVisible}
-                          onToggleTerminal={onToggleTerminal}
-                          sidecarVisible={sidecarVisible}
-                          onToggleSidecar={onToggleSidecar}
-                        />
-                      }
+              <>
+                <TopBar
+                  workspaceName={workspaceName}
+                  sidebarCollapsed={sidebarCollapsed}
+                  onToggleSidebar={toggleSidebar}
+                  canGoBack={canGoBack}
+                  canGoForward={canGoForward}
+                  onGoBack={goBack}
+                  onGoForward={goForward}
+                  breadcrumb={<RoomBreadcrumb rooms={rooms} activeRoomId={activeRoomId} />}
+                  actions={
+                    <RoomActions
+                      onOpenWorkspace={onOpenWorkspace}
+                      stageVisible={stageVisible}
+                      onToggleStage={handleToggleStage}
+                      terminalVisible={terminalVisible}
+                      onToggleTerminal={onToggleTerminal}
+                      sidecarVisible={sidecarVisible}
+                      onToggleSidecar={onToggleSidecar}
                     />
-                    <PanelGroup id="agora-term" orientation="vertical" style={{ flex: 1, minHeight: 0 }}>
-                      <Panel id="content" defaultSize="75%">
-                        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                          {main}
-                          {floatingPanel}
-                          <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px", position: "relative" }}>
-                            {showScrollToBottom && <ScrollButton onClick={onScrollToBottom} count={newMsgCount} />}
-                            {composer}
+                  }
+                />
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <PanelGroup id="agora-stage" orientation="horizontal" style={{ flex: 1, minHeight: 0, height: "100%" }}>
+                    <Panel id="stage" panelRef={onStagePanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
+                      <CouncilStagePanel
+                        stageView={stageView}
+                        onStageViewChange={setStageView}
+                        roles={roles}
+                        messages={messages}
+                        focusedRoleId={focusedRoleId}
+                        onRoleFocus={handleRoleFocus}
+                        activeRoomId={activeRoomId}
+                        rooms={rooms}
+                      />
+                    </Panel>
+                    <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
+                    <Panel id="agora-docs" defaultSize="75%" minSize="30%">
+                      <PanelGroup id="agora-docs-inner" orientation="horizontal" style={{ flex: 1, minHeight: 0, height: "100%" }}>
+                        <Panel id="chat" defaultSize="70%" className="chat-panel" style={{ position: "relative" }}>
+                          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                            <PanelGroup id="agora-term" orientation="vertical" style={{ flex: 1, minHeight: 0 }}>
+                              <Panel id="content" defaultSize="75%">
+                                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                                  {main}
+                                  {floatingPanel}
+                                  <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px", position: "relative" }}>
+                                    {showScrollToBottom && <ScrollButton onClick={onScrollToBottom} count={newMsgCount} />}
+                                    {composer}
+                                  </div>
+                                </div>
+                              </Panel>
+                              <PanelResizeHandle className="resize-handle-h" />
+                              <Panel id="terminal" panelRef={onTerminalPanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
+                                <TerminalPanel visible={!!terminalVisible} workspacePath={workspacePath} onClose={onToggleTerminal ?? (() => {})} />
+                              </Panel>
+                            </PanelGroup>
                           </div>
-                        </div>
-                      </Panel>
-                      <PanelResizeHandle className="resize-handle-h" />
-                      <Panel id="terminal" panelRef={onTerminalPanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
-                        <TerminalPanel visible={!!terminalVisible} workspacePath={workspacePath} onClose={onToggleTerminal ?? (() => {})} />
-                      </Panel>
-                    </PanelGroup>
-                  </div>
-                </Panel>
-                <PanelResizeHandle className="resize-handle" />
-                <Panel id="docs" panelRef={onDocsPanelRef} defaultSize="30%" minSize="20%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: "100%" }}>{sidecar}</div>
-                </Panel>
-              </PanelGroup>
+                        </Panel>
+                        <PanelResizeHandle className="resize-handle" />
+                        <Panel id="docs" panelRef={onDocsPanelRef} defaultSize="30%" minSize="20%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: "100%" }}>{sidecar}</div>
+                        </Panel>
+                      </PanelGroup>
+                    </Panel>
+                  </PanelGroup>
+                </div>
+              </>
             )}
           </main>
         </Panel>

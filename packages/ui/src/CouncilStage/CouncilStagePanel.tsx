@@ -57,27 +57,6 @@ export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
       background: "var(--panel)",
       borderRight: "1px solid var(--line)",
     }}>
-      {/* Header */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "10px 14px",
-        borderBottom: "1px solid var(--line)",
-        flexShrink: 0,
-      }}>
-        <div>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--muted)" }}>
-            Council Stage
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>
-            {room?.title || "会议态势"}
-          </div>
-        </div>
-        <StageViewToggle active={stageView} onChange={onStageViewChange} />
-      </div>
-
-      {/* Content */}
       <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
         <style>{`@keyframes stage-spin { to { transform: rotate(360deg); } }`}</style>
         {stageView === "meeting" ? (

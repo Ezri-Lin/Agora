@@ -14,7 +14,6 @@ export function usePanelManager(
 
   const onStagePanelRef = useCallback((handle: any) => {
     stageHandle.current = handle;
-    // Collapse on mount (stageVisible defaults to false)
     if (handle) requestAnimationFrame(() => handle.collapse());
   }, []);
 
@@ -37,14 +36,12 @@ export function usePanelManager(
     else sidebarRef.current.expand();
   }, [sidebarCollapsed]);
 
-  // Stage — useLayoutEffect runs synchronously before paint.
-  // When sidebar collapses, the library auto-expands stage; this effect
-  // re-collapses it before the browser paints, so it's invisible to the user.
+  // Stage expand/collapse
   useLayoutEffect(() => {
     if (!stageHandle.current) return;
     if (stageVisible) stageHandle.current.expand();
     else stageHandle.current.collapse();
-  }, [stageVisible, sidebarCollapsed]);
+  }, [stageVisible]);
 
   // Sidecar expand/collapse
   useEffect(() => {
