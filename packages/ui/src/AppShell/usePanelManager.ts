@@ -4,10 +4,8 @@ import { usePanelRef } from "react-resizable-panels";
 export function usePanelManager(
   sidecarVisible: boolean,
   terminalVisible?: boolean,
-  sidebarCollapsed?: boolean,
   stageVisible?: boolean,
 ) {
-  const sidebarRef = usePanelRef();
   const stageHandle = useRef<any>(null);
   const docsHandle = useRef<any>(null);
   const terminalHandle = useRef<any>(null);
@@ -28,13 +26,6 @@ export function usePanelManager(
     terminalHandle.current = handle;
     if (handle) requestAnimationFrame(() => handle.collapse());
   }, []);
-
-  // Sidebar expand/collapse
-  useLayoutEffect(() => {
-    if (!sidebarRef.current) return;
-    if (sidebarCollapsed) sidebarRef.current.collapse();
-    else sidebarRef.current.expand();
-  }, [sidebarCollapsed]);
 
   // Stage expand/collapse
   useLayoutEffect(() => {
@@ -69,5 +60,5 @@ export function usePanelManager(
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  return { sidebarRef, onStagePanelRef, onDocsPanelRef, onTerminalPanelRef };
+  return { onStagePanelRef, onDocsPanelRef, onTerminalPanelRef };
 }

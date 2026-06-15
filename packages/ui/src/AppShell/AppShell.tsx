@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { TerminalPanel } from "../Terminal/TerminalPanel.js";
 import type { AppView, CouncilStageView, SidecarTab } from "./AppShell.types.js";
@@ -111,17 +111,18 @@ export const AppShell: React.FC<AppShellProps> = ({
   messages = [],
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(268);
   const [stageView, setStageView] = useState<CouncilStageView>("meeting");
   const { canGoBack, canGoForward, goBack, goForward } = useNavigation(view, onViewChange);
-  const { sidebarRef, onStagePanelRef, onDocsPanelRef, onTerminalPanelRef } = usePanelManager(
-    sidecarVisible, terminalVisible, sidebarCollapsed, stageVisible,
+  const { onStagePanelRef, onDocsPanelRef, onTerminalPanelRef } = usePanelManager(
+    sidecarVisible, terminalVisible, stageVisible,
   );
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
   }, []);
 
-  // Stage toggle: hide sidebar when opening, TopBar takes over sidebar buttons
+  // Stage toggle: hide sidebar when opening
   const handleToggleStage = useCallback(() => {
     if (!stageVisible) setSidebarCollapsed(true);
     onToggleStage?.();
@@ -131,127 +132,155 @@ export const AppShell: React.FC<AppShellProps> = ({
     onRoleFocus?.(roleId);
   }, [onRoleFocus]);
 
+  // Sidebar drag-to-resize
+  const dragRef = useRef<{ startX: number; startW: number } | null>(null);
+  const onSidebarResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { startX: e.clientX, startW: sidebarWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const delta = ev.clientX - dragRef.current.startX;
+      const newW = dragRef.current.startW + delta;
+      if (newW < 200) { setSidebarCollapsed(true); dragRef.current = null; document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); document.body.style.cursor = ""; document.body.style.userSelect = ""; return; }
+      setSidebarWidth(Math.min(400, newW));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [sidebarWidth]);
+
+  // TopBar breadcrumb per view
+  const breadcrumb = view === "room"
+    ? <RoomBreadcrumb rooms={rooms} activeRoomId={activeRoomId} />
+    : view === "contextGraph"
+    ? <><span style={{ margin: "0 6px", opacity: 0.4 }}>/</span><span style={{ opacity: 0.6 }}>Context Graph</span></>
+    : undefined;
+
+  // TopBar actions (only in room view)
+  const actions = view === "room" ? (
+    <RoomActions
+      onOpenWorkspace={onOpenWorkspace}
+      stageVisible={stageVisible}
+      onToggleStage={handleToggleStage}
+      terminalVisible={terminalVisible}
+      onToggleTerminal={onToggleTerminal}
+      sidecarVisible={sidecarVisible}
+      onToggleSidecar={onToggleSidecar}
+    />
+  ) : undefined;
+
   return (
     <div className="app-layout" style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", background: "var(--bg-app)" }}>
-      <PanelGroup id="agora-main" orientation="horizontal" className="app-window" style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
-        {/* Sidebar — always mounted, collapsed when stage is on */}
-        <Panel
-          id="sidebar"
-          panelRef={sidebarRef}
-          defaultSize="20%"
-          minSize="15%"
-          maxSize="30%"
-          collapsedSize="0%"
-          collapsible
-          className="sidebar-panel"
-          style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}
-        >
-          <Sidebar
+      <div className="app-window" style={{ flex: 1, display: "flex", minHeight: 0, overflow: "hidden" }}>
+        {/* Sidebar — Codex-style, drag-resizable */}
+        {!sidebarCollapsed && (
+          <>
+            <div className="sidebar-panel" style={{ width: sidebarWidth, flexShrink: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <Sidebar
+                workspaceName={workspaceName}
+                workspacePath={workspacePath}
+                rooms={rooms}
+                activeRoomId={activeRoomId}
+                isLoading={isLoading}
+                onNewRoom={onNewRoom}
+                onSelectRoom={onSelectRoom}
+                onDeleteRoom={onDeleteRoom}
+                onOpenContextGraph={onOpenContextGraph}
+                onOpenSettings={onOpenSettings}
+                onToggleCollapse={toggleSidebar}
+                canGoBack={canGoBack}
+                canGoForward={canGoForward}
+                onGoBack={goBack}
+                onGoForward={goForward}
+              />
+            </div>
+            <div
+              className="sidebar-resize-handle"
+              onMouseDown={onSidebarResizeStart}
+              style={{ width: 4, flexShrink: 0, cursor: "col-resize", background: "var(--line)", transition: "background .15s" }}
+            />
+          </>
+        )}
+
+        {/* Main content */}
+        <main className="main" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+          <TopBar
             workspaceName={workspaceName}
-            workspacePath={workspacePath}
-            rooms={rooms}
-            activeRoomId={activeRoomId}
-            isLoading={isLoading}
-            onNewRoom={onNewRoom}
-            onSelectRoom={onSelectRoom}
-            onDeleteRoom={onDeleteRoom}
-            onOpenContextGraph={onOpenContextGraph}
-            onOpenSettings={onOpenSettings}
-            onToggleCollapse={toggleSidebar}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={toggleSidebar}
             canGoBack={canGoBack}
             canGoForward={canGoForward}
             onGoBack={goBack}
             onGoForward={goForward}
+            breadcrumb={breadcrumb}
+            actions={actions}
           />
-        </Panel>
-        <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
-        <Panel id="main" defaultSize="85%" minSize="20%">
-          <main className="main" style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-            {view === "home" && (
-              <>
-                <TopBar workspaceName={workspaceName} sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} canGoBack={canGoBack} canGoForward={canGoForward} onGoBack={goBack} onGoForward={goForward} />
-                <section className="workspace" style={{ flex: 1, overflow: "hidden" }}>{home}</section>
-              </>
-            )}
-            {view === "contextGraph" && (
-              <>
-                <TopBar workspaceName={workspaceName} sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} canGoBack={canGoBack} canGoForward={canGoForward} onGoBack={goBack} onGoForward={goForward} breadcrumb={<><span style={{ margin: "0 6px", opacity: 0.4 }}>/</span><span style={{ opacity: 0.6 }}>Context Graph</span></>} />
-                <section className="workspace" style={{ flex: 1, overflow: "hidden" }}>{contextGraph}</section>
-              </>
-            )}
-            {view === "room" && (
-              <>
-                <TopBar
-                  workspaceName={workspaceName}
-                  sidebarCollapsed={sidebarCollapsed}
-                  onToggleSidebar={toggleSidebar}
-                  canGoBack={canGoBack}
-                  canGoForward={canGoForward}
-                  onGoBack={goBack}
-                  onGoForward={goForward}
-                  breadcrumb={<RoomBreadcrumb rooms={rooms} activeRoomId={activeRoomId} />}
-                  actions={
-                    <RoomActions
-                      onOpenWorkspace={onOpenWorkspace}
-                      stageVisible={stageVisible}
-                      onToggleStage={handleToggleStage}
-                      terminalVisible={terminalVisible}
-                      onToggleTerminal={onToggleTerminal}
-                      sidecarVisible={sidecarVisible}
-                      onToggleSidecar={onToggleSidecar}
-                    />
-                  }
-                />
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <PanelGroup id="agora-stage" orientation="horizontal" style={{ flex: 1, minHeight: 0, height: "100%" }}>
-                    <Panel id="stage" panelRef={onStagePanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
-                      <CouncilStagePanel
-                        stageView={stageView}
-                        onStageViewChange={setStageView}
-                        roles={roles}
-                        messages={messages}
-                        focusedRoleId={focusedRoleId}
-                        onRoleFocus={handleRoleFocus}
-                        activeRoomId={activeRoomId}
-                        rooms={rooms}
-                      />
+
+          {view === "home" && (
+            <section className="workspace" style={{ flex: 1, overflow: "hidden" }}>{home}</section>
+          )}
+
+          {view === "contextGraph" && (
+            <section className="workspace" style={{ flex: 1, overflow: "hidden" }}>{contextGraph}</section>
+          )}
+
+          {view === "room" && (
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <PanelGroup id="agora-stage" orientation="horizontal" style={{ flex: 1, minHeight: 0, height: "100%" }}>
+                <Panel id="stage" panelRef={onStagePanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
+                  <CouncilStagePanel
+                    stageView={stageView}
+                    onStageViewChange={setStageView}
+                    roles={roles}
+                    messages={messages}
+                    focusedRoleId={focusedRoleId}
+                    onRoleFocus={handleRoleFocus}
+                    activeRoomId={activeRoomId}
+                    rooms={rooms}
+                  />
+                </Panel>
+                <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
+                <Panel id="agora-docs" defaultSize="75%" minSize="30%">
+                  <PanelGroup id="agora-docs-inner" orientation="horizontal" style={{ flex: 1, minHeight: 0, height: "100%" }}>
+                    <Panel id="chat" defaultSize="70%" className="chat-panel" style={{ position: "relative" }}>
+                      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                        <PanelGroup id="agora-term" orientation="vertical" style={{ flex: 1, minHeight: 0 }}>
+                          <Panel id="content" defaultSize="75%">
+                            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                              {main}
+                              {floatingPanel}
+                              <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px", position: "relative" }}>
+                                {showScrollToBottom && <ScrollButton onClick={onScrollToBottom} count={newMsgCount} />}
+                                {composer}
+                              </div>
+                            </div>
+                          </Panel>
+                          <PanelResizeHandle className="resize-handle-h" />
+                          <Panel id="terminal" panelRef={onTerminalPanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
+                            <TerminalPanel visible={!!terminalVisible} workspacePath={workspacePath} onClose={onToggleTerminal ?? (() => {})} />
+                          </Panel>
+                        </PanelGroup>
+                      </div>
                     </Panel>
-                    <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />
-                    <Panel id="agora-docs" defaultSize="75%" minSize="30%">
-                      <PanelGroup id="agora-docs-inner" orientation="horizontal" style={{ flex: 1, minHeight: 0, height: "100%" }}>
-                        <Panel id="chat" defaultSize="70%" className="chat-panel" style={{ position: "relative" }}>
-                          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                            <PanelGroup id="agora-term" orientation="vertical" style={{ flex: 1, minHeight: 0 }}>
-                              <Panel id="content" defaultSize="75%">
-                                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                                  {main}
-                                  {floatingPanel}
-                                  <div className="chat-composer-wrap" style={{ flexShrink: 0, borderTop: "none", background: "transparent", padding: "0 32px 24px", position: "relative" }}>
-                                    {showScrollToBottom && <ScrollButton onClick={onScrollToBottom} count={newMsgCount} />}
-                                    {composer}
-                                  </div>
-                                </div>
-                              </Panel>
-                              <PanelResizeHandle className="resize-handle-h" />
-                              <Panel id="terminal" panelRef={onTerminalPanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
-                                <TerminalPanel visible={!!terminalVisible} workspacePath={workspacePath} onClose={onToggleTerminal ?? (() => {})} />
-                              </Panel>
-                            </PanelGroup>
-                          </div>
-                        </Panel>
-                        <PanelResizeHandle className="resize-handle" />
-                        <Panel id="docs" panelRef={onDocsPanelRef} defaultSize="30%" minSize="20%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: "100%" }}>{sidecar}</div>
-                        </Panel>
-                      </PanelGroup>
+                    <PanelResizeHandle className="resize-handle" />
+                    <Panel id="docs" panelRef={onDocsPanelRef} defaultSize="30%" minSize="20%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: "100%" }}>{sidecar}</div>
                     </Panel>
                   </PanelGroup>
-                </div>
-              </>
-            )}
-          </main>
-        </Panel>
-      </PanelGroup>
+                </Panel>
+              </PanelGroup>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
