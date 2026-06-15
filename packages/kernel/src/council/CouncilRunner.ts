@@ -30,8 +30,11 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     recentMessages = [], docContents, memoryStore,
     onEvent, roleSettings, explicitRoleRequests,
     getContractForRole, retrievalEngine, retrievalQuery, contextPackage: explicitContextPackage,
-    sessionRunningBrief: inputSessionBrief, selectedRoleIds,
+    sessionRunningBrief: inputSessionBrief, selectedRoleIds, taskFrame, finalSelectedRoleIds,
   } = input;
+
+  // Adaptive Council Graph: finalSelectedRoleIds takes precedence
+  const effectiveSelectedRoleIds = finalSelectedRoleIds ?? selectedRoleIds;
   const effectiveSettings = normalizeCouncilRoleSettings(roleSettings);
   const roundId = `round_${room.id}_${Date.now()}`;
 
@@ -71,7 +74,7 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
 
   // Step 3: Select roles
   const { routingDecision, finalRoles } = await selectRolesForRound({
-    selectedRoleIds, availableRoles, topic, effectiveSettings, recentMessages, explicitRoleRequests, room, llm, modPack,
+    selectedRoleIds: effectiveSelectedRoleIds, availableRoles, topic, effectiveSettings, recentMessages, explicitRoleRequests, room, llm, modPack,
   });
 
   // Step 4: Role responses

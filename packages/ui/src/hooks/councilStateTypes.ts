@@ -33,6 +33,8 @@ export interface DispatchGateContext {
   moderatorAnalysis?: string;
   /** Moderator thinking/reasoning (shown in dispatch gate) */
   moderatorThinking?: string;
+  /** Why this council is worth opening (Adaptive Council Graph) */
+  councilValueReason?: string[];
 }
 
 export interface CustomRole {

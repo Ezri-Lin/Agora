@@ -8,6 +8,7 @@ import type {
   ExplicitRoleRequest,
   RoleRoutingDecision,
   PersonaContract,
+  TaskFrame,
 } from "@agora/shared";
 import type { LLMProvider } from "../types/index.js";
 import type { ContextPack } from "../context/ContextPack.js";
@@ -61,4 +62,8 @@ export interface RunCouncilRoundInput {
   contextPackage?: ContextPackage;
   sessionRunningBrief?: SessionRunningBrief;
   selectedRoleIds?: string[];
+  /** Adaptive Council Graph: task frame for context */
+  taskFrame?: TaskFrame;
+  /** Adaptive Council Graph: user-confirmed role IDs (takes precedence over selectedRoleIds) */
+  finalSelectedRoleIds?: string[];
 }

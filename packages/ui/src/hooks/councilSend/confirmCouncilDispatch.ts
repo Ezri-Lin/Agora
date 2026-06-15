@@ -1,8 +1,8 @@
 /**
- * ConfirmCouncilDispatch — handle user confirmation of dispatch preview.
+ * ConfirmCouncilDispatch — bridge dispatch preview to council round execution.
  *
- * Takes finalSelectedRoleIds from user and triggers the council round.
- * TODO: Wire up to CouncilRunner with new TaskFrame + finalSelectedRoleIds signature.
+ * Takes finalSelectedRoleIds from user and triggers the council round
+ * with TaskFrame + finalSelectedRoleIds.
  */
 
 import type { TaskFrame, DispatchPreview } from "@agora/shared";
@@ -11,24 +11,18 @@ interface ConfirmDispatchInput {
   taskFrame: TaskFrame;
   dispatchPreview: DispatchPreview;
   finalSelectedRoleIds: string[];
-  // TODO: Add CouncilRunner, persistence, room update params
+  runRound: (params: { taskFrame: TaskFrame; finalSelectedRoleIds: string[] }) => Promise<void>;
 }
 
 /**
  * Confirm dispatch and run council round.
- * v1 skeleton: logs the confirmation. TODO: wire to real runner.
+ * Passes TaskFrame + finalSelectedRoleIds to the runner.
  */
 export async function confirmCouncilDispatch(input: ConfirmDispatchInput): Promise<void> {
-  const { taskFrame, dispatchPreview, finalSelectedRoleIds } = input;
+  const { taskFrame, finalSelectedRoleIds, runRound } = input;
 
-  // TODO: Replace with real CouncilRunner call
-  console.log("[confirmCouncilDispatch] Would run council round:", {
-    taskId: taskFrame.taskId,
-    roundId: dispatchPreview.roundId,
+  await runRound({
+    taskFrame,
     finalSelectedRoleIds,
-    candidateCount: dispatchPreview.rankedCandidates.length,
   });
-
-  // TODO: After round completes, update inviteGateState to cooldown
-  // TODO: Persist routing decision record
 }

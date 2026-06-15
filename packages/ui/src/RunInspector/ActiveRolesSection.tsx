@@ -72,14 +72,6 @@ export const ActiveRolesSection: React.FC<ActiveRolesSectionProps> = ({
           history={roleHistories?.get(role.id)}
           panelRef={panelRef}
         />
-          state={state}
-          onStopTurn={state?.status !== "done" ? () => onStopRole?.(role.id) : undefined}
-          onRemove={() => onRemoveRole?.(role.id)}
-          onJumpToMessage={onJumpToMessage}
-          colors={colors}
-          history={roleHistories?.get(role.id)}
-          panelRef={panelRef}
-        />
       );
     })}
   </Section>

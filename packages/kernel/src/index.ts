@@ -62,3 +62,9 @@ export type {
 } from "./documentWrite/index.js";
 export type { LLMProvider, CouncilSession } from "./types/index.js";
 export { parseLlmJson } from "./utils/parseLlmJson.js";
+export { routeInputRuleFirst } from "./moderator/routeInputRules.js";
+export { routeInput } from "./moderator/routeInput.js";
+export { decideEngagement, buildTaskFingerprint } from "./moderator/decideEngagement.js";
+export { buildTaskFrame } from "./council/buildTaskFrame.js";
+export { applyDefaultSelectionPolicy } from "./council/applyDefaultSelectionPolicy.js";
+export { buildDispatchPreview } from "./council/buildDispatchPreview.js";

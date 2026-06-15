@@ -38,6 +38,7 @@ export const DispatchGateHost: React.FC<DispatchGateHostProps> = ({
         <CouncilDispatchGate
           preview={{
             moderatorSummary: context.moderatorAnalysis || context.preview.moderatorSummary,
+            councilValueReason: context.councilValueReason,
             defaultSelectedRoleIds: context.preview.defaultSelectedRoleIds,
             alternativeRoleIds: context.preview.alternativeRoleIds,
           }}

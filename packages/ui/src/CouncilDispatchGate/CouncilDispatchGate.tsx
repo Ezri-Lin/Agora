@@ -12,11 +12,33 @@ import {
   gridStyle,
   emptySearchStyle,
 } from "./styles.js";
+import type { ColorPalette } from "../theme/palettes.js";
+import { spacing, typography } from "../theme/tokens.js";
+
+const councilValueStyle = (colors: ColorPalette): React.CSSProperties => ({
+  padding: `${spacing.sm}px ${spacing.md}px`,
+  marginBottom: spacing.md,
+  borderRadius: 6,
+  background: colors.surface,
+  border: `1px solid ${colors.border}`,
+  fontSize: typography.chatBody.size,
+  color: colors.textMuted,
+  lineHeight: 1.5,
+});
+
+const softWarningStyle = (colors: ColorPalette): React.CSSProperties => ({
+  padding: `${spacing.xs}px ${spacing.md}px`,
+  fontSize: typography.meta.size,
+  color: "#f59e0b",
+  textAlign: "center" as const,
+});
 
 export interface CouncilDispatchPreviewViewModel {
   moderatorSummary: string;
+  councilValueReason?: string[];
   defaultSelectedRoleIds: string[];
   alternativeRoleIds: string[];
+  softSelectionWarningThreshold?: number;
 }
 
 export interface RoleViewModel {
@@ -117,10 +139,21 @@ export const CouncilDispatchGate: React.FC<CouncilDispatchGateProps> = ({
     />
   );
 
+  const threshold = preview.softSelectionWarningThreshold ?? 6;
+  const showSoftWarning = selectedRoleIds.length > threshold;
+
   return (
     <>
       <div style={scrollBodyStyle}>
         <ModeratorDispatchSummary summary={preview.moderatorSummary} />
+
+        {preview.councilValueReason && preview.councilValueReason.length > 0 && (
+          <div style={councilValueStyle(colors)}>
+            {preview.councilValueReason.map((r, i) => (
+              <div key={i}>{r}</div>
+            ))}
+          </div>
+        )}
 
         <RoleSearchBox value={query} onChange={setQuery} />
 
@@ -153,6 +186,12 @@ export const CouncilDispatchGate: React.FC<CouncilDispatchGateProps> = ({
           <div style={emptySearchStyle(colors)}>没有找到匹配角色</div>
         )}
       </div>
+
+      {showSoftWarning && (
+        <div style={softWarningStyle(colors)}>
+          已选择 {selectedRoleIds.length} 个角色。角色越多讨论越全面，但也会更慢、更容易发散。
+        </div>
+      )}
 
       <DispatchGateFooter
         selectedCount={selectedRoleIds.length}
