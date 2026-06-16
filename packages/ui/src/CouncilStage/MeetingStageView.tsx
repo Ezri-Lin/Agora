@@ -23,6 +23,8 @@ interface MeetingStageViewProps {
   focusedRoleId?: string | null;
   onRoleFocus?: (roleId: string | null) => void;
   lastUserMessage?: string;
+  onStopRole?: (roleId: string) => void;
+  onRemoveRole?: (roleId: string) => void;
 }
 
 const CARD_W = 120;
@@ -45,6 +47,8 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
   focusedRoleId,
   onRoleFocus,
   lastUserMessage,
+  onStopRole,
+  onRemoveRole,
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(360);
@@ -133,6 +137,8 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
               focused={focusedRoleId === role.id}
               dimmed={focusedRoleId !== null && focusedRoleId !== role.id}
               onClick={() => handleSeatClick(role.id)}
+              onStop={onStopRole ? () => onStopRole(role.id) : undefined}
+              onRemove={onRemoveRole ? () => onRemoveRole(role.id) : undefined}
             />
           );
         })}
