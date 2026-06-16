@@ -66,4 +66,8 @@ export interface RunCouncilRoundInput {
   taskFrame?: TaskFrame;
   /** Adaptive Council Graph: user-confirmed role IDs (takes precedence over selectedRoleIds) */
   finalSelectedRoleIds?: string[];
+  /** Roles excluded from candidate pool (paused + removed) */
+  excludedRoleIds?: string[];
+  /** Roles manually included — exempt from cap/blocking but not forced */
+  includedRoleIds?: string[];
 }

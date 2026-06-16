@@ -33,10 +33,12 @@ interface CouncilStagePanelProps {
   onRoleFocus?: (roleId: string | null) => void;
   activeRoomId?: string | null;
   rooms?: RoomEntry[];
-  pausedRoleIds?: Set<string>;
-  removedRoleIds?: Set<string>;
+  pausedRoleIds?: string[];
+  removedRoleIds?: string[];
+  excludedRoleIds?: string[];
   onTogglePause?: (roleId: string) => void;
   onToggleRemove?: (roleId: string) => void;
+  onAddExcluded?: (roleId: string) => void;
 }
 
 export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
@@ -50,8 +52,10 @@ export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
   rooms,
   pausedRoleIds,
   removedRoleIds,
+  excludedRoleIds,
   onTogglePause,
   onToggleRemove,
+  onAddExcluded,
 }) => {
   const room = rooms?.find(r => r.id === activeRoomId);
   const userMessages = messages.filter(m => m.senderType === "user");
@@ -92,8 +96,10 @@ export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
             lastUserMessage={lastUserMsg?.content}
             pausedRoleIds={pausedRoleIds}
             removedRoleIds={removedRoleIds}
+            excludedRoleIds={excludedRoleIds}
             onTogglePause={onTogglePause}
             onToggleRemove={onToggleRemove}
+            onAddExcluded={onAddExcluded}
           />
         ) : (
           <RoomGraphPlaceholder />

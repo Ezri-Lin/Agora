@@ -1,10 +1,19 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { usePanelRef } from "react-resizable-panels";
 
-export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boolean, sidebarCollapsed?: boolean) {
-  const sidebarRef = usePanelRef();
+export function usePanelManager(
+  sidecarVisible: boolean,
+  terminalVisible?: boolean,
+  stageVisible?: boolean,
+) {
+  const stageHandle = useRef<any>(null);
   const docsHandle = useRef<any>(null);
   const terminalHandle = useRef<any>(null);
+
+  const onStagePanelRef = useCallback((handle: any) => {
+    stageHandle.current = handle;
+    if (handle) requestAnimationFrame(() => handle.collapse());
+  }, []);
 
   const onDocsPanelRef = useCallback((handle: any) => {
     docsHandle.current = handle;
@@ -18,17 +27,12 @@ export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boole
     if (handle) requestAnimationFrame(() => handle.collapse());
   }, []);
 
-  // Sidebar expand/collapse
-  useEffect(() => {
-    if (!sidebarRef.current) return;
-    if (sidebarRef.current.isCollapsed()) sidebarRef.current.expand();
-  }, []);
-
-  useEffect(() => {
-    if (!sidebarRef.current) return;
-    if (sidebarCollapsed) sidebarRef.current.collapse();
-    else sidebarRef.current.expand();
-  }, [sidebarCollapsed]);
+  // Stage expand/collapse
+  useLayoutEffect(() => {
+    if (!stageHandle.current) return;
+    if (stageVisible) stageHandle.current.expand();
+    else stageHandle.current.collapse();
+  }, [stageVisible]);
 
   // Sidecar expand/collapse
   useEffect(() => {
@@ -56,5 +60,5 @@ export function usePanelManager(sidecarVisible: boolean, terminalVisible?: boole
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  return { sidebarRef, onDocsPanelRef, onTerminalPanelRef };
+  return { onStagePanelRef, onDocsPanelRef, onTerminalPanelRef };
 }

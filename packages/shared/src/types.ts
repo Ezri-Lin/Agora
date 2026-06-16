@@ -46,6 +46,12 @@ export interface CouncilRoom {
   createdAt: string;
   updatedAt: string;
   inviteGateState?: import("./council/routingTypes.js").InviteGateState;
+  /** Roles paused by user — excluded from future fan-out until restored */
+  pausedRoleIds?: string[];
+  /** Roles removed by user — excluded from future fan-out until restored */
+  removedRoleIds?: string[];
+  /** Roles manually added back from excluded/removed — exempt from cap/blocking */
+  includedRoleIds?: string[];
 }
 
 export type SourceRefImportance = "primary" | "supporting" | "memory" | "background";

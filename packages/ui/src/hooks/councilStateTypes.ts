@@ -78,7 +78,7 @@ export interface CouncilState {
   loadRooms: (wsPath: string) => Promise<void>;
   loadCustomRoles: (wsPath: string) => Promise<void>;
   loadWorkspaceData: (wsPath: string) => void;
-  handleSelectRoom: (roomId: string, workspacePath: string) => Promise<void>;
+  handleSelectRoom: (roomId: string, workspacePath: string) => Promise<{ room: unknown; messages: unknown[] } | null>;
   handleSend: (
     text: string,
     workspace: { path: string },
@@ -86,11 +86,13 @@ export interface CouncilState {
     targetedRoles?: any[],
     composerParams?: { maxRoles?: number; autoInvite?: boolean },
     overrideRoomMode?: RoomMode,
+    stageRoleState?: { excludedRoleIds: string[]; includedRoleIds: string[] },
   ) => Promise<void>;
   handleDispatchContinue: (
     selectedRoleIds: string[],
     workspace: { path: string },
     selectedRefs: WorkspaceRef[],
+    stageRoleState?: { excludedRoleIds: string[]; includedRoleIds: string[] },
   ) => Promise<void>;
   handleDispatchCancel: () => void;
   handleStop: () => void;

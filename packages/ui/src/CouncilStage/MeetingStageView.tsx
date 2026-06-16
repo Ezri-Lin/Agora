@@ -23,10 +23,12 @@ interface MeetingStageViewProps {
   focusedRoleId?: string | null;
   onRoleFocus?: (roleId: string | null) => void;
   lastUserMessage?: string;
-  pausedRoleIds?: Set<string>;
-  removedRoleIds?: Set<string>;
+  pausedRoleIds?: string[];
+  removedRoleIds?: string[];
+  excludedRoleIds?: string[];
   onTogglePause?: (roleId: string) => void;
   onToggleRemove?: (roleId: string) => void;
+  onAddExcluded?: (roleId: string) => void;
 }
 
 const CARD_W = 120;
@@ -51,8 +53,10 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
   lastUserMessage,
   pausedRoleIds,
   removedRoleIds,
+  excludedRoleIds,
   onTogglePause,
   onToggleRemove,
+  onAddExcluded,
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(360);
@@ -132,6 +136,9 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
       >
         {visible.map(role => {
           const latest = latestByRole.get(role.id);
+          const isRemoved = removedRoleIds?.includes(role.id) ?? false;
+          const isPaused = pausedRoleIds?.includes(role.id) ?? false;
+          const isExcluded = excludedRoleIds?.includes(role.id) ?? false;
           return (
             <RoleSeat
               key={role.id}
@@ -140,11 +147,13 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
               liveBubble={latest?.content}
               focused={focusedRoleId === role.id}
               dimmed={focusedRoleId !== null && focusedRoleId !== role.id}
-              paused={pausedRoleIds?.has(role.id)}
-              removed={removedRoleIds?.has(role.id)}
+              paused={isPaused}
+              removed={isRemoved}
+              excluded={isExcluded}
               onClick={() => handleSeatClick(role.id)}
               onTogglePause={onTogglePause ? () => onTogglePause(role.id) : undefined}
               onToggleRemove={onToggleRemove ? () => onToggleRemove(role.id) : undefined}
+              onAddExcluded={onAddExcluded ? () => onAddExcluded(role.id) : undefined}
             />
           );
         })}

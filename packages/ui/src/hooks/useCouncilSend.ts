@@ -74,7 +74,7 @@ export function useCouncilSend({
   setDispatchGate,
   setDispatchSelectedRoleIds,
 }: UseCouncilSendParams) {
-  return useCallback(async (text: string, workspace: { path: string }, selectedRefs: WorkspaceRef[], targetedRoles?: any[], composerParams?: { maxRoles?: number; autoInvite?: boolean }, overrideRoomMode?: RoomMode) => {
+  return useCallback(async (text: string, workspace: { path: string }, selectedRefs: WorkspaceRef[], targetedRoles?: any[], composerParams?: { maxRoles?: number; autoInvite?: boolean }, overrideRoomMode?: RoomMode, stageRoleState?: { excludedRoleIds: string[]; includedRoleIds: string[] }) => {
     const effectiveRoomMode = overrideRoomMode ?? roomMode;
     const bridge = getBridge();
     if (!bridge) return;
@@ -276,6 +276,8 @@ export function useCouncilSend({
             roleSettings,
             explicitRoleRequests: undefined,
             selectedRoleIds: [],
+            excludedRoleIds: stageRoleState?.excludedRoleIds,
+            includedRoleIds: stageRoleState?.includedRoleIds,
           });
 
           if (result.routingDecision) {
@@ -326,6 +328,8 @@ export function useCouncilSend({
             roleSettings,
             explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
             selectedRoleIds: preview.defaultSelectedRoleIds,
+            excludedRoleIds: stageRoleState?.excludedRoleIds,
+            includedRoleIds: stageRoleState?.includedRoleIds,
           });
 
           if (result.routingDecision) {
@@ -397,6 +401,8 @@ export function useCouncilSend({
         onEvent,
         roleSettings,
         explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
+        excludedRoleIds: stageRoleState?.excludedRoleIds,
+        includedRoleIds: stageRoleState?.includedRoleIds,
       });
 
       setLastRoutingDecision(

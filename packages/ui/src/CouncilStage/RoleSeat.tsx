@@ -16,9 +16,11 @@ export interface RoleSeatProps {
   dimmed?: boolean;
   paused?: boolean;
   removed?: boolean;
+  excluded?: boolean;
   onClick?: () => void;
   onTogglePause?: () => void;
   onToggleRemove?: () => void;
+  onAddExcluded?: () => void;
 }
 
 const CARD_W = 120;
@@ -32,15 +34,19 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
   dimmed,
   paused,
   removed,
+  excluded,
   onClick,
   onTogglePause,
   onToggleRemove,
+  onAddExcluded,
 }) => {
   const [hovered, setHovered] = useState(false);
 
+  // Priority: removed > paused > excluded > active
+  const isRemovedOrExcluded = removed || excluded;
   const borderStyle = paused ? "dashed" : "solid";
-  const cardOpacity = removed ? 0.45 : dimmed ? 0.18 : 1;
-  const cardFilter = dimmed && !removed ? "blur(1px)" : "none";
+  const cardOpacity = isRemovedOrExcluded ? 0.45 : dimmed ? 0.18 : 1;
+  const cardFilter = dimmed && !isRemovedOrExcluded ? "blur(1px)" : "none";
 
   return (
     <div
@@ -52,7 +58,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
         width: CARD_W,
         height: CARD_H,
         border: `1px ${borderStyle} ${focused ? "#111" : paused ? "#aaa" : "var(--line)"}`,
-        background: focused ? "#fff" : removed ? "rgba(245,245,242,.7)" : "rgba(255,255,255,.9)",
+        background: focused ? "#fff" : isRemovedOrExcluded ? "rgba(245,245,242,.7)" : "rgba(255,255,255,.9)",
         borderRadius: 14,
         padding: "8px 9px",
         cursor: "pointer",
@@ -72,7 +78,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       }}
     >
       {/* Hover action buttons */}
-      {hovered && (onTogglePause || onToggleRemove) && (
+      {hovered && (onTogglePause || onToggleRemove || onAddExcluded) && (
         <div style={{
           position: "absolute",
           top: 4,
@@ -81,7 +87,8 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
           gap: 3,
           zIndex: 2,
         }}>
-          {!removed && onTogglePause && (
+          {/* Pause/resume — hidden when removed or excluded */}
+          {!removed && !excluded && onTogglePause && (
             <HoverBtn
               title={paused ? "恢复" : "暂停"}
               active={paused}
@@ -99,14 +106,36 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
               )}
             </HoverBtn>
           )}
-          {onToggleRemove && (
+          {/* Excluded: add button */}
+          {excluded && onAddExcluded && (
             <HoverBtn
-              title={removed ? "恢复" : "移除"}
-              active={removed}
+              title="加入"
+              onClick={(e) => { e.stopPropagation(); onAddExcluded(); }}
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
+                <path d="M12 8H4M7 5L4 8l3 3" />
+              </svg>
+            </HoverBtn>
+          )}
+          {/* Removed: restore button */}
+          {removed && onToggleRemove && (
+            <HoverBtn
+              title="恢复"
               onClick={(e) => { e.stopPropagation(); onToggleRemove(); }}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
-                {removed ? <path d="M12 8H4M7 5L4 8l3 3" /> : <path d="M4 4l8 8M12 4l-8 8" />}
+                <path d="M12 8H4M7 5L4 8l3 3" />
+              </svg>
+            </HoverBtn>
+          )}
+          {/* Normal: remove button */}
+          {!removed && !excluded && !paused && onToggleRemove && (
+            <HoverBtn
+              title="移除"
+              onClick={(e) => { e.stopPropagation(); onToggleRemove(); }}
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
+                <path d="M4 4l8 8M12 4l-8 8" />
               </svg>
             </HoverBtn>
           )}
@@ -115,7 +144,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
 
       {/* Top row: avatar + name */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-        <RoleAvatar name={role.name} avatar={role.avatar} status={removed ? "idle" : status} />
+        <RoleAvatar name={role.name} avatar={role.avatar} status={isRemovedOrExcluded ? "idle" : status} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{
             fontSize: 11,
@@ -123,8 +152,8 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            textDecoration: removed ? "line-through" : "none",
-            color: removed ? "var(--muted)" : "inherit",
+            textDecoration: isRemovedOrExcluded ? "line-through" : "none",
+            color: isRemovedOrExcluded ? "var(--muted)" : "inherit",
           }}>
             {role.shortName || role.name}
           </div>
@@ -145,13 +174,13 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       {/* Bottom: micro summary */}
       <div style={{
         fontSize: 10,
-        color: removed ? "var(--muted)" : "#666",
+        color: isRemovedOrExcluded ? "var(--muted)" : "#666",
         lineHeight: 1.2,
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
       }}>
-        {removed ? "已移除" : paused ? "已暂停" : liveBubble ? truncate(liveBubble, 12) : (status === "thinking" ? "思考中..." : "等待发言")}
+        {removed ? "已移除" : excluded ? "被排除" : paused ? "已暂停" : liveBubble ? truncate(liveBubble, 12) : (status === "thinking" ? "思考中..." : "等待发言")}
       </div>
     </div>
   );

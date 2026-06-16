@@ -36,6 +36,16 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
   // Adaptive Council Graph: finalSelectedRoleIds takes precedence
   const effectiveSelectedRoleIds = finalSelectedRoleIds ?? selectedRoleIds;
   const effectiveSettings = normalizeCouncilRoleSettings(roleSettings);
+
+  // Stage role management: filter excluded roles (paused + removed)
+  const excludedSet = new Set(input.excludedRoleIds ?? []);
+  const filteredAvailableRoles = availableRoles.filter(r => !excludedSet.has(r.id));
+  // Also filter from selectedRoleIds if user-confirmed path
+  const filteredSelectedRoleIds = effectiveSelectedRoleIds
+    ? effectiveSelectedRoleIds.filter(id => !excludedSet.has(id))
+    : undefined;
+  // includedRoleIds: exempt from cap/blocking (but not override excluded)
+  const effectiveIncludedRoleIds = (input.includedRoleIds ?? []).filter(id => !excludedSet.has(id));
   const roundId = `round_${room.id}_${Date.now()}`;
 
   // Step 0: Resolve context package
@@ -74,7 +84,7 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
 
   // Step 3: Select roles
   const { routingDecision, finalRoles } = await selectRolesForRound({
-    selectedRoleIds: effectiveSelectedRoleIds, availableRoles, topic, effectiveSettings, recentMessages, explicitRoleRequests, room, llm, modPack,
+    selectedRoleIds: filteredSelectedRoleIds, availableRoles: filteredAvailableRoles, topic, effectiveSettings, recentMessages, explicitRoleRequests, room, llm, modPack, includedRoleIds: effectiveIncludedRoleIds,
   });
 
   // Step 4: Role responses
@@ -137,8 +147,9 @@ async function selectRolesForRound(input: {
   room: { id: string };
   llm: LLMProvider;
   modPack: any;
+  includedRoleIds?: string[];
 }): Promise<{ routingDecision: RoleRoutingDecision; finalRoles: RoleCard[] }> {
-  const { selectedRoleIds, availableRoles, topic, effectiveSettings, recentMessages, explicitRoleRequests, room, llm, modPack } = input;
+  const { selectedRoleIds, availableRoles, topic, effectiveSettings, recentMessages, explicitRoleRequests, room, llm, modPack, includedRoleIds } = input;
 
   if (selectedRoleIds !== undefined) {
     const finalRoles = selectedRoleIds
@@ -167,6 +178,27 @@ async function selectRolesForRound(input: {
     selectedRoles.length >= 2 ? selectedRoles : availableRoles, topic, routingSettings,
     { previousSpeakerIds: recentMessages.filter((m) => m.senderType === "role").map((m) => m.senderId), existingActiveRoleIds: availableRoles.map((r) => r.id), explicitRoleRequests },
   );
+
+  // includedRoleIds: exempt from cap/blocking — re-add blocked included roles
+  if (includedRoleIds && includedRoleIds.length > 0) {
+    const includedSet = new Set(includedRoleIds);
+    const activeIds = new Set(routingDecision.activeEntrants.map(e => e.roleId));
+    for (const score of routingDecision.scores) {
+      if (includedSet.has(score.personaId) && score.blockedBy && !activeIds.has(score.personaId)) {
+        const role = availableRoles.find(r => r.id === score.personaId);
+        if (role) {
+          score.blockedBy = undefined; // clear blocking
+          routingDecision.activeEntrants.push({
+            roleId: role.id,
+            name: role.name,
+            subtitle: role.subtitle,
+            source: "manual",
+          });
+          activeIds.add(role.id);
+        }
+      }
+    }
+  }
 
   const allSelectedRoles = routingDecision.activeEntrants
     .map((sr) => availableRoles.find((r) => r.id === sr.roleId))

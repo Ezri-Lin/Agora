@@ -1304,12 +1304,18 @@ html, body {
   transition: background-color 0.2s ease;
   position: relative;
   z-index: 10;
+  touch-action: none;
 }
 .resize-handle:hover,
 .resize-handle:active,
 .resize-handle[data-separator="active"],
 .resize-handle[data-separator="focus"] {
   background-color: var(--accent);
+}
+
+/* Stage panel — ensure no overlay when collapsed */
+.stage-panel {
+  background: transparent;
 }
 
 .resize-handle-h {
@@ -1319,6 +1325,7 @@ html, body {
   transition: background-color 0.2s ease;
   position: relative;
   z-index: 10;
+  touch-action: none;
 }
 .resize-handle-h:hover,
 .resize-handle-h:active,

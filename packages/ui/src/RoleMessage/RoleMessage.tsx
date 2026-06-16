@@ -18,6 +18,7 @@ interface RoleMessageProps {
   streaming?: boolean;
   expanded?: boolean;
   onToggle?: () => void;
+  focused?: boolean;
 }
 
 function truncate(s: string, max: number): string {
@@ -88,6 +89,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
   streaming,
   expanded = true,
   onToggle,
+  focused,
 }) => {
   const { colors } = useTheme();
   const { t, locale } = useI18n();
@@ -108,6 +110,9 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
 
   const isUser = message.senderType === "user";
   const isError = message.status === "error";
+  const bubbleFocusStyle: React.CSSProperties | undefined = focused
+    ? { border: "2px solid #111", transition: "border .2s" }
+    : undefined;
 
   if (isError) {
     const roleName = message.targetRoleId
@@ -116,7 +121,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
     return (
       <div className={`message ${isUser ? "user-message" : ""}`} id={message.id}>
         <div className="avatar" style={{ borderColor: colors.danger }}>!</div>
-        <div className="bubble">
+        <div className="bubble" style={bubbleFocusStyle}>
           <div className="meta"><b>{roleName} - {message.errorCode ?? "error"}</b></div>
           <p>{message.errorMessage ?? message.content}</p>
         </div>
@@ -137,7 +142,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
         <div className="avatar" style={{ borderColor: meta.color }}>
           {meta.name.charAt(0)}
         </div>
-        <div className="bubble" style={{ background: "var(--accent)", color: "#fff", borderColor: "var(--accent)", borderBottomRightRadius: "4px" }}>
+        <div className="bubble" style={{ background: "var(--accent)", color: "#fff", borderColor: "var(--accent)", borderBottomRightRadius: "4px", ...bubbleFocusStyle }}>
           {expanded && (
             <div onClick={onToggle} style={{ cursor: onToggle ? "pointer" : "default" }}>
               <MessageContent content={message.content} colors={colors} />
@@ -159,7 +164,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
       <div className={`avatar ${streaming ? "speaking" : ""}`} style={{ borderColor: meta.color }}>
         {meta.name.charAt(0)}
       </div>
-      <div className="bubble">
+      <div className="bubble" style={bubbleFocusStyle}>
         <div className="meta">
           <b>{meta.name}</b>
           <span>{message.createdAt ? formatTime(message.createdAt) : ""}</span>

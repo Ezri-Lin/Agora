@@ -64,6 +64,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
   const themeRef = useRef<ResolvedGraphTheme>(resolveGraphTheme(colors));
   const hasPointerRef = useRef(false);
   const mountedRef = useRef(true);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const needsFitRef = useRef(false);
   const fitTickRef = useRef(0);
   const hasFittedRef = useRef(false);
@@ -222,12 +223,27 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
       renderLoop.addSource({ isSettled: () => !hasPointerRef.current });
       renderLoopRef.current = renderLoop;
       renderLoop.start();
+
+      // ResizeObserver — keep Pixi canvas in sync with container
+      const ro = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          stage.app.renderer.resize(width, height);
+          renderLoopRef.current?.wake();
+        }
+      });
+      ro.observe(container);
+      resizeObserverRef.current = ro;
     };
 
     initStage();
 
     return () => {
       mountedRef.current = false;
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
       layersReadyRef.current = false;
       renderLoopRef.current?.destroy();
       renderLoopRef.current = null;

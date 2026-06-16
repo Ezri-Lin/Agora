@@ -104,14 +104,15 @@ export function useCouncilState(): CouncilState {
 
   const handleSelectRoom = useCallback(async (roomId: string, workspacePath: string) => {
     const bridge = getBridge();
-    if (!bridge) return;
+    if (!bridge) return null;
     const data = await bridge.room.load(workspacePath, roomId);
-    if (!data) return;
+    if (!data) return null;
     roomIdRef.current = roomId;
     setMessages(data.messages as CouncilMessage[]);
     const outputFiles = await bridge.room.listOutputs(workspacePath, roomId);
     setOutputs(outputFiles);
     setError(null);
+    return data;
   }, []);
 
   const handleStop = useCallback(() => {
@@ -248,7 +249,8 @@ export function useCouncilState(): CouncilState {
       selectedRoleIds: string[],
       workspace: { path: string },
       selectedRefs: WorkspaceRef[],
-    ) => handleDispatchContinue(selectedRoleIds, workspace, selectedRefs),
+      stageRoleState?: { excludedRoleIds: string[]; includedRoleIds: string[] },
+    ) => handleDispatchContinue(selectedRoleIds, workspace, selectedRefs, stageRoleState),
     handleDispatchCancel,
     handleStop,
     handleStopRole,

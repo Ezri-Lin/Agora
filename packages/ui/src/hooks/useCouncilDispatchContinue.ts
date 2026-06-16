@@ -55,6 +55,7 @@ export function useCouncilDispatchContinue({
     selectedRoleIds: string[],
     workspace: { path: string },
     _selectedRefs: WorkspaceRef[],
+    stageRoleState?: { excludedRoleIds: string[]; includedRoleIds: string[] },
   ) => {
     if (!dispatchGate) return;
     const bridge = getBridge();
@@ -88,6 +89,8 @@ export function useCouncilDispatchContinue({
         roleSettings,
         explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
         selectedRoleIds,
+        excludedRoleIds: stageRoleState?.excludedRoleIds,
+        includedRoleIds: stageRoleState?.includedRoleIds,
       });
 
       if (result.routingDecision) {
