@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import type { SourceRefImportance } from "@agora/shared";
-import { getBridge, type ScannedDoc } from "../AgoraBridge.js";
+import { getBridge, type ScannedDoc, type RecentWorkspace } from "../AgoraBridge.js";
 import type { ContextDebug } from "../RunInspector/RunInspector.js";
 
 export interface WorkspaceRef {
@@ -12,6 +12,7 @@ export interface WorkspaceRef {
 
 export interface WorkspaceState {
   workspace: { path: string; name: string } | null;
+  recentWorkspaces: RecentWorkspace[];
   availableDocs: ScannedDoc[];
   selectedRefs: WorkspaceRef[];
   showRefPicker: boolean;
@@ -30,7 +31,7 @@ export function useWorkspaceState(
   onWorkspaceLoaded?: (path: string) => void,
 ): WorkspaceState {
   const [workspace, setWorkspace] = useState<{ path: string; name: string } | null>(null);
-  const [recentWorkspaces, setRecentWorkspaces] = useState<string[]>([]);
+  const [recentWorkspaces, setRecentWorkspaces] = useState<RecentWorkspace[]>([]);
   const [availableDocs, setAvailableDocs] = useState<ScannedDoc[]>([]);
   const [selectedRefs, setSelectedRefs] = useState<WorkspaceRef[]>([]);
   const [showRefPicker, setShowRefPicker] = useState(false);

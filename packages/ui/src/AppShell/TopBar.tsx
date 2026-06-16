@@ -23,8 +23,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   breadcrumb,
   actions,
 }) => (
-  <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
-    <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" as any }}>
+  <header className="main-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "40px", padding: "0 16px", paddingLeft: sidebarCollapsed ? "80px" : "16px", flexShrink: 0, WebkitAppRegion: "drag" } as any}>
+    <div className="main-topbar-left" style={{ display: "flex", alignItems: "center", gap: "8px", WebkitAppRegion: "no-drag" } as any}>
       {sidebarCollapsed && (
         <>
           <label className="tool" title="Toggle Sidebar" onClick={onToggleSidebar} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
@@ -51,7 +51,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
     </div>
     {actions && (
-      <div className="main-topbar-right" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" as any }}>
+      <div className="main-topbar-right" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" } as any}>
         {actions}
       </div>
     )}

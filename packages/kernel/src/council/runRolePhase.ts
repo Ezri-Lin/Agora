@@ -12,7 +12,8 @@ import { compilePersonaPrompt } from "../prompt/compilePersonaPrompt.js";
 import { parseTailCompact } from "../compact/parseTailCompact.js";
 import { formatSessionBriefForPrompt } from "../compact/formatSessionBriefForPrompt.js";
 import type { MessageCompact, SessionRunningBrief } from "../compact/types.js";
-import type { PersonaContract, ContextPackage } from "@agora/shared";
+import type { PersonaContract } from "@agora/shared";
+import type { ContextPackage } from "../context/ContextCompiler.js";
 
 // Module-level abort controllers — keyed by `${roundId}_${roleId}`
 const roleAbortControllers = new Map<string, AbortController>();
