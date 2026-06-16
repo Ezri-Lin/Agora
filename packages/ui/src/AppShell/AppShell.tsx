@@ -72,8 +72,10 @@ interface AppShellProps {
   onRoleFocus?: (roleId: string | null) => void;
   roles?: RoleCard[];
   messages?: CouncilMessage[];
-  onStopRole?: (roleId: string) => void;
-  onRemoveRole?: (roleId: string) => void;
+  pausedRoleIds?: Set<string>;
+  removedRoleIds?: Set<string>;
+  onTogglePause?: (roleId: string) => void;
+  onToggleRemove?: (roleId: string) => void;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -111,8 +113,10 @@ export const AppShell: React.FC<AppShellProps> = ({
   onRoleFocus,
   roles = [],
   messages = [],
-  onStopRole,
-  onRemoveRole,
+  pausedRoleIds,
+  removedRoleIds,
+  onTogglePause,
+  onToggleRemove,
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(268);
@@ -249,8 +253,10 @@ export const AppShell: React.FC<AppShellProps> = ({
                     onRoleFocus={handleRoleFocus}
                     activeRoomId={activeRoomId}
                     rooms={rooms}
-                    onStopRole={onStopRole}
-                    onRemoveRole={onRemoveRole}
+                    pausedRoleIds={pausedRoleIds}
+                    removedRoleIds={removedRoleIds}
+                    onTogglePause={onTogglePause}
+                    onToggleRemove={onToggleRemove}
                   />
                 </Panel>
                 <PanelResizeHandle className="resize-handle" disabled={!stageVisible} />

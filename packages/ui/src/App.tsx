@@ -158,8 +158,10 @@ export const App: React.FC = () => {
       onRoleFocus={handleRoleFocus}
       roles={stageRoles}
       messages={council.messages}
-      onStopRole={council.handleStopRole}
-      onRemoveRole={council.handleRemoveRole}
+      pausedRoleIds={panels.pausedRoleIds}
+      removedRoleIds={panels.removedRoleIds}
+      onTogglePause={panels.togglePauseRole}
+      onToggleRemove={panels.toggleRemoveRole}
       home={
         <WorkspaceHome
           graph={<WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} workspacePath={workspace.workspace.path} />}

@@ -23,8 +23,10 @@ interface MeetingStageViewProps {
   focusedRoleId?: string | null;
   onRoleFocus?: (roleId: string | null) => void;
   lastUserMessage?: string;
-  onStopRole?: (roleId: string) => void;
-  onRemoveRole?: (roleId: string) => void;
+  pausedRoleIds?: Set<string>;
+  removedRoleIds?: Set<string>;
+  onTogglePause?: (roleId: string) => void;
+  onToggleRemove?: (roleId: string) => void;
 }
 
 const CARD_W = 120;
@@ -47,8 +49,10 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
   focusedRoleId,
   onRoleFocus,
   lastUserMessage,
-  onStopRole,
-  onRemoveRole,
+  pausedRoleIds,
+  removedRoleIds,
+  onTogglePause,
+  onToggleRemove,
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(360);
@@ -136,9 +140,11 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
               liveBubble={latest?.content}
               focused={focusedRoleId === role.id}
               dimmed={focusedRoleId !== null && focusedRoleId !== role.id}
+              paused={pausedRoleIds?.has(role.id)}
+              removed={removedRoleIds?.has(role.id)}
               onClick={() => handleSeatClick(role.id)}
-              onStop={onStopRole ? () => onStopRole(role.id) : undefined}
-              onRemove={onRemoveRole ? () => onRemoveRole(role.id) : undefined}
+              onTogglePause={onTogglePause ? () => onTogglePause(role.id) : undefined}
+              onToggleRemove={onToggleRemove ? () => onToggleRemove(role.id) : undefined}
             />
           );
         })}

@@ -14,9 +14,11 @@ export interface RoleSeatProps {
   liveBubble?: string;
   focused?: boolean;
   dimmed?: boolean;
+  paused?: boolean;
+  removed?: boolean;
   onClick?: () => void;
-  onStop?: () => void;
-  onRemove?: () => void;
+  onTogglePause?: () => void;
+  onToggleRemove?: () => void;
 }
 
 const CARD_W = 120;
@@ -28,11 +30,17 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
   liveBubble,
   focused,
   dimmed,
+  paused,
+  removed,
   onClick,
-  onStop,
-  onRemove,
+  onTogglePause,
+  onToggleRemove,
 }) => {
   const [hovered, setHovered] = useState(false);
+
+  const borderStyle = paused ? "dashed" : "solid";
+  const cardOpacity = removed ? 0.45 : dimmed ? 0.18 : 1;
+  const cardFilter = dimmed && !removed ? "blur(1px)" : "none";
 
   return (
     <div
@@ -43,16 +51,16 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       style={{
         width: CARD_W,
         height: CARD_H,
-        border: `1px solid ${focused ? "#111" : "var(--line)"}`,
-        background: focused ? "#fff" : "rgba(255,255,255,.9)",
+        border: `1px ${borderStyle} ${focused ? "#111" : paused ? "#aaa" : "var(--line)"}`,
+        background: focused ? "#fff" : removed ? "rgba(245,245,242,.7)" : "rgba(255,255,255,.9)",
         borderRadius: 14,
         padding: "8px 9px",
         cursor: "pointer",
         boxShadow: focused
           ? "0 0 0 2px #111, 0 16px 48px rgba(0,0,0,.12)"
           : "0 4px 16px rgba(0,0,0,.035)",
-        opacity: dimmed ? 0.18 : 1,
-        filter: dimmed ? "blur(1px)" : "none",
+        opacity: cardOpacity,
+        filter: cardFilter,
         transition: "opacity .18s ease, filter .18s ease, box-shadow .16s ease, border-color .16s ease",
         willChange: "opacity, filter",
         display: "flex",
@@ -64,7 +72,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       }}
     >
       {/* Hover action buttons */}
-      {hovered && (onStop || onRemove) && (
+      {hovered && (onTogglePause || onToggleRemove) && (
         <div style={{
           position: "absolute",
           top: 4,
@@ -73,18 +81,32 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
           gap: 3,
           zIndex: 2,
         }}>
-          {onStop && (
-            <HoverBtn title="暂停" onClick={(e) => { e.stopPropagation(); onStop(); }}>
-              <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 9, height: 9 }}>
-                <rect x="3" y="2" width="4" height="12" rx="1" />
-                <rect x="9" y="2" width="4" height="12" rx="1" />
-              </svg>
+          {onTogglePause && (
+            <HoverBtn
+              title={paused ? "恢复" : "暂停"}
+              active={paused}
+              onClick={(e) => { e.stopPropagation(); onTogglePause(); }}
+            >
+              {paused ? (
+                <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 9, height: 9 }}>
+                  <path d="M4 2l10 6-10 6z" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 16 16" fill="currentColor" style={{ width: 9, height: 9 }}>
+                  <rect x="3" y="2" width="4" height="12" rx="1" />
+                  <rect x="9" y="2" width="4" height="12" rx="1" />
+                </svg>
+              )}
             </HoverBtn>
           )}
-          {onRemove && (
-            <HoverBtn title="移除" onClick={(e) => { e.stopPropagation(); onRemove(); }}>
+          {onToggleRemove && (
+            <HoverBtn
+              title={removed ? "恢复" : "移除"}
+              active={removed}
+              onClick={(e) => { e.stopPropagation(); onToggleRemove(); }}
+            >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
-                <path d="M4 4l8 8M12 4l-8 8" />
+                {removed ? <path d="M4 8l3 3 5-6" /> : <path d="M4 4l8 8M12 4l-8 8" />}
               </svg>
             </HoverBtn>
           )}
@@ -93,7 +115,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
 
       {/* Top row: avatar + name */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-        <RoleAvatar name={role.name} avatar={role.avatar} status={status} />
+        <RoleAvatar name={role.name} avatar={role.avatar} status={removed ? "idle" : status} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{
             fontSize: 11,
@@ -101,6 +123,8 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            textDecoration: removed ? "line-through" : "none",
+            color: removed ? "var(--muted)" : "inherit",
           }}>
             {role.shortName || role.name}
           </div>
@@ -121,19 +145,24 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       {/* Bottom: micro summary */}
       <div style={{
         fontSize: 10,
-        color: "#666",
+        color: removed ? "var(--muted)" : "#666",
         lineHeight: 1.2,
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
       }}>
-        {liveBubble ? truncate(liveBubble, 12) : (status === "thinking" ? "思考中..." : "等待发言")}
+        {removed ? "已移除" : paused ? "已暂停" : liveBubble ? truncate(liveBubble, 12) : (status === "thinking" ? "思考中..." : "等待发言")}
       </div>
     </div>
   );
 };
 
-const HoverBtn: React.FC<{ title: string; onClick: (e: React.MouseEvent) => void; children: React.ReactNode }> = ({ title, onClick, children }) => (
+const HoverBtn: React.FC<{
+  title: string;
+  active?: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  children: React.ReactNode;
+}> = ({ title, active, onClick, children }) => (
   <button
     title={title}
     onClick={onClick}
@@ -141,17 +170,17 @@ const HoverBtn: React.FC<{ title: string; onClick: (e: React.MouseEvent) => void
       width: 18,
       height: 18,
       borderRadius: 4,
-      border: "1px solid var(--line)",
-      background: "rgba(255,255,255,.92)",
+      border: `1px solid ${active ? "#111" : "var(--line)"}`,
+      background: active ? "#111" : "rgba(255,255,255,.92)",
       display: "grid",
       placeItems: "center",
       cursor: "pointer",
-      color: "var(--muted)",
+      color: active ? "#fff" : "var(--muted)",
       padding: 0,
       transition: "background .12s, color .12s",
     }}
-    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f1f1ef"; (e.currentTarget as HTMLElement).style.color = "#111"; }}
-    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,.92)"; (e.currentTarget as HTMLElement).style.color = "var(--muted)"; }}
+    onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = "#f1f1ef"; (e.currentTarget as HTMLElement).style.color = "#111"; } }}
+    onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,.92)"; (e.currentTarget as HTMLElement).style.color = "var(--muted)"; } }}
   >
     {children}
   </button>

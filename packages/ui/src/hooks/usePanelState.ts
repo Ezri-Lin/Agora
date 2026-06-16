@@ -9,6 +9,8 @@ export interface PanelState {
   sidecarTab: SidecarTab;
   stageVisible: boolean;
   focusedRoleId: string | null;
+  pausedRoleIds: Set<string>;
+  removedRoleIds: Set<string>;
   dispatchGateOpen: boolean;
   showWriteProposalPanel: boolean;
   showMemoryReviewPanel: boolean;
@@ -20,6 +22,8 @@ export interface PanelState {
   toggleSidecar: () => void;
   toggleStage: () => void;
   setFocusedRoleId: (id: string | null) => void;
+  togglePauseRole: (id: string) => void;
+  toggleRemoveRole: (id: string) => void;
   setSidecarTab: (tab: SidecarTab) => void;
   setDispatchGateOpen: (open: boolean) => void;
   openWriteProposalPanel: () => void;
@@ -44,6 +48,8 @@ export function usePanelState(): PanelState {
   const [showSessionSummaryPanel, setShowSessionSummaryPanel] = useState(false);
   const [stageVisible, setStageVisible] = useState(false);
   const [focusedRoleId, setFocusedRoleId] = useState<string | null>(null);
+  const [pausedRoleIds, setPausedRoleIds] = useState<Set<string>>(new Set());
+  const [removedRoleIds, setRemovedRoleIds] = useState<Set<string>>(new Set());
 
   const openSettings = useCallback(() => setShowSettings(true), []);
   const closeSettings = useCallback(() => setShowSettings(false), []);
@@ -69,6 +75,26 @@ export function usePanelState(): PanelState {
     });
   }, []);
 
+  const togglePauseRole = useCallback((id: string) => {
+    setPausedRoleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+    // Pausing also un-removes
+    setRemovedRoleIds((prev) => { if (!prev.has(id)) return prev; const next = new Set(prev); next.delete(id); return next; });
+  }, []);
+
+  const toggleRemoveRole = useCallback((id: string) => {
+    setRemovedRoleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+    // Removing also un-pauses
+    setPausedRoleIds((prev) => { if (!prev.has(id)) return prev; const next = new Set(prev); next.delete(id); return next; });
+  }, []);
+
   return {
     showSettings,
     terminalVisible,
@@ -77,6 +103,8 @@ export function usePanelState(): PanelState {
     sidecarTab,
     stageVisible,
     focusedRoleId,
+    pausedRoleIds,
+    removedRoleIds,
     dispatchGateOpen,
     showWriteProposalPanel,
     showMemoryReviewPanel,
@@ -88,6 +116,8 @@ export function usePanelState(): PanelState {
     toggleSidecar,
     toggleStage,
     setFocusedRoleId,
+    togglePauseRole,
+    toggleRemoveRole,
     setSidecarTab,
     setDispatchGateOpen,
     openWriteProposalPanel,
