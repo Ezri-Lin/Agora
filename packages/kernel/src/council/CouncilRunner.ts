@@ -94,13 +94,13 @@ export async function runCouncilRound(input: RunCouncilRoundInput): Promise<Coun
     finalRoles, roleMessages, failedRoles, messageCompacts, room, recentMessages, userMessage, llm,
   });
 
-  // Step 5: Moderator summarizes
-  const summary = await buildSummary({
-    modPack, roleMessages, crossExaminationMessages, messageCompacts, inputSessionBrief, room, userMessage, llm, onEvent,
-  });
+  // Step 5: Moderator summarizes — REMOVED
+  // Host does not auto-summarize after fan-out.
+  // Summary is only generated when user explicitly triggers host_synthesize / finalize_decision.
+  const summary = "";
 
-  // Step 6: Extract memories
-  const extractedMemories = await extractMemoriesFromRound({ memoryStore, llm, room, topic, summary });
+  // Step 6: Extract memories — deferred until user triggers finalize_decision
+  const extractedMemories: import("@agora/shared").MemoryCandidate[] = [];
 
   // Build context debug + session brief
   const contextDebug = {

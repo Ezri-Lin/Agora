@@ -105,30 +105,25 @@ export function createCouncilEventHandler({
       case "moderator_done": {
         if (event.message) {
           if (moderatorPlaceholderId) {
-            // Replace the thinking placeholder with the real moderator message
-            setMessages((prev) => prev.map(m =>
-              m.id === moderatorPlaceholderId ? event.message! : m
-            ));
+            // Try to replace placeholder; if not found (already removed), append
+            let replaced = false;
+            setMessages((prev) => {
+              const next = prev.map((m) => {
+                if (m.id === moderatorPlaceholderId) {
+                  replaced = true;
+                  return event.message!;
+                }
+                return m;
+              });
+              return replaced ? next : [...prev, event.message!];
+            });
           } else {
             setMessages((prev) => [...prev, event.message!]);
           }
         }
         break;
       }
-      case "summary_done": {
-        if (event.content) {
-          const summaryMsg: CouncilMessage = {
-            id: generateId("msg"),
-            roomId: roomIdRef.current!,
-            senderType: "moderator",
-            senderId: "moderator",
-            content: event.content,
-            createdAt: nowISO(),
-          };
-          setMessages((prev) => [...prev, summaryMsg]);
-        }
-        break;
-      }
+      // summary_done removed — host does not auto-summarize after fan-out
     }
   };
 }

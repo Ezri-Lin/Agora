@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import type { CouncilMessage, RoleCard } from "@agora/shared";
 import { RoleMessage } from "../RoleMessage/RoleMessage.js";
-import { TextShimmer } from "../AgentTools/TextShimmer.js";
 import { useI18n } from "../i18n/I18nContext.js";
 import { useTheme } from "../theme/ThemeContext.js";
 import type { ColorPalette } from "../theme/palettes.js";
@@ -22,7 +21,7 @@ interface CouncilRoomProps {
   onNewMsgCountChange?: (count: number) => void;
 }
 
-export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, loadingStatus, onStop, streamingRoleId, onRegisterJumpFns, onNearBottomChange, onNewMsgCountChange }) => {
+export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, streamingRoleId, onRegisterJumpFns, onNearBottomChange, onNewMsgCountChange }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -172,16 +171,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
             </div>
           );
         })}
-        {isLoading && (
-          <div style={styles.loadingRow}>
-            <TextShimmer style={styles.loadingText} duration={2.5}>
-              {loadingStatus || t.rolesAreThinking}
-            </TextShimmer>
-            {onStop && (
-              <button style={styles.stopBtn} onClick={onStop}>{t.stop}</button>
-            )}
-          </div>
-        )}
+        {/* Loading indicator removed from chat — stop button stays in Composer only */}
       </div>
     </div>
   );
@@ -213,27 +203,6 @@ const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties>
     fontSize: typography.chatBody.size,
     textAlign: "center",
     padding: spacing.xxxl,
-  },
-  loadingRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-  },
-  loadingText: {
-    color: colors.accent,
-    fontSize: typography.meta.size,
-    fontStyle: "italic",
-  },
-  stopBtn: {
-    background: colors.dangerBg,
-    border: `1px solid ${colors.dangerBorder}`,
-    borderRadius: radius.xs,
-    padding: `${spacing.xxs}px ${spacing.md - 2}px`,
-    fontSize: typography.meta.size,
-    color: colors.danger,
-    cursor: "pointer",
   },
   jumpBtn: {
     position: "absolute",
