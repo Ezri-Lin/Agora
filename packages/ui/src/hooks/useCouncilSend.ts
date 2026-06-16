@@ -216,6 +216,7 @@ export function useCouncilSend({
         // Step 1: 先判断是否需要邀请（LLM 分析任务）
         const hasUserInviteTrigger = chipRequests.length > 0;
         let shouldInvite = hasUserInviteTrigger;
+        let inviteReason = "";
 
         if (!shouldInvite) {
           try {
@@ -253,6 +254,9 @@ export function useCouncilSend({
               roomId: roomForCouncil.id,
             });
             shouldInvite = engagement.mode === "invite";
+            if (shouldInvite && engagement.mode === "invite") {
+              inviteReason = engagement.reason;
+            }
           } catch (err) {
             console.warn("decideEngagement failed, defaulting to direct:", err);
           }
@@ -356,6 +360,7 @@ export function useCouncilSend({
           roleSettings,
           chipRequests,
           moderatorAnalysis,
+          councilValueReason: inviteReason ? [inviteReason] : undefined,
           taskFrame: {
             taskId: `task_${Date.now()}`,
             userMessageId: userMsg.id,

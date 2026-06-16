@@ -5,6 +5,7 @@ import { AppShell } from "./AppShell/AppShell.js";
 import type { AppView } from "./AppShell/AppShell.types.js";
 import { ContextGraph } from "./ContextGraph/ContextGraph.js";
 import { CouncilRoom } from "./CouncilRoom/CouncilRoom.js";
+import { NextActionChips } from "./CouncilRoom/NextActionChips.js";
 import { Composer } from "./Composer/Composer.js";
 import { DocumentSurface } from "./DocumentSurface/DocumentSurface.js";
 import { RunInspector } from "./RunInspector/RunInspector.js";
@@ -215,6 +216,15 @@ export const App: React.FC = () => {
             onNearBottomChange={setIsNearBottom}
             onNewMsgCountChange={setNewMsgCount}
           />
+          {council.panelPhase === "completed" && (
+            <NextActionChips onResult={(result) => {
+              console.log("[NextAction]", result.kind, "→", result.execute);
+              // v1: discard clears the action surface; others log only for now
+              if (result.kind === "discard") {
+                // Panel auto-resets to idle via timer in useCouncilState
+              }
+            }} />
+          )}
         </>
       }
       sidecar={
