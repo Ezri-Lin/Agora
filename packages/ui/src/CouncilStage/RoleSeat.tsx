@@ -81,7 +81,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
           gap: 3,
           zIndex: 2,
         }}>
-          {onTogglePause && (
+          {!removed && onTogglePause && (
             <HoverBtn
               title={paused ? "恢复" : "暂停"}
               active={paused}
@@ -106,7 +106,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
               onClick={(e) => { e.stopPropagation(); onToggleRemove(); }}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
-                {removed ? <path d="M4 8l3 3 5-6" /> : <path d="M4 4l8 8M12 4l-8 8" />}
+                {removed ? <path d="M12 8H4M7 5L4 8l3 3" /> : <path d="M4 4l8 8M12 4l-8 8" />}
               </svg>
             </HoverBtn>
           )}

@@ -200,13 +200,14 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
           const alwaysExpand = isUser;
           const isExpanded = !!(alwaysExpand || expandedIds.has(msg.id) || isFocusedRole);
           return (
-            <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id} style={isFocusedRole ? { boxShadow: "0 0 0 2px #111, 0 18px 48px rgba(0,0,0,.12)", borderRadius: 13, transition: "box-shadow .2s" } : undefined}>
+            <div key={msg.id} id={isStreaming ? `streaming-${msg.senderId}` : undefined} data-message-id={msg.id}>
               <RoleMessage
                 message={msg}
                 roles={roles}
                 streaming={isStreaming}
                 expanded={isExpanded}
                 onToggle={alwaysExpand ? undefined : () => handleToggle(msg.id)}
+                focused={isFocusedRole || undefined}
               />
             </div>
           );
