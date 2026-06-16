@@ -13,6 +13,7 @@ import type { RoleStreamState } from "../CouncilMonitor/CouncilMonitor.js";
 import type { WorkspaceRef } from "./useWorkspaceState.js";
 import { finalizeRoleStreams } from "./councilCompletion.js";
 import { persistCouncilRunResult } from "./councilPersistence.js";
+import { persistInviteGateState } from "./councilSend/persistInviteGateState.js";
 import type { DispatchGateContext } from "./councilStateTypes.js";
 
 interface UseCouncilDispatchContinueParams {
@@ -95,6 +96,23 @@ export function useCouncilDispatchContinue({
           decision: result.routingDecision,
         });
       }
+
+      // Persist invite gate cooldown after successful dispatch
+      try {
+        const taskFrame = dispatchGate.taskFrame;
+        if (taskFrame) {
+          await persistInviteGateState({
+            workspacePath: workspace.path,
+            roomId: roomIdRef.current!,
+            roundId: `round_${roomIdRef.current}_${Date.now()}`,
+            taskFrame,
+            bridge,
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to persist invite gate state:", err);
+      }
+
       setLoadingStatus("Persisting...");
 
       const outputFiles = await persistCouncilRunResult({

@@ -13,6 +13,7 @@ import type {
   InviteGateState,
   CouncilDispatchSettings,
 } from "@agora/shared";
+import { buildTaskFingerprint, isSameTaskThread } from "../council/taskFingerprint.js";
 
 interface DecideEngagementInput {
   taskFrame: TaskFrame;
@@ -84,22 +85,13 @@ function hasHighCouncilValue(taskFrame: TaskFrame): boolean {
 
 // === Cooldown check ===
 
-function isSameTaskThread(
+function checkSameTaskThread(
   taskFrame: TaskFrame,
   inviteGateState?: InviteGateState,
 ): boolean {
   if (!inviteGateState?.lastInviteTaskFingerprint) return false;
   const currentFingerprint = buildTaskFingerprint(taskFrame);
-  return inviteGateState.lastInviteTaskFingerprint === currentFingerprint;
-}
-
-export function buildTaskFingerprint(taskFrame: TaskFrame): string {
-  const parts = [
-    taskFrame.taskType,
-    taskFrame.problemStatement.slice(0, 100),
-    taskFrame.selectedDocs.map((d) => d.docId).sort().join(","),
-  ];
-  return parts.join("|");
+  return isSameTaskThread(inviteGateState.lastInviteTaskFingerprint, currentFingerprint);
 }
 
 // === Main decision function ===
@@ -119,7 +111,7 @@ export async function decideEngagement(input: DecideEngagementInput): Promise<En
   }
 
   // 2. Cooldown gate: same task thread, no user trigger → prefer direct
-  if (inviteGateState?.status === "cooldown" && isSameTaskThread(taskFrame, inviteGateState)) {
+  if (inviteGateState?.status === "cooldown" && checkSameTaskThread(taskFrame, inviteGateState)) {
     return {
       mode: "direct",
       reason: "Similar task was recently discussed. User can explicitly request council if needed.",

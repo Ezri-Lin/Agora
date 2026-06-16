@@ -8,6 +8,7 @@ import type {
   RoleCard,
   RoleRoutingDecision,
   RoomMode,
+  TaskFrame,
 } from "@agora/shared";
 import type { CouncilDispatchPreview } from "@agora/kernel";
 import type { MutableRefObject } from "react";
@@ -35,6 +36,8 @@ export interface DispatchGateContext {
   moderatorThinking?: string;
   /** Why this council is worth opening (Adaptive Council Graph) */
   councilValueReason?: string[];
+  /** Task frame for cooldown persistence (Adaptive Council Graph) */
+  taskFrame?: TaskFrame;
 }
 
 export interface CustomRole {

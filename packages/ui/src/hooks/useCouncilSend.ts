@@ -11,7 +11,7 @@ import type {
   RoomMode,
 } from "@agora/shared";
 import { generateId, nowISO } from "@agora/shared";
-import { prepareCouncilDispatch, runCouncilRound, buildModeratorContextPack, buildModeratorPrompt } from "@agora/kernel";
+import { prepareCouncilDispatch, runCouncilRound, decideEngagement, buildTaskFingerprint } from "@agora/kernel";
 import { getBridge } from "../AgoraBridge.js";
 import { IPCProvider } from "../IPCProvider.js";
 import { sendSingleMode } from "./councilSendSingle.js";
@@ -213,57 +213,56 @@ export function useCouncilSend({
       setPendingPerspectiveChips([]);
 
       if (effectiveRoomMode === "council") {
-        const preview = await prepareCouncilDispatch({
-          room: roomForCouncil,
-          topic: text,
-          userMessage: userMsg,
-          availableRoles: allRoles,
-          recentMessages: messages,
-          docContents,
-          roleSettings,
-          explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
-        });
+        // Step 1: 先判断是否需要邀请（LLM 分析任务）
+        const hasUserInviteTrigger = chipRequests.length > 0;
+        let shouldInvite = hasUserInviteTrigger;
 
-        // Moderator LLM analyzes the topic before showing dispatch gate
-        let moderatorAnalysis = "";
-        let moderatorThinking: string | undefined;
-        try {
-          const modPack = buildModeratorContextPack(
-            roomForCouncil, text, [...messages, userMsg], docContents,
-          );
-          const analyzePrompt = buildModeratorPrompt("analyze", modPack);
-          const analysisResult = await provider.callModerator({
-            roomId: roomForCouncil.id,
-            task: "analyze",
-            context: analyzePrompt,
-            messages: [...messages, userMsg],
-          });
-          moderatorAnalysis = analysisResult.content;
-          moderatorThinking = analysisResult.thinking;
-
-          // Update moderator placeholder with real analysis
-          setMessages((prev) => prev.map(m =>
-            m.id === moderatorPlaceholderId
-              ? { ...m, content: moderatorAnalysis, thinking: moderatorThinking ?? "" }
-              : m
-          ));
-        } catch (err) {
-          console.warn("Moderator pre-analysis failed, using deterministic summary:", err);
-          moderatorAnalysis = preview.moderatorSummary;
+        if (!shouldInvite) {
+          try {
+            const engagement = await decideEngagement({
+              taskFrame: {
+                taskId: `task_${Date.now()}`,
+                userMessageId: userMsg.id,
+                taskType: "other",
+                userGoal: text,
+                problemStatement: text,
+                selectedDocs: selectedRefs.map((r, i) => ({
+                  docId: r.path || `doc-${i}`,
+                  title: r.label || r.path || `Document ${i + 1}`,
+                  usage: "reference" as const,
+                })),
+                retrievedContext: [],
+                constraints: [],
+                openQuestions: [],
+                taskBriefForHost: text,
+                taskBriefForRoles: text,
+                evidencePolicy: { enoughContext: docContents.size > 0, missingEvidence: [], shouldSearchMore: false },
+              },
+              inviteGateState: roomForCouncil.inviteGateState,
+              userInviteTrigger: false,
+              settings: {
+                defaultSelectedRoleLimit: 3,
+                candidateDisplayLimit: 10,
+                skipConfirm: false,
+                requireCriticByDefault: true,
+              },
+              llm: {
+                callModerator: (params: { roomId: string; task: string; context: string }) =>
+                  provider.callModerator({ ...params, task: params.task as any }),
+              },
+              roomId: roomForCouncil.id,
+            });
+            shouldInvite = engagement.mode === "invite";
+          } catch (err) {
+            console.warn("decideEngagement failed, defaulting to direct:", err);
+          }
         }
 
-        // Enrich preview with LLM analysis
-        const enrichedPreview = {
-          ...preview,
-          moderatorAnalysis,
-          moderatorThinking,
-        };
-
-        // No roles needed and no explicit requests → skip dispatch gate, run directly
-        if (preview.defaultSelectedRoleIds.length === 0 && chipRequests.length === 0) {
+        // Step 2: 如果不需要邀请 → 主持人直接回答
+        if (!shouldInvite) {
           const result = await runCouncilRound({
             room: roomForCouncil,
-            topic: preview.topic,
+            topic: text,
             userMessage: userMsg,
             availableRoles: allRoles,
             llm: provider,
@@ -295,11 +294,25 @@ export function useCouncilSend({
           return;
         }
 
+        // Step 3: 需要邀请 → 扫描角色库、打分、构建预览
+        const preview = await prepareCouncilDispatch({
+          room: roomForCouncil,
+          topic: text,
+          userMessage: userMsg,
+          availableRoles: allRoles,
+          recentMessages: messages,
+          docContents,
+          roleSettings,
+          explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
+        });
+
+        const moderatorAnalysis = preview.moderatorSummary;
+
         // Auto-invite: skip confirmation, run directly with suggested roles
         if (composerParams?.autoInvite) {
           const result = await runCouncilRound({
             room: roomForCouncil,
-            topic: preview.topic,
+            topic: text,
             userMessage: userMsg,
             availableRoles: allRoles,
             llm: provider,
@@ -331,11 +344,10 @@ export function useCouncilSend({
           return;
         }
 
-        // Manual: show dispatch gate for user confirmation with LLM analysis
-        // Remove moderator thinking placeholder — dispatch gate replaces it
+        // Step 4: 显示 dispatch gate，等用户确认
         setMessages((prev) => prev.filter((m) => m.id !== moderatorPlaceholderId));
         setDispatchGate({
-          preview: enrichedPreview,
+          preview,
           userMsg,
           roomForCouncil,
           allRoles,
@@ -344,7 +356,24 @@ export function useCouncilSend({
           roleSettings,
           chipRequests,
           moderatorAnalysis,
-          moderatorThinking,
+          taskFrame: {
+            taskId: `task_${Date.now()}`,
+            userMessageId: userMsg.id,
+            taskType: "other",
+            userGoal: text,
+            problemStatement: text,
+            selectedDocs: selectedRefs.map((r, i) => ({
+              docId: r.path || `doc-${i}`,
+              title: r.label || r.path || `Document ${i + 1}`,
+              usage: "reference" as const,
+            })),
+            retrievedContext: [],
+            constraints: [],
+            openQuestions: [],
+            taskBriefForHost: text,
+            taskBriefForRoles: text,
+            evidencePolicy: { enoughContext: docContents.size > 0, missingEvidence: [], shouldSearchMore: false },
+          },
         });
         setDispatchSelectedRoleIds(preview.defaultSelectedRoleIds);
         setIsLoading(false);
