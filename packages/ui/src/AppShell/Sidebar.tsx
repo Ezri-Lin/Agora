@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { SpiralLoader } from "../AgentTools/SpiralLoader.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface RoomEntry {
   id: string;
@@ -43,23 +45,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onGoBack,
   onGoForward,
 }) => {
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
   const [projectExpanded, setProjectExpanded] = useState(true);
 
   return (
     <>
       <header className="sidebar-topbar" style={{ display: "flex", alignItems: "center", height: "40px", paddingLeft: "80px", paddingRight: "8px", gap: "8px", flexShrink: 0, WebkitAppRegion: "drag" as any }}>
-        <label className="tool" title="Toggle Sidebar" onClick={onToggleCollapse} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px", WebkitAppRegion: "no-drag" as any }}>
+        <label className="tool" title="Toggle Sidebar" onClick={onToggleCollapse} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: colors.textMuted, borderRadius: "4px", WebkitAppRegion: "no-drag" as any }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
             <line x1="9" y1="3" x2="9" y2="21" />
           </svg>
         </label>
-        <label className="tool" title="Back" onClick={onGoBack} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoBack ? "pointer" : "default", color: canGoBack ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoBack ? 1 : 0.4, WebkitAppRegion: "no-drag" as any }}>
+        <label className="tool" title="Back" onClick={onGoBack} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoBack ? "pointer" : "default", color: canGoBack ? colors.textMuted : colors.textDisabled, borderRadius: "4px", opacity: canGoBack ? 1 : 0.4, WebkitAppRegion: "no-drag" as any }}>
           <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
         </label>
-        <label className="tool" title="Forward" onClick={onGoForward} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoForward ? "pointer" : "default", color: canGoForward ? "var(--text-muted)" : "var(--faint)", borderRadius: "4px", opacity: canGoForward ? 1 : 0.4, WebkitAppRegion: "no-drag" as any }}>
+        <label className="tool" title="Forward" onClick={onGoForward} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: canGoForward ? "pointer" : "default", color: canGoForward ? colors.textMuted : colors.textDisabled, borderRadius: "4px", opacity: canGoForward ? 1 : 0.4, WebkitAppRegion: "no-drag" as any }}>
           <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
             <path d="M5 12h14M12 5l7 7-7 7"/>
           </svg>
@@ -72,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M12 5v14M5 12h14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              New chat
+              {t.newChat}
             </div>
           )}
           <div className="side-action">
@@ -80,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <circle cx="11" cy="11" r="7" strokeWidth="2" />
               <path d="m20 20-3.5-3.5" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Search
+            {t.search}
           </div>
           {onOpenContextGraph && (
             <div className="side-action" onClick={onOpenContextGraph}>
@@ -92,15 +96,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <circle cx="19" cy="18" r="2" />
                 <path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3" />
               </svg>
-              Context Graph
+              {t.contextGraph}
             </div>
           )}
         </div>
         <div className="projects">
-          <div className="side-label">Projects</div>
+          <div className="side-label">{t.projects}</div>
           <div
             onClick={() => setProjectExpanded(!projectExpanded)}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "var(--text)", userSelect: "none" }}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", cursor: "pointer", fontWeight: 600, fontSize: 13, color: colors.textPrimary, userSelect: "none" }}
             title={workspacePath || workspaceName}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0, opacity: 0.7 }}>
@@ -118,25 +122,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={r.id}
                   className={`room-link ${r.id === activeRoomId ? "active" : ""}`}
                   onClick={() => onSelectRoom?.(r.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px 4px 24px", fontSize: 13, color: r.id === activeRoomId ? "var(--text)" : "var(--text-muted)", borderRadius: 4, margin: "0 8px", cursor: "pointer" }}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px 4px 24px", fontSize: 13, color: r.id === activeRoomId ? colors.textPrimary : colors.textMuted, borderRadius: 4, margin: "0 8px", cursor: "pointer" }}
                 >
-                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled Room"}</span>
+                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || t.untitledRoom}</span>
                   {r.id === activeRoomId && isLoading && (
-                    <SpiralLoader size={12} style={{ opacity: 0.5, color: "var(--text-muted)" }} />
+                    <SpiralLoader size={12} style={{ opacity: 0.5, color: colors.textMuted }} />
                   )}
                   {onDeleteRoom && (
                     <span
                       className="room-delete"
                       onClick={e => { e.stopPropagation(); onDeleteRoom(r.id); }}
-                      style={{ opacity: 0, cursor: "pointer", fontSize: 11, color: "var(--muted)", padding: "0 2px", flexShrink: 0 }}
+                      style={{ opacity: 0, cursor: "pointer", fontSize: 11, color: colors.textMuted, padding: "0 2px", flexShrink: 0 }}
                       title="Delete room"
                     >✕</span>
                   )}
                 </a>
               ))}
               {rooms.length === 0 && (
-                <div style={{ padding: "4px 16px", fontSize: 12, color: "var(--faint)", fontStyle: "italic" }}>
-                  No chats yet
+                <div style={{ padding: "4px 16px", fontSize: 12, color: colors.textDisabled, fontStyle: "italic" }}>
+                  {t.noChatsYet}
                 </div>
               )}
             </div>
@@ -148,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="12" cy="12" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Settings
+            {t.settings}
           </div>
         </div>
       </aside>

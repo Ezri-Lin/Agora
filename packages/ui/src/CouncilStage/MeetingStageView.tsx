@@ -1,5 +1,8 @@
 import React, { useCallback, useRef, useState, useLayoutEffect } from "react";
 import { RoleSeat } from "./RoleSeat.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import { useI18n } from "../i18n/I18nContext.js";
+import type { AgoraColorPalette } from "../theme/palettes.js";
 
 interface RoleCard {
   id: string;
@@ -60,6 +63,8 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(360);
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
 
   useLayoutEffect(() => {
     const el = gridRef.current;
@@ -111,11 +116,12 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
       {/* Moderator — fixed top */}
       <div data-card onClick={() => handleSeatClick("moderator")} style={{ cursor: "pointer" }}>
         <MissionCard
-          label="Moderator · 任务导航"
-          summary={lastModMsg?.content || "等待任务开始..."}
+          label={t.moderatorLabel}
+          summary={lastModMsg?.content || t.waitingForTask}
           status={lastModMsg ? "running" : "idle"}
           focused={modFocused}
           dimmed={anyFocused && !modFocused}
+          colors={colors}
         />
       </div>
 
@@ -163,13 +169,14 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
       {/* User — fixed bottom */}
       <div data-card onClick={() => handleSeatClick("user")} style={{ cursor: "pointer" }}>
         <MissionCard
-          avatar="你"
-          label="Ezri · 任务起始"
-          summary={lastUserMessage ? `"${truncate(lastUserMessage, 60)}"` : "发送消息开始议事"}
+          avatar={t.you}
+          label={t.userLabel}
+          summary={lastUserMessage ? `"${truncate(lastUserMessage, 60)}"` : t.sendMessageToStart}
           status="user"
           isUser
           focused={focusedRoleId === "user"}
           dimmed={anyFocused && focusedRoleId !== "user"}
+          colors={colors}
         />
       </div>
     </div>
@@ -206,10 +213,11 @@ const MissionCard: React.FC<{
   isUser?: boolean;
   focused?: boolean;
   dimmed?: boolean;
-}> = ({ avatar, label, summary, status, isUser, focused, dimmed }) => (
+  colors: AgoraColorPalette;
+}> = ({ avatar, label, summary, status, isUser, focused, dimmed, colors }) => (
   <div style={{
-    background: focused ? "#fff" : "rgba(255,255,255,.88)",
-    border: `1px solid ${focused ? "#111" : "var(--line)"}`,
+    background: focused ? colors.bgPanel : colors.bgPanel,
+    border: `1px solid ${focused ? colors.borderStrong : colors.borderDefault}`,
     borderRadius: 15,
     padding: 10,
     display: "grid",
@@ -217,7 +225,7 @@ const MissionCard: React.FC<{
     gap: 9,
     alignItems: "start",
     boxShadow: focused
-      ? "0 0 0 2px #111, 0 16px 48px rgba(0,0,0,.12)"
+      ? `0 0 0 2px ${colors.borderStrong}, 0 16px 48px rgba(0,0,0,.12)`
       : "0 8px 24px rgba(0,0,0,.05)",
     opacity: dimmed ? 0.18 : 1,
     filter: dimmed ? "blur(1px)" : "none",
@@ -228,34 +236,34 @@ const MissionCard: React.FC<{
       width: 30,
       height: 30,
       borderRadius: "50%",
-      background: isUser ? "#fff" : "#111",
-      color: isUser ? "#111" : "#fff",
+      background: isUser ? colors.bgPanel : colors.textPrimary,
+      color: isUser ? colors.textPrimary : colors.textInverse,
       display: "grid",
       placeItems: "center",
       fontWeight: 800,
       fontSize: 10,
-      border: isUser ? "1px solid var(--line)" : "none",
+      border: isUser ? `1px solid ${colors.borderDefault}` : "none",
       position: "relative",
     }}>
-      {avatar || (isUser ? "你" : "M")}
+      {avatar || "M"}
       {status === "running" && <ThinkingRing />}
     </div>
     <div>
       <div style={{ fontSize: 12, fontWeight: 600 }}>{label}</div>
-      <div style={{ fontSize: 11, color: "var(--soft)", lineHeight: 1.45, marginTop: 3 }}>
+      <div style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 1.45, marginTop: 3 }}>
         {truncate(summary, 80)}
       </div>
     </div>
-    <Tag status={status} />
+    <Tag status={status} colors={colors} />
   </div>
 );
 
-const Tag: React.FC<{ status: string }> = ({ status }) => (
+const Tag: React.FC<{ status: string; colors: AgoraColorPalette }> = ({ status, colors }) => (
   <span style={{
     fontSize: 10,
-    color: "var(--muted)",
-    border: "1px solid #e9e9e4",
-    background: "#fbfbf9",
+    color: colors.textMuted,
+    border: `1px solid ${colors.borderSubtle}`,
+    background: colors.bgSubtle,
     borderRadius: 999,
     padding: "2px 6px",
     whiteSpace: "nowrap",

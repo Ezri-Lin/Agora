@@ -111,7 +111,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
   const isUser = message.senderType === "user";
   const isError = message.status === "error";
   const bubbleFocusStyle: React.CSSProperties | undefined = focused
-    ? { border: "2px solid #111", transition: "border .2s" }
+    ? { border: `2px solid ${colors.text}`, transition: "border .2s" }
     : undefined;
 
   if (isError) {
@@ -168,12 +168,12 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
         <div className="meta">
           <b>{meta.name}</b>
           <span>{message.createdAt ? formatTime(message.createdAt) : ""}</span>
-          {streaming && <span>speaking</span>}
+          {streaming && <span>{t.speaking}</span>}
         </div>
         
         {!expanded && (
           <div style={{ cursor: "pointer", color: colors.textMuted, fontSize: 13 }} onClick={onToggle}>
-            {message.graphSummary && <span style={{ marginRight: 8, background: "#333", padding: "2px 6px", borderRadius: 4 }}>Summary</span>}
+            {message.graphSummary && <span style={{ marginRight: 8, background: colors.text, padding: "2px 6px", borderRadius: 4, color: colors.surface }}>{t.summaryLabel}</span>}
             {preview}
             {onToggle && <span style={{ marginLeft: 8 }}>v</span>}
           </div>
@@ -199,7 +199,7 @@ export const RoleMessage: React.FC<RoleMessageProps> = ({
             {renderToolCalls(message, streaming)}
             {streaming && !message.content ? (
               <TextShimmer style={{ color: colors.textMuted, fontSize: 13, padding: "4px 0" }}>
-                {meta.name} is thinking...
+                {t.isThinking.replace("{name}", meta.name)}
               </TextShimmer>
             ) : (
               <MessageContent content={message.content} colors={colors} />

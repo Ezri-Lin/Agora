@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useTheme } from "../theme/ThemeContext.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface RoleCard {
   id: string;
@@ -41,6 +43,8 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
   onAddExcluded,
 }) => {
   const [hovered, setHovered] = useState(false);
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
 
   // Priority: removed > paused > excluded > active
   const isRemovedOrExcluded = removed || excluded;
@@ -57,13 +61,13 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       style={{
         width: CARD_W,
         height: CARD_H,
-        border: `1px ${borderStyle} ${focused ? "#111" : paused ? "#aaa" : "var(--line)"}`,
-        background: focused ? "#fff" : isRemovedOrExcluded ? "rgba(245,245,242,.7)" : "rgba(255,255,255,.9)",
+        border: `1px ${borderStyle} ${focused ? colors.textPrimary : paused ? colors.textMuted : colors.borderDefault}`,
+        background: focused ? colors.bgPanel : isRemovedOrExcluded ? colors.bgSubtle : colors.bgPanel,
         borderRadius: 14,
         padding: "8px 9px",
         cursor: "pointer",
         boxShadow: focused
-          ? "0 0 0 2px #111, 0 16px 48px rgba(0,0,0,.12)"
+          ? `0 0 0 2px ${colors.textPrimary}, 0 16px 48px rgba(0,0,0,.12)`
           : "0 4px 16px rgba(0,0,0,.035)",
         opacity: cardOpacity,
         filter: cardFilter,
@@ -90,7 +94,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
           {/* Pause/resume — hidden when removed or excluded */}
           {!removed && !excluded && onTogglePause && (
             <HoverBtn
-              title={paused ? "恢复" : "暂停"}
+              title={paused ? t.btnResume : t.btnPause}
               active={paused}
               onClick={(e) => { e.stopPropagation(); onTogglePause(); }}
             >
@@ -109,7 +113,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
           {/* Excluded: add button */}
           {excluded && onAddExcluded && (
             <HoverBtn
-              title="加入"
+              title={t.btnAdd}
               onClick={(e) => { e.stopPropagation(); onAddExcluded(); }}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
@@ -120,7 +124,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
           {/* Removed: restore button */}
           {removed && onToggleRemove && (
             <HoverBtn
-              title="恢复"
+              title={t.btnRestore}
               onClick={(e) => { e.stopPropagation(); onToggleRemove(); }}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
@@ -131,7 +135,7 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
           {/* Normal: remove button */}
           {!removed && !excluded && !paused && onToggleRemove && (
             <HoverBtn
-              title="移除"
+              title={t.btnRemove}
               onClick={(e) => { e.stopPropagation(); onToggleRemove(); }}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 9, height: 9 }}>
@@ -153,14 +157,14 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
             overflow: "hidden",
             textOverflow: "ellipsis",
             textDecoration: isRemovedOrExcluded ? "line-through" : "none",
-            color: isRemovedOrExcluded ? "var(--muted)" : "inherit",
+            color: isRemovedOrExcluded ? colors.textMuted : "inherit",
           }}>
             {role.shortName || role.name}
           </div>
           {role.label && (
             <div style={{
               fontSize: 9,
-              color: "var(--muted)",
+              color: colors.textMuted,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -174,13 +178,13 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       {/* Bottom: micro summary */}
       <div style={{
         fontSize: 10,
-        color: isRemovedOrExcluded ? "var(--muted)" : "#666",
+        color: isRemovedOrExcluded ? colors.textMuted : colors.textSecondary,
         lineHeight: 1.2,
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
       }}>
-        {removed ? "已移除" : excluded ? "被排除" : paused ? "已暂停" : liveBubble ? truncate(liveBubble, 12) : (status === "thinking" ? "思考中..." : "等待发言")}
+        {removed ? t.roleRemoved : excluded ? t.roleExcluded : paused ? t.rolePaused : liveBubble ? truncate(liveBubble, 12) : (status === "thinking" ? t.roleThinkingDots : t.roleWaiting)}
       </div>
     </div>
   );
@@ -191,31 +195,35 @@ const HoverBtn: React.FC<{
   active?: boolean;
   onClick: (e: React.MouseEvent) => void;
   children: React.ReactNode;
-}> = ({ title, active, onClick, children }) => (
-  <button
-    title={title}
-    onClick={onClick}
-    style={{
-      width: 18,
-      height: 18,
-      borderRadius: 4,
-      border: `1px solid ${active ? "#111" : "var(--line)"}`,
-      background: active ? "#111" : "rgba(255,255,255,.92)",
-      display: "grid",
-      placeItems: "center",
-      cursor: "pointer",
-      color: active ? "#fff" : "var(--muted)",
-      padding: 0,
-      transition: "background .12s, color .12s",
-    }}
-    onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = "#f1f1ef"; (e.currentTarget as HTMLElement).style.color = "#111"; } }}
-    onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,.92)"; (e.currentTarget as HTMLElement).style.color = "var(--muted)"; } }}
-  >
-    {children}
-  </button>
-);
+}> = ({ title, active, onClick, children }) => {
+  const { agoraColors: colors } = useTheme();
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      style={{
+        width: 18,
+        height: 18,
+        borderRadius: 4,
+        border: `1px solid ${active ? colors.textPrimary : colors.borderDefault}`,
+        background: active ? colors.textPrimary : colors.bgPanel,
+        display: "grid",
+        placeItems: "center",
+        cursor: "pointer",
+        color: active ? colors.textInverse : colors.textMuted,
+        padding: 0,
+        transition: "background .12s, color .12s",
+      }}
+      onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = colors.bgHover; (e.currentTarget as HTMLElement).style.color = colors.textPrimary; } }}
+      onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = colors.bgPanel; (e.currentTarget as HTMLElement).style.color = colors.textMuted; } }}
+    >
+      {children}
+    </button>
+  );
+};
 
 const RoleAvatar: React.FC<{ name: string; avatar?: string; status: string }> = ({ name, avatar, status }) => {
+  const { agoraColors: colors } = useTheme();
   const initials = getInitials(avatar || name);
   const thinking = status === "thinking";
   return (
@@ -223,8 +231,8 @@ const RoleAvatar: React.FC<{ name: string; avatar?: string; status: string }> = 
       width: 22,
       height: 22,
       borderRadius: "50%",
-      background: "#111",
-      color: "#fff",
+      background: colors.textPrimary,
+      color: colors.textInverse,
       display: "grid",
       placeItems: "center",
       fontWeight: 800,
@@ -238,7 +246,7 @@ const RoleAvatar: React.FC<{ name: string; avatar?: string; status: string }> = 
           position: "absolute",
           inset: -2,
           border: "1.5px solid transparent",
-          borderTopColor: "#111",
+          borderTopColor: colors.textPrimary,
           borderRadius: "50%",
           animation: "stage-spin 1s linear infinite",
         }} />

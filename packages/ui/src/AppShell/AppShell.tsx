@@ -7,6 +7,8 @@ import { usePanelManager } from "./usePanelManager.js";
 import { Sidebar } from "./Sidebar.js";
 import { TopBar } from "./TopBar.js";
 import { CouncilStagePanel } from "../CouncilStage/CouncilStagePanel.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface RoomEntry {
   id: string;
@@ -122,6 +124,8 @@ export const AppShell: React.FC<AppShellProps> = ({
   onToggleRemove,
   onAddExcluded,
 }) => {
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(268);
   const [stageView, setStageView] = useState<CouncilStageView>("meeting");
@@ -173,7 +177,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const breadcrumb = view === "room"
     ? <RoomBreadcrumb rooms={rooms} activeRoomId={activeRoomId} />
     : view === "contextGraph"
-    ? <><span style={{ margin: "0 6px", opacity: 0.4 }}>/</span><span style={{ opacity: 0.6 }}>Context Graph</span></>
+    ? <><span style={{ margin: "0 6px", opacity: 0.4 }}>/</span><span style={{ opacity: 0.6 }}>{t.contextGraph}</span></>
     : undefined;
 
   // TopBar actions (only in room view)
@@ -217,7 +221,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             <div
               className="sidebar-resize-handle"
               onMouseDown={onSidebarResizeStart}
-              style={{ width: 4, flexShrink: 0, cursor: "col-resize", background: "var(--line)", transition: "background .15s" }}
+              style={{ width: 4, flexShrink: 0, cursor: "col-resize", background: colors.borderDefault, transition: "background .15s" }}
             />
           </>
         )}
@@ -306,6 +310,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 // ── Sub-components ──
 
 const RoomBreadcrumb: React.FC<{ rooms: RoomEntry[]; activeRoomId?: string | null }> = ({ rooms, activeRoomId }) => {
+  const { agoraColors: colors } = useTheme();
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
 
@@ -324,7 +329,7 @@ const RoomBreadcrumb: React.FC<{ rooms: RoomEntry[]; activeRoomId?: string | nul
             onInput={e => setEditingTitle((e.target as HTMLElement).textContent || "")}
             onBlur={() => setEditingRoomId(null)}
             onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") setEditingRoomId(null); }}
-            style={{ outline: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 500, minWidth: "1ch" }}
+            style={{ outline: "none", background: "transparent", color: colors.textPrimary, fontSize: 13, fontWeight: 500, minWidth: "1ch" }}
           />
         ) : (
           room.title || "Room"
@@ -342,14 +347,17 @@ const RoomActions: React.FC<{
   onToggleTerminal?: () => void;
   sidecarVisible?: boolean;
   onToggleSidecar?: () => void;
-}> = ({ onOpenWorkspace, stageVisible, onToggleStage, terminalVisible, onToggleTerminal, sidecarVisible, onToggleSidecar }) => (
+}> = ({ onOpenWorkspace, stageVisible, onToggleStage, terminalVisible, onToggleTerminal, sidecarVisible, onToggleSidecar }) => {
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
+  return (
   <>
-    <label className="tool" title="Open Workspace" onClick={onOpenWorkspace} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: "var(--text-muted)", borderRadius: "4px" }}>
+    <label className="tool" title={t.openWorkspace} onClick={onOpenWorkspace} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: colors.textMuted, borderRadius: "4px" }}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </label>
-    <label className={`tool ${stageVisible ? "active" : ""}`} title="Council Stage" onClick={onToggleStage} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: stageVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+    <label className={`tool ${stageVisible ? "active" : ""}`} title={t.stagePanel} onClick={onToggleStage} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: stageVisible ? colors.textPrimary : colors.textMuted, borderRadius: "4px" }}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
         <circle cx="12" cy="12" r="10" />
         <circle cx="12" cy="12" r="3" />
@@ -359,13 +367,13 @@ const RoomActions: React.FC<{
         <line x1="18" y1="12" x2="22" y2="12" />
       </svg>
     </label>
-    <label className={`tool ${terminalVisible ? "active" : ""}`} title="Toggle Terminal (Ctrl+`)" onClick={onToggleTerminal} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: terminalVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+    <label className={`tool ${terminalVisible ? "active" : ""}`} title={t.toggleTerminalTitle} onClick={onToggleTerminal} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: terminalVisible ? colors.textPrimary : colors.textMuted, borderRadius: "4px" }}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
         <path d="M4 17l6-6-6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M12 19h8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </label>
-    <label className={`tool ${sidecarVisible ? "active" : ""}`} title="Toggle Docs/Progress" onClick={onToggleSidecar} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: sidecarVisible ? "var(--text)" : "var(--text-muted)", borderRadius: "4px" }}>
+    <label className={`tool ${sidecarVisible ? "active" : ""}`} title={t.toggleDocsTitle} onClick={onToggleSidecar} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", cursor: "pointer", color: sidecarVisible ? colors.textPrimary : colors.textMuted, borderRadius: "4px" }}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ width: 15, height: 15 }}>
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M14 2v6h6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -375,15 +383,20 @@ const RoomActions: React.FC<{
       </svg>
     </label>
   </>
-);
+  );
+};
 
-const ScrollButton: React.FC<{ onClick?: () => void; count?: number }> = ({ onClick, count }) => (
-  <button onClick={onClick} style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)", background: "var(--panel)", border: "1px solid var(--line)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--muted)", boxShadow: "0 1px 4px rgba(0,0,0,0.12)", zIndex: 10 }} title="Scroll to bottom">
+const ScrollButton: React.FC<{ onClick?: () => void; count?: number }> = ({ onClick, count }) => {
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
+  return (
+  <button onClick={onClick} style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)", background: colors.bgPanel, border: `1px solid ${colors.borderDefault}`, borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: colors.textMuted, boxShadow: "0 1px 4px rgba(0,0,0,0.12)", zIndex: 10 }} title={t.scrollToBottomTitle}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
       <path d="M12 5v14M19 12l-7 7-7-7" />
     </svg>
     {(count ?? 0) > 0 && (
-      <span style={{ position: "absolute", top: -4, right: -4, background: "var(--blue)", color: "#fff", fontSize: 9, fontWeight: 700, minWidth: 14, height: 14, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{count}</span>
+      <span style={{ position: "absolute", top: -4, right: -4, background: colors.accentPrimary, color: colors.textInverse, fontSize: 9, fontWeight: 700, minWidth: 14, height: 14, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{count}</span>
     )}
   </button>
-);
+  );
+};

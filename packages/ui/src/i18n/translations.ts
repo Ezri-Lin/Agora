@@ -222,6 +222,57 @@ export interface Translations {
   pasteLongText: string;
   addDocumentRef: string;
   addRole: string;
+
+  // Stage Panel
+  stagePanel: string;
+  roomGraph: string;
+  comingSoon: string;
+  moderatorLabel: string;
+  userLabel: string;
+  waitingForTask: string;
+  sendMessageToStart: string;
+
+  // RoleSeat
+  rolePaused: string;
+  roleRemoved: string;
+  roleExcluded: string;
+  roleWaiting: string;
+  roleThinkingDots: string;
+  btnAdd: string;
+  btnRestore: string;
+  btnRemove: string;
+  btnPause: string;
+  btnResume: string;
+
+  // NextActionChips
+  nextAction: string;
+  synthesize: string;
+  synthesizeDesc: string;
+  continueDiscussion: string;
+  continueDesc: string;
+  finalize: string;
+  finalizeDesc: string;
+  writeDoc: string;
+  writeDocDesc: string;
+  discard: string;
+  discardDesc: string;
+
+  // AppShell toolbar
+  toggleTerminalTitle: string;
+  toggleDocsTitle: string;
+  scrollToBottomTitle: string;
+
+  // Sidebar
+  newChat: string;
+  search: string;
+  projects: string;
+  noChatsYet: string;
+  untitledRoom: string;
+
+  // RoleMessage
+  speaking: string;
+  summaryLabel: string;
+  isThinking: string;
 }
 
 export const en: Translations = {
@@ -405,6 +456,57 @@ export const en: Translations = {
   pasteLongText: "Paste Long Text",
   addDocumentRef: "Add Document Reference",
   addRole: "Add Role",
+
+  // Stage Panel
+  stagePanel: "Council Stage",
+  roomGraph: "Room Graph",
+  comingSoon: "coming soon",
+  moderatorLabel: "Moderator · Task Navigator",
+  userLabel: "You · Task Origin",
+  waitingForTask: "Waiting for task...",
+  sendMessageToStart: "Send a message to start",
+
+  // RoleSeat
+  rolePaused: "Paused",
+  roleRemoved: "Removed",
+  roleExcluded: "Excluded",
+  roleWaiting: "Waiting",
+  roleThinkingDots: "Thinking...",
+  btnAdd: "Add",
+  btnRestore: "Restore",
+  btnRemove: "Remove",
+  btnPause: "Pause",
+  btnResume: "Resume",
+
+  // NextActionChips
+  nextAction: "Next:",
+  synthesize: "Summarize",
+  synthesizeDesc: "Generate discussion summary",
+  continueDiscussion: "Continue",
+  continueDesc: "Continue based on current discussion",
+  finalize: "Decide & Save",
+  finalizeDesc: "Confirm decision and generate memory",
+  writeDoc: "Write to Doc",
+  writeDocDesc: "Generate document change plan",
+  discard: "Discard",
+  discardDesc: "Close discussion",
+
+  // AppShell toolbar
+  toggleTerminalTitle: "Toggle Terminal",
+  toggleDocsTitle: "Toggle Docs/Progress",
+  scrollToBottomTitle: "Scroll to bottom",
+
+  // Sidebar
+  newChat: "New chat",
+  search: "Search",
+  projects: "Projects",
+  noChatsYet: "No chats yet",
+  untitledRoom: "Untitled Room",
+
+  // RoleMessage
+  speaking: "speaking",
+  summaryLabel: "Summary",
+  isThinking: "{name} is thinking...",
 };
 
 export const zh: Translations = {
@@ -588,6 +690,57 @@ export const zh: Translations = {
   pasteLongText: "粘贴长文本",
   addDocumentRef: "添加文档引用",
   addRole: "添加角色",
+
+  // Stage Panel
+  stagePanel: "议事台",
+  roomGraph: "议题图谱",
+  comingSoon: "即将推出",
+  moderatorLabel: "主持人 · 任务导航",
+  userLabel: "你 · 任务起始",
+  waitingForTask: "等待任务开始...",
+  sendMessageToStart: "发送消息开始议事",
+
+  // RoleSeat
+  rolePaused: "已暂停",
+  roleRemoved: "已移除",
+  roleExcluded: "被排除",
+  roleWaiting: "等待发言",
+  roleThinkingDots: "思考中...",
+  btnAdd: "加入",
+  btnRestore: "恢复",
+  btnRemove: "移除",
+  btnPause: "暂停",
+  btnResume: "恢复",
+
+  // NextActionChips
+  nextAction: "下一步：",
+  synthesize: "让主持人总结",
+  synthesizeDesc: "生成讨论总结",
+  continueDiscussion: "继续追问",
+  continueDesc: "基于当前讨论继续",
+  finalize: "拍板并沉淀",
+  finalizeDesc: "确认决策并生成记忆",
+  writeDoc: "写入文档",
+  writeDocDesc: "生成文档变更计划",
+  discard: "放弃本轮",
+  discardDesc: "关闭讨论",
+
+  // AppShell toolbar
+  toggleTerminalTitle: "切换终端",
+  toggleDocsTitle: "切换文档/进度",
+  scrollToBottomTitle: "滚动到底部",
+
+  // Sidebar
+  newChat: "新对话",
+  search: "搜索",
+  projects: "项目",
+  noChatsYet: "暂无对话",
+  untitledRoom: "未命名房间",
+
+  // RoleMessage
+  speaking: "发言中",
+  summaryLabel: "总结",
+  isThinking: "{name} 正在思考...",
 };
 
 export const translations: Record<Locale, Translations> = { en, zh };

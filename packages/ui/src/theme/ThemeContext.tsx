@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import { darkColors, lightColors, type ColorPalette } from "./palettes.js";
+import { agoraDarkColors, agoraLightColors, type AgoraColorPalette } from "./tokens.js";
 
 export type ThemeMode = "dark" | "light";
 
 interface ThemeContextValue {
   theme: ThemeMode;
   colors: ColorPalette;
+  agoraColors: AgoraColorPalette;
   setTheme: (theme: ThemeMode) => void;
   toggleTheme: () => void;
 }
@@ -47,6 +49,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const value: ThemeContextValue = {
     theme,
     colors: theme === "dark" ? darkColors : lightColors,
+    agoraColors: theme === "dark" ? agoraDarkColors : agoraLightColors,
     setTheme,
     toggleTheme,
   };

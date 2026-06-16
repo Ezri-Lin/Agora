@@ -2,6 +2,8 @@ import React from "react";
 import type { CouncilStageView } from "../AppShell/AppShell.types.js";
 import { StageViewToggle } from "./StageViewToggle.js";
 import { MeetingStageView } from "./MeetingStageView.js";
+import { useTheme } from "../theme/ThemeContext.js";
+import { useI18n } from "../i18n/I18nContext.js";
 
 interface RoleCard {
   id: string;
@@ -57,6 +59,8 @@ export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
   onToggleRemove,
   onAddExcluded,
 }) => {
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
   const room = rooms?.find(r => r.id === activeRoomId);
   const userMessages = messages.filter(m => m.senderType === "user");
   const lastUserMsg = userMessages[userMessages.length - 1];
@@ -66,8 +70,8 @@ export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
       display: "flex",
       flexDirection: "column",
       height: "100%",
-      background: "var(--panel)",
-      borderRight: "1px solid var(--line)",
+      background: colors.bgPanel,
+      borderRight: `1px solid ${colors.borderDefault}`,
     }}>
       {/* Header */}
       <div style={{
@@ -75,11 +79,11 @@ export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
         alignItems: "center",
         justifyContent: "space-between",
         padding: "10px 14px",
-        borderBottom: "1px solid var(--line)",
+        borderBottom: `1px solid ${colors.borderDefault}`,
         flexShrink: 0,
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: "var(--text)" }}>
-          Council Stage
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: colors.textPrimary }}>
+          {t.stagePanel}
         </div>
         <StageViewToggle active={stageView} onChange={onStageViewChange} />
       </div>
@@ -109,24 +113,28 @@ export const CouncilStagePanel: React.FC<CouncilStagePanelProps> = ({
   );
 };
 
-const RoomGraphPlaceholder: React.FC = () => (
-  <div style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100%",
-    color: "var(--muted)",
-    fontSize: 13,
-    flexDirection: "column",
-    gap: 8,
-  }}>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 32, height: 32, opacity: 0.4 }}>
-      <circle cx="6" cy="12" r="2.5" />
-      <circle cx="17" cy="7" r="2.5" />
-      <circle cx="17" cy="17" r="2.5" />
-      <path d="M8.3 11l6.4-3M8.3 13l6.4 3" />
-    </svg>
-    <span style={{ opacity: 0.5 }}>Room Graph</span>
-    <span style={{ fontSize: 11, opacity: 0.35 }}>coming soon</span>
-  </div>
-);
+const RoomGraphPlaceholder: React.FC = () => {
+  const { agoraColors: colors } = useTheme();
+  const { t } = useI18n();
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+      color: colors.textMuted,
+      fontSize: 13,
+      flexDirection: "column",
+      gap: 8,
+    }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 32, height: 32, opacity: 0.4 }}>
+        <circle cx="6" cy="12" r="2.5" />
+        <circle cx="17" cy="7" r="2.5" />
+        <circle cx="17" cy="17" r="2.5" />
+        <path d="M8.3 11l6.4-3M8.3 13l6.4 3" />
+      </svg>
+      <span style={{ opacity: 0.5 }}>{t.roomGraph}</span>
+      <span style={{ fontSize: 11, opacity: 0.35 }}>{t.comingSoon}</span>
+    </div>
+  );
+};
