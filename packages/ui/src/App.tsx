@@ -92,6 +92,10 @@ export const App: React.FC = () => {
     jumpFnsRef.current?.highlightMessage(messageId, 1800);
   }, []);
 
+  const handleRoleFocus = useCallback((roleId: string | null) => {
+    panels.setFocusedRoleId(roleId);
+  }, [panels.setFocusedRoleId]);
+
   const handleRegisterJumpFns = useCallback((fns: { scrollToMessage: (id: string) => void; highlightMessage: (id: string, ms?: number) => void; scrollToBottom: () => void }) => {
     jumpFnsRef.current = fns;
   }, []);
@@ -120,6 +124,12 @@ export const App: React.FC = () => {
     [council.messages]
   );
 
+  // Stage roles: only roles that have spoken in this room, excluding moderator
+  const stageRoles = useMemo(
+    () => council.allRoles.filter((r) => activeRoleIds.has(r.id) && r.id !== "moderator"),
+    [council.allRoles, activeRoleIds]
+  );
+
   if (workspace.isLoading) {
     return null;
   }
@@ -145,8 +155,8 @@ export const App: React.FC = () => {
       stageVisible={panels.stageVisible}
       onToggleStage={panels.toggleStage}
       focusedRoleId={panels.focusedRoleId}
-      onRoleFocus={panels.setFocusedRoleId}
-      roles={council.allRoles}
+      onRoleFocus={handleRoleFocus}
+      roles={stageRoles}
       messages={council.messages}
       home={
         <WorkspaceHome

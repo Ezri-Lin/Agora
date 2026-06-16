@@ -8,7 +8,7 @@ interface RoleCard {
   avatar?: string;
 }
 
-interface RoleSeatProps {
+export interface RoleSeatProps {
   role: RoleCard;
   status: "thinking" | "speaking" | "done" | "idle" | "paused";
   liveBubble?: string;
@@ -16,6 +16,9 @@ interface RoleSeatProps {
   dimmed?: boolean;
   onClick?: () => void;
 }
+
+const CARD_W = 120;
+const CARD_H = 70;
 
 export const RoleSeat: React.FC<RoleSeatProps> = ({
   role,
@@ -26,12 +29,15 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
   onClick,
 }) => (
   <div
+    data-card
     onClick={onClick}
     style={{
+      width: CARD_W,
+      height: CARD_H,
       border: `1px solid ${focused ? "#111" : "var(--line)"}`,
       background: focused ? "#fff" : "rgba(255,255,255,.9)",
-      borderRadius: 15,
-      padding: 7,
+      borderRadius: 14,
+      padding: "8px 9px",
       cursor: "pointer",
       boxShadow: focused
         ? "0 0 0 2px #111, 0 16px 48px rgba(0,0,0,.12)"
@@ -40,37 +46,51 @@ export const RoleSeat: React.FC<RoleSeatProps> = ({
       filter: dimmed ? "blur(1px)" : "none",
       transition: "opacity .18s ease, filter .18s ease, box-shadow .16s ease, border-color .16s ease",
       willChange: "opacity, filter",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      overflow: "hidden",
+      flexShrink: 0,
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+    {/* Top row: avatar + name */}
+    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
       <RoleAvatar name={role.name} avatar={role.avatar} status={status} />
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 600,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}>
           {role.shortName || role.name}
         </div>
         {role.label && (
-          <div style={{ fontSize: 10, color: "var(--muted)" }}>{role.label}</div>
+          <div style={{
+            fontSize: 9,
+            color: "var(--muted)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}>
+            {role.label}
+          </div>
         )}
       </div>
     </div>
-    {liveBubble && (
-      <div style={{
-        marginTop: 6,
-        background: "#f9f9f7",
-        border: "1px solid #e8e8e3",
-        borderRadius: 10,
-        padding: "6px 7px",
-        fontSize: 10.5,
-        color: "#343430",
-        lineHeight: 1.32,
-        overflow: "hidden",
-        display: "-webkit-box",
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: "vertical",
-      }}>
-        {truncate(liveBubble, 80)}
-      </div>
-    )}
+
+    {/* Bottom: micro summary */}
+    <div style={{
+      fontSize: 10,
+      color: "#666",
+      lineHeight: 1.2,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    }}>
+      {liveBubble ? truncate(liveBubble, 12) : (status === "thinking" ? "思考中..." : "等待发言")}
+    </div>
   </div>
 );
 
@@ -78,15 +98,15 @@ const RoleAvatar: React.FC<{ name: string; avatar?: string; status: string }> = 
   const initials = getInitials(avatar || name);
   return (
     <div style={{
-      width: 30,
-      height: 30,
+      width: 22,
+      height: 22,
       borderRadius: "50%",
       background: "#111",
       color: "#fff",
       display: "grid",
       placeItems: "center",
       fontWeight: 800,
-      fontSize: 10,
+      fontSize: 8,
       flexShrink: 0,
       position: "relative",
     }}>
@@ -94,8 +114,8 @@ const RoleAvatar: React.FC<{ name: string; avatar?: string; status: string }> = 
       {status === "thinking" && (
         <div style={{
           position: "absolute",
-          inset: -3,
-          border: "2px solid transparent",
+          inset: -2,
+          border: "1.5px solid transparent",
           borderTopColor: "#111",
           borderRadius: "50%",
           animation: "stage-spin 1s linear infinite",

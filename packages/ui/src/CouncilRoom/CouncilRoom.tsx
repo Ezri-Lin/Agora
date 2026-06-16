@@ -153,7 +153,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
   // Focus mode: scroll to focused role's latest message
   useEffect(() => {
     if (!focusedRoleId) return;
-    const roleMsgs = messages.filter(m => m.senderId === focusedRoleId && m.senderType === "role");
+    const roleMsgs = messages.filter(m => m.senderId === focusedRoleId && (m.senderType === "role" || m.senderType === "moderator"));
     const latest = roleMsgs[roleMsgs.length - 1];
     if (latest) {
       requestAnimationFrame(() => {
@@ -174,7 +174,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
         {messages.map((msg) => {
           const isStreaming = streamingRoleId === msg.senderId || (msg.senderType === "moderator" && msg.content === "" && !!msg.thinking);
           const isUser = msg.senderType === "user";
-          const isFocusedRole = focusedRoleId && msg.senderId === focusedRoleId && msg.senderType === "role";
+          const isFocusedRole = focusedRoleId && msg.senderId === focusedRoleId && (msg.senderType === "role" || msg.senderType === "moderator");
 
           // Focus mode: collapse non-focused messages
           if (isFocusMode && !isFocusedRole && !isUser) {

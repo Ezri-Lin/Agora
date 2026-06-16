@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useState, useLayoutEffect } from "react";
 import { RoleSeat } from "./RoleSeat.js";
 
 interface RoleCard {
@@ -25,6 +25,20 @@ interface MeetingStageViewProps {
   lastUserMessage?: string;
 }
 
+const CARD_W = 120;
+const GAP_X = 12;
+const MAX_TILES = 10;
+const OVERFLOW_THRESHOLD = 420;
+
+function getColumns(width: number): number {
+  return width >= OVERFLOW_THRESHOLD ? 3 : 2;
+}
+
+function getVisibleRoles(roles: RoleCard[]): { visible: RoleCard[]; moreCount: number } {
+  if (roles.length <= MAX_TILES) return { visible: roles, moreCount: 0 };
+  return { visible: roles.slice(0, MAX_TILES - 1), moreCount: roles.length - (MAX_TILES - 1) };
+}
+
 export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
   roles,
   messages,
@@ -32,23 +46,43 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
   onRoleFocus,
   lastUserMessage,
 }) => {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [stageWidth, setStageWidth] = useState(360);
+
+  useLayoutEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setStageWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const handleSeatClick = useCallback((roleId: string) => {
     onRoleFocus?.(focusedRoleId === roleId ? null : roleId);
   }, [focusedRoleId, onRoleFocus]);
 
+  const modFocused = focusedRoleId === "moderator";
+  const anyFocused = focusedRoleId !== null;
+
   const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onRoleFocus?.(null);
+    if ((e.target as HTMLElement).closest("[data-card]")) return;
+    onRoleFocus?.(null);
   }, [onRoleFocus]);
 
-  // Find latest message per role
+  // Latest message per role
   const latestByRole = new Map<string, CouncilMessage>();
   for (const msg of messages) {
     if (msg.senderType === "role") latestByRole.set(msg.senderId, msg);
   }
 
-  // Get moderator status from messages
+  // Moderator messages
   const modMessages = messages.filter(m => m.senderType === "moderator");
   const lastModMsg = modMessages[modMessages.length - 1];
+
+  const columns = getColumns(stageWidth);
+  const { visible, moreCount } = getVisibleRoles(roles);
 
   return (
     <div
@@ -62,25 +96,33 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
         overflow: "hidden",
       }}
     >
-      {/* Moderator Card */}
-      <MissionCard
-        label="Moderator · 任务导航"
-        summary={lastModMsg?.content || "等待任务开始..."}
-        status={lastModMsg ? "running" : "idle"}
-      />
+      {/* Moderator — fixed top */}
+      <div data-card onClick={() => handleSeatClick("moderator")} style={{ cursor: "pointer" }}>
+        <MissionCard
+          label="Moderator · 任务导航"
+          summary={lastModMsg?.content || "等待任务开始..."}
+          status={lastModMsg ? "running" : "idle"}
+          focused={modFocused}
+          dimmed={anyFocused && !modFocused}
+        />
+      </div>
 
-      {/* Role Seats */}
-      <div style={{
-        flex: 1,
-        minHeight: 0,
-        display: "grid",
-        gridTemplateColumns: roles.length <= 4 ? "1fr 1fr" : "1fr 1fr",
-        gridAutoRows: "min-content",
-        gap: 8,
-        alignContent: "start",
-        overflow: "auto",
-      }}>
-        {roles.map(role => {
+      {/* Role Grid — centered, fixed cards, no scroll */}
+      <div
+        ref={gridRef}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "grid",
+          gridTemplateColumns: `repeat(${columns}, ${CARD_W}px)`,
+          gridAutoRows: 70,
+          gap: `10px ${GAP_X}px`,
+          justifyContent: "center",
+          alignContent: "center",
+          overflow: "hidden",
+        }}
+      >
+        {visible.map(role => {
           const latest = latestByRole.get(role.id);
           return (
             <RoleSeat
@@ -94,21 +136,46 @@ export const MeetingStageView: React.FC<MeetingStageViewProps> = ({
             />
           );
         })}
+        {moreCount > 0 && <MoreTile count={moreCount} />}
       </div>
 
-      {/* User Card */}
-      <MissionCard
-        avatar="你"
-        label="Ezri · 任务起始"
-        summary={lastUserMessage ? `"${truncate(lastUserMessage, 60)}"` : "发送消息开始议事"}
-        status="user"
-        isUser
-      />
+      {/* User — fixed bottom */}
+      <div data-card onClick={() => handleSeatClick("user")} style={{ cursor: "pointer" }}>
+        <MissionCard
+          avatar="你"
+          label="Ezri · 任务起始"
+          summary={lastUserMessage ? `"${truncate(lastUserMessage, 60)}"` : "发送消息开始议事"}
+          status="user"
+          isUser
+          focused={focusedRoleId === "user"}
+          dimmed={anyFocused && focusedRoleId !== "user"}
+        />
+      </div>
     </div>
   );
 };
 
-// ── Helpers ──
+// ── Sub-components ──
+
+const MoreTile: React.FC<{ count: number }> = ({ count }) => (
+  <div
+    data-card
+    style={{
+      width: CARD_W,
+      height: 70,
+      border: "1px dashed #ccc",
+      borderRadius: 14,
+      display: "grid",
+      placeItems: "center",
+      fontSize: 12,
+      color: "var(--muted)",
+      background: "rgba(255,255,255,.5)",
+      cursor: "default",
+    }}
+  >
+    +{count} ···
+  </div>
+);
 
 const MissionCard: React.FC<{
   avatar?: string;
@@ -116,17 +183,24 @@ const MissionCard: React.FC<{
   summary: string;
   status: "running" | "idle" | "user";
   isUser?: boolean;
-}> = ({ avatar, label, summary, status, isUser }) => (
+  focused?: boolean;
+  dimmed?: boolean;
+}> = ({ avatar, label, summary, status, isUser, focused, dimmed }) => (
   <div style={{
-    background: "rgba(255,255,255,.88)",
-    border: "1px solid var(--line)",
+    background: focused ? "#fff" : "rgba(255,255,255,.88)",
+    border: `1px solid ${focused ? "#111" : "var(--line)"}`,
     borderRadius: 15,
     padding: 10,
     display: "grid",
     gridTemplateColumns: "34px 1fr auto",
     gap: 9,
     alignItems: "start",
-    boxShadow: "0 8px 24px rgba(0,0,0,.05)",
+    boxShadow: focused
+      ? "0 0 0 2px #111, 0 16px 48px rgba(0,0,0,.12)"
+      : "0 8px 24px rgba(0,0,0,.05)",
+    opacity: dimmed ? 0.18 : 1,
+    filter: dimmed ? "blur(1px)" : "none",
+    transition: "opacity .18s ease, filter .18s ease, box-shadow .16s ease, border-color .16s ease",
     flexShrink: 0,
   }}>
     <div style={{
