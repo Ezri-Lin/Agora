@@ -7,7 +7,7 @@
  * Event handlers extracted to useGraphInteraction.ts.
  */
 
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useState } from "react";
 import type { CoreGraph, CoreGraphViewModel } from "./model/coreTypes.js";
 import type { ResolvedGraphTheme } from "./theme/ThemeBridge.js";
 import { resolveGraphTheme } from "./theme/ThemeBridge.js";
@@ -69,6 +69,29 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
   const fitTickRef = useRef(0);
   const hasFittedRef = useRef(false);
   const layersReadyRef = useRef(false);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // IntersectionObserver — pause render loop when off-screen
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Pause/resume render loop based on visibility
+  useEffect(() => {
+    if (!isVisible) {
+      renderLoopRef.current?.stop();
+    } else {
+      renderLoopRef.current?.wake();
+    }
+  }, [isVisible]);
+
   const flightVisCacheRef = useRef<{
     highlightedSet: Set<string> | null;
     showAll: boolean;

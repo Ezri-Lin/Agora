@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from "react";
 import { darkColors, lightColors, type ColorPalette } from "./palettes.js";
 import { agoraDarkColors, agoraLightColors, type AgoraColorPalette } from "./tokens.js";
 
@@ -46,13 +46,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  const value: ThemeContextValue = {
+  const value: ThemeContextValue = useMemo(() => ({
     theme,
     colors: theme === "dark" ? darkColors : lightColors,
     agoraColors: theme === "dark" ? agoraDarkColors : agoraLightColors,
     setTheme,
     toggleTheme,
-  };
+  }), [theme, setTheme, toggleTheme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

@@ -1,10 +1,18 @@
 import { ipcMain, dialog, BrowserWindow } from "electron";
 import { join, extname, basename, resolve } from "node:path";
-import { mkdir, writeFile, readFile, readdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { mkdir, writeFile, readFile, readdir, access } from "node:fs/promises";
 import { assertInWorkspace, assertAllowedFileType, isAllowedExtension } from "./safety.js";
 import { auditLog } from "./audit.js";
 import { assertSenderIsMain } from "./sender.js";
+
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const SCAN_EXTENSIONS = new Set([
   // Docs
@@ -86,10 +94,10 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
     const resolved = resolve(workspacePath);
     const agoraDir = join(resolved, ".agora");
     for (const dir of [agoraDir, join(agoraDir, "rooms"), join(agoraDir, "memory")]) {
-      if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+      if (!(await fileExists(dir))) await mkdir(dir, { recursive: true });
     }
     const bootPath = join(agoraDir, "BOOT.md");
-    if (!existsSync(bootPath)) {
+    if (!(await fileExists(bootPath))) {
       await writeFile(bootPath, `# Agora Workspace\n\nWorkspace: ${basename(resolved)}\n`);
     }
     auditLog("workspace:init", { target: resolved });
@@ -120,7 +128,7 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
   ipcMain.handle("workspace:readDoc", async (_e: any, workspaceRoot: string, filePath: string) => {
     assertInWorkspace(filePath, workspaceRoot);
     assertAllowedFileType(filePath);
-    if (!existsSync(filePath)) return null;
+    if (!(await fileExists(filePath))) return null;
     return readFile(filePath, "utf-8");
   });
 }
