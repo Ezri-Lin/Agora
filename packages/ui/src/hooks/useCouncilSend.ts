@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type {
   CouncilMessage,
@@ -74,6 +74,9 @@ export function useCouncilSend({
   setDispatchGate,
   setDispatchSelectedRoleIds,
 }: UseCouncilSendParams) {
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   return useCallback(async (text: string, workspace: { path: string }, selectedRefs: WorkspaceRef[], targetedRoles?: any[], composerParams?: { maxRoles?: number; autoInvite?: boolean }, overrideRoomMode?: RoomMode, stageRoleState?: { excludedRoleIds: string[]; includedRoleIds: string[] }) => {
     const effectiveRoomMode = overrideRoomMode ?? roomMode;
     const bridge = getBridge();
@@ -157,7 +160,7 @@ export function useCouncilSend({
         await sendSingleMode({
           llmConfig,
           roomId: roomIdRef.current!,
-          messages,
+          messages: messagesRef.current,
           userMsg,
           docContents,
           placeholderId: moderatorPlaceholderId,
@@ -270,7 +273,7 @@ export function useCouncilSend({
             userMessage: userMsg,
             availableRoles: allRoles,
             llm: provider,
-            recentMessages: messages,
+            recentMessages: messagesRef.current,
             docContents,
             onEvent,
             roleSettings,
@@ -289,7 +292,7 @@ export function useCouncilSend({
             workspacePath: workspace.path,
             roomId: roomIdRef.current!,
             roomForCouncil,
-            messages,
+            messages: messagesRef.current,
             userMsg,
             result,
           });
@@ -306,7 +309,7 @@ export function useCouncilSend({
           topic: text,
           userMessage: userMsg,
           availableRoles: allRoles,
-          recentMessages: messages,
+          recentMessages: messagesRef.current,
           docContents,
           roleSettings,
           explicitRoleRequests: chipRequests.length > 0 ? chipRequests : undefined,
@@ -322,7 +325,7 @@ export function useCouncilSend({
             userMessage: userMsg,
             availableRoles: allRoles,
             llm: provider,
-            recentMessages: messages,
+            recentMessages: messagesRef.current,
             docContents,
             onEvent,
             roleSettings,
@@ -341,7 +344,7 @@ export function useCouncilSend({
             workspacePath: workspace.path,
             roomId: roomIdRef.current!,
             roomForCouncil,
-            messages,
+            messages: messagesRef.current,
             userMsg,
             result,
           });
@@ -396,7 +399,7 @@ export function useCouncilSend({
         userMessage: userMsg,
         availableRoles: allRoles,
         llm: provider,
-        recentMessages: messages,
+        recentMessages: messagesRef.current,
         docContents,
         onEvent,
         roleSettings,
@@ -417,7 +420,7 @@ export function useCouncilSend({
         workspacePath: workspace.path,
         roomId: roomIdRef.current!,
         roomForCouncil,
-        messages,
+        messages: messagesRef.current,
         userMsg,
         result,
       });
@@ -452,7 +455,6 @@ export function useCouncilSend({
     collapseTimerRef,
     llmConfig,
     loadRooms,
-    messages,
     pendingPerspectiveChips,
     roomIdRef,
     roomMode,

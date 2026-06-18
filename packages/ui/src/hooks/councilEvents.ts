@@ -20,9 +20,61 @@ export function createCouncilEventHandler({
 }: CouncilEventHandlerParams): (event: CouncilEvent) => void {
   const streamingMsgIds = new Map<string, string>();
 
+  // Batch buffer for chunk updates
+  let pendingChunks: Array<{ roleId: string; delta: string; thinking: string }> = [];
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const flushChunks = () => {
+    if (pendingChunks.length === 0) return;
+    const chunks = pendingChunks;
+    pendingChunks = [];
+
+    // Batch message updates — apply all pending deltas in one pass
+    setMessages((prev) => {
+      let changed = false;
+      const next = prev.map((m) => {
+        const msgId = streamingMsgIds.get(m.senderId);
+        if (!msgId || m.id !== msgId) return m;
+        let newContent = m.content;
+        let newThinking = m.thinking ?? "";
+        for (const chunk of chunks) {
+          if (streamingMsgIds.get(chunk.roleId) === msgId) {
+            newContent += chunk.delta;
+            newThinking += chunk.thinking;
+          }
+        }
+        if (newContent !== m.content || newThinking !== (m.thinking ?? "")) {
+          changed = true;
+          return { ...m, content: newContent, thinking: newThinking };
+        }
+        return m;
+      });
+      return changed ? next : prev;
+    });
+
+    // Single roleStreamStates update from the last chunk
+    const lastChunk = chunks[chunks.length - 1];
+    setRoleStreamStates((prev) => {
+      const existing = prev.get(lastChunk.roleId);
+      if (!existing) return prev;
+      const summary = (lastChunk.thinking || lastChunk.delta).slice(-60);
+      const next = new Map(prev);
+      next.set(lastChunk.roleId, {
+        ...existing,
+        status: "streaming",
+        microSummary: summary || existing.microSummary,
+      });
+      return next;
+    });
+  };
+
   return (event: CouncilEvent) => {
     switch (event.type) {
       case "role_start": {
+        // Flush any pending chunks for previous role before starting new one
+        flushChunks();
+        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+
         const msgId = `msg_${event.roleId}_${Date.now()}`;
         streamingMsgIds.set(event.roleId!, msgId);
         streamingRoleIdRef.current = event.roleId!;
@@ -52,38 +104,24 @@ export function createCouncilEventHandler({
       case "role_chunk": {
         const msgId = streamingMsgIds.get(event.roleId!);
         if (!msgId) break;
-        const thinkingDelta = event.thinking ?? "";
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === msgId
-              ? {
-                  ...m,
-                  content: m.content + (event.delta ?? ""),
-                  thinking: (m.thinking ?? "") + thinkingDelta,
-                }
-              : m,
-          ),
-        );
-        if (thinkingDelta || event.delta) {
-          setRoleStreamStates((prev) => {
-            const next = new Map(prev);
-            const existing = next.get(event.roleId!);
-            if (existing) {
-              const summary = thinkingDelta
-                ? thinkingDelta.slice(-60)
-                : (event.delta ?? "").slice(-60);
-              next.set(event.roleId!, {
-                ...existing,
-                status: "streaming",
-                microSummary: summary || existing.microSummary,
-              });
-            }
-            return next;
-          });
+        pendingChunks.push({
+          roleId: event.roleId!,
+          delta: event.delta ?? "",
+          thinking: event.thinking ?? "",
+        });
+        if (!flushTimer) {
+          flushTimer = setTimeout(() => {
+            flushTimer = null;
+            flushChunks();
+          }, 50);
         }
         break;
       }
       case "role_done": {
+        // Flush pending chunks before finalizing
+        flushChunks();
+        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+
         const msgId = streamingMsgIds.get(event.roleId!);
         if (!msgId || !event.message) break;
         streamingRoleIdRef.current = null;

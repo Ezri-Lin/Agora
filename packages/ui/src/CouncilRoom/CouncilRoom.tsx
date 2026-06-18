@@ -23,7 +23,7 @@ interface CouncilRoomProps {
   onNewMsgCountChange?: (count: number) => void;
 }
 
-export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoading, streamingRoleId, focusedRoleId, onRegisterJumpFns, onNearBottomChange, onNewMsgCountChange }) => {
+export const CouncilRoom: React.FC<CouncilRoomProps> = React.memo(({ messages, roles, isLoading, streamingRoleId, focusedRoleId, onRegisterJumpFns, onNearBottomChange, onNewMsgCountChange }) => {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -111,23 +111,26 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
   }, []);
 
   // Track whether user is near bottom
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
     setIsNearBottom(nearBottom);
     if (nearBottom) setNewMsgCount(0);
-  };
+  }, []);
 
   // Auto-scroll to bottom when messages change (e.g. entering a room or new messages)
   useEffect(() => {
-    requestAnimationFrame(() => {
-      const el = scrollRef.current;
-      if (!el) return;
-      // Scroll to bottom on first load or when new messages arrive
-      el.scrollTop = el.scrollHeight;
-      setIsNearBottom(true);
-    });
+    const el = scrollRef.current;
+    if (!el) return;
+    // Only auto-scroll if user is near bottom
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
+    if (nearBottom) {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+        setIsNearBottom(true);
+      });
+    }
   }, [messages]);
 
   // Count new messages when user is scrolled up
@@ -215,7 +218,7 @@ export const CouncilRoom: React.FC<CouncilRoomProps> = ({ messages, roles, isLoa
       </div>
     </div>
   );
-};
+});
 
 const createStyles = (colors: ColorPalette): Record<string, React.CSSProperties> => ({
   container: {
