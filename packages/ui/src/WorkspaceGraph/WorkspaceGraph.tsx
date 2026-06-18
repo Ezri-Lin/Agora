@@ -57,6 +57,8 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
       const bridge = getBridge();
       if (!bridge) { setLoading(false); return; }
 
+      const kernel = await import("@agora/kernel");
+
       const BATCH = 10;
       const parsed: Array<{ path: string; name: string; wikilinks: string[]; tags: string[] }> = [];
       for (let i = 0; i < docs.length; i += BATCH) {
@@ -66,9 +68,7 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
             try {
               const content = await bridge.workspace.readDoc(workspacePath, doc.path);
               if (!content) return { path: doc.path, name: doc.name, wikilinks: [], tags: [] };
-              const { document } = await import("@agora/kernel").then((m) =>
-                m.parseDocument({ path: doc.path, content }),
-              );
+              const { document } = kernel.parseDocument({ path: doc.path, content });
               return { path: doc.path, name: doc.name, wikilinks: document.wikilinks, tags: document.tags };
             } catch {
               return { path: doc.path, name: doc.name, wikilinks: [], tags: [] };

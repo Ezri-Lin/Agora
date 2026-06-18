@@ -13,7 +13,9 @@ import { EmptyState } from "./EmptyState.js";
 import { RefPicker } from "./RefPicker.js";
 import { SettingsModal } from "./Settings/SettingsModal.js";
 import { ReviewPanelHost } from "./ReviewPanels/ReviewPanelHost.js";
-import { WorkspaceGraph } from "./WorkspaceGraph/WorkspaceGraph.js";
+const WorkspaceGraph = React.lazy(() =>
+  import("./WorkspaceGraph/WorkspaceGraph.js").then((m) => ({ default: m.WorkspaceGraph }))
+);
 import { WorkspaceHome } from "./WorkspaceHome/WorkspaceHome.js";
 import { errorStyle } from "./appStyles.js";
 import { DispatchGateHost } from "./CouncilDispatchGate/DispatchGateHost.js";
@@ -258,7 +260,11 @@ export const App: React.FC = () => {
       onAddExcluded={handleAddExcluded}
       home={
         <WorkspaceHome
-          graph={<WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} workspacePath={workspace.workspace.path} />}
+          graph={
+            <React.Suspense fallback={<div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>Loading graph…</div>}>
+              <WorkspaceGraph docs={workspace.availableDocs} rooms={council.rooms} workspacePath={workspace.workspace.path} />
+            </React.Suspense>
+          }
           rooms={council.rooms}
           docs={workspace.availableDocs}
           workspacePath={workspace.workspace.path}
@@ -303,11 +309,13 @@ export const App: React.FC = () => {
             <div className="layer-row"><span>Density</span><span className="pill">Clean ▾</span></div>
           </div>
           <div style={{ position: "absolute", inset: 0 }}>
-            <WorkspaceGraph
-              docs={workspace.availableDocs}
-              rooms={council.rooms}
-              workspacePath={workspace.workspace.path}
-            />
+            <React.Suspense fallback={<div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>Loading graph…</div>}>
+              <WorkspaceGraph
+                docs={workspace.availableDocs}
+                rooms={council.rooms}
+                workspacePath={workspace.workspace.path}
+              />
+            </React.Suspense>
           </div>
         </div>
       }

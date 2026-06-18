@@ -1,6 +1,9 @@
 import React, { useState, useCallback, useRef } from "react";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
-import { TerminalPanel } from "../Terminal/TerminalPanel.js";
+
+const TerminalPanel = React.lazy(() =>
+  import("../Terminal/TerminalPanel.js").then((m) => ({ default: m.TerminalPanel }))
+);
 import type { AppView, CouncilStageView, SidecarTab } from "./AppShell.types.js";
 import { useNavigation } from "./useNavigation.js";
 import { usePanelManager } from "./usePanelManager.js";
@@ -287,7 +290,9 @@ export const AppShell: React.FC<AppShellProps> = ({
                           </Panel>
                           <PanelResizeHandle className="resize-handle-h" />
                           <Panel id="terminal" panelRef={onTerminalPanelRef} defaultSize="25%" minSize="15%" collapsedSize="0%" collapsible style={{ overflow: "hidden" }}>
-                            <TerminalPanel visible={!!terminalVisible} workspacePath={workspacePath} onClose={onToggleTerminal ?? (() => {})} />
+                            <React.Suspense fallback={null}>
+                              <TerminalPanel visible={!!terminalVisible} workspacePath={workspacePath} onClose={onToggleTerminal ?? (() => {})} />
+                            </React.Suspense>
                           </Panel>
                         </PanelGroup>
                       </div>

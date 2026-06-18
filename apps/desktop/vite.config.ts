@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["@agora/kernel"],
+    exclude: [],
   },
   resolve: {
     alias: {
