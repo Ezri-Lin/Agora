@@ -7,10 +7,31 @@ interface GraphAuditPanelProps {
 
 export const GraphAuditPanel: React.FC<GraphAuditPanelProps> = ({ snapshot }) => {
   const [expanded, setExpanded] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   if (!snapshot) return null;
 
   const { nodes, edges, parser } = snapshot;
+
+  const formatAudit = () => `Graph Audit Snapshot
+Nodes: ${nodes.total}
+  document: ${nodes.document} | tag: ${nodes.tag} | ghost: ${nodes.ghost}
+  workspace: ${nodes.workspace} | room: ${nodes.room}
+Edges: ${edges.total}
+  wikilink: ${edges.wikilink} | tag: ${edges.tag} | ghost: ${edges.ghost}
+  fallback: ${edges.fallback}
+Files scanned: ${parser.filesScanned}
+Files parsed: ${parser.filesParsed}
+Wikilinks: ${parser.totalWikilinks} (resolved: ${parser.resolvedWikilinks})
+Tags: ${parser.totalTags}
+Markdown links: ${parser.totalMarkdownLinks}`;
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await navigator.clipboard.writeText(formatAudit());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div
@@ -33,8 +54,22 @@ export const GraphAuditPanel: React.FC<GraphAuditPanelProps> = ({ snapshot }) =>
       onClick={() => setExpanded(!expanded)}
       title="Click to expand/collapse"
     >
-      <div style={{ fontWeight: 600, marginBottom: 4 }}>
-        Graph Audit {expanded ? "▼" : "▶"}
+      <div style={{ fontWeight: 600, marginBottom: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>Graph Audit {expanded ? "▼" : "▶"}</span>
+        <button
+          onClick={handleCopy}
+          style={{
+            background: "rgba(255,255,255,0.15)",
+            border: "none",
+            color: "#e0e0e0",
+            padding: "2px 8px",
+            borderRadius: 4,
+            fontSize: 10,
+            cursor: "pointer",
+          }}
+        >
+          {copied ? "Copied!" : "Copy"}
+        </button>
       </div>
       {expanded && (
         <>
