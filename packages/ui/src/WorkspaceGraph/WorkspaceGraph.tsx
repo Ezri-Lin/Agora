@@ -12,6 +12,9 @@ import { GraphSurface } from "../GraphSurface/GraphSurface.js";
 import type { CoreGraph, CoreGraphViewModel } from "../GraphSurface/model/coreTypes.js";
 import { buildGraphViewModel } from "../GraphSurface/model/coreTypes.js";
 import { buildFallbackCoreGraph, buildCitationCoreGraph } from "../GraphSurface/adapters/WorkspaceAdapter.js";
+import { auditGraph } from "../GraphSurface/model/graphAudit.js";
+import type { GraphAuditParserMetrics, GraphAuditSnapshot } from "../GraphSurface/model/graphAudit.js";
+import { GraphAuditPanel } from "./GraphAuditPanel.js";
 
 interface RoomEntry {
   id: string;
@@ -40,6 +43,16 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
   const { colors } = useTheme();
   const [citationGraph, setCitationGraph] = useState<CoreGraph | null>(null);
   const [loading, setLoading] = useState(false);
+  const [parserMetrics, setParserMetrics] = useState<GraphAuditParserMetrics>({
+    filesScanned: 0,
+    filesParsed: 0,
+    filesFailed: 0,
+    totalWikilinks: 0,
+    totalTags: 0,
+    totalMarkdownLinks: 0,
+    resolvedWikilinks: 0,
+    unresolvedWikilinks: 0,
+  });
 
   // Phase 1: immediate fallback (star topology)
   const fallback = useMemo(
@@ -81,6 +94,27 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
 
       if (cancelled) return;
       setCitationGraph(buildCitationCoreGraph(docs, parsed, COLORS));
+
+      // Track parser metrics
+      let totalWikilinks = 0;
+      let totalTags = 0;
+      let totalMarkdownLinks = 0;
+      for (const p of parsed) {
+        totalWikilinks += p.wikilinks.length;
+        totalTags += p.tags.length;
+        totalMarkdownLinks += (p as any).markdownLinks?.length ?? 0;
+      }
+      setParserMetrics({
+        filesScanned: docs.length,
+        filesParsed: parsed.length,
+        filesFailed: Math.max(0, docs.length - parsed.length),
+        totalWikilinks,
+        totalTags,
+        totalMarkdownLinks,
+        resolvedWikilinks: 0, // computed from audit edge counts
+        unresolvedWikilinks: 0, // computed from audit edge counts
+      });
+
       setLoading(false);
     })();
 
@@ -92,6 +126,11 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
     () => buildGraphViewModel(coreGraph),
     [coreGraph],
   );
+
+  const auditSnapshot: GraphAuditSnapshot | null = useMemo(() => {
+    if (!citationGraph) return null;
+    return auditGraph(citationGraph, parserMetrics);
+  }, [citationGraph, parserMetrics]);
 
   if (coreGraph.nodes.length <= 1) {
     return (
@@ -117,6 +156,9 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
         </div>
       )}
       <GraphSurface viewModel={viewModel} />
+      {process.env.NODE_ENV === "development" && auditSnapshot && (
+        <GraphAuditPanel snapshot={auditSnapshot} />
+      )}
     </div>
   );
 };
