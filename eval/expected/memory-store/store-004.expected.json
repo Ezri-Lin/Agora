@@ -1,0 +1,9 @@
+{
+  "testId": "store-004",
+  "description": "验证审计日志记录所有操作",
+  "passed": true,
+  "candidatePersisted": true,
+  "statusTransitionRecorded": true,
+  "auditLogCount": 2,
+  "auditEvents": ["candidate_created", "memory_rejected"]
+}

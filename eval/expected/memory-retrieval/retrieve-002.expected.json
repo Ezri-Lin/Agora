@@ -1,0 +1,8 @@
+{
+  "testId": "retrieve-002",
+  "description": "验证状态过滤",
+  "returnedCount": 1,
+  "firstMemoryId": "mem-001",
+  "firstMemoryStatus": "accepted",
+  "budgetApplied": false
+}

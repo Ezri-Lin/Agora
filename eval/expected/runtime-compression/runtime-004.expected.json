@@ -1,0 +1,8 @@
+{
+  "testId": "runtime-004-latest-user-message-retained",
+  "compressed": true,
+  "latestUserMessageRetained": true,
+  "latestUserMessageId": "msg-user-latest",
+  "latestUserMessageOccurrences": 1,
+  "latestUserMessageFormat": "raw"
+}

@@ -1,0 +1,120 @@
+{
+  "sessionId": "session-002-architecture-review",
+  "compressedAt": "2026-06-23T00:00:00.000Z",
+  "summaryText": "架构评审讨论 Context Substrate 设计方案。关键决策：token ratio 默认 0.7 可配置，保留策略增加 KeyInsight，v1 使用 schema-first，先实现 ContextFrame 和 ContextBudget。Skeptic Critic 对 token ratio 有担忧，建议动态调整。",
+  "decisions": [
+    {
+      "id": "decision-001",
+      "statement": "token ratio 默认 0.7，可配置",
+      "rationale": "留 30% 给新内容，允许用户调整",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-008", "msg-012"]
+    },
+    {
+      "id": "decision-002",
+      "statement": "保留策略增加 KeyInsight",
+      "rationale": "当前策略可能丢失关键洞察",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-015", "msg-019"]
+    },
+    {
+      "id": "decision-003",
+      "statement": "v1 使用 schema-first",
+      "rationale": "可测试、可验证",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-016", "msg-020"]
+    },
+    {
+      "id": "decision-004",
+      "statement": "先实现 ContextFrame 和 ContextBudget，再做 ContextCompressor",
+      "rationale": "ContextCompressor 依赖 LLM，需要 golden transcript 验证",
+      "decidedBy": "Implementation Reviewer",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-021"]
+    }
+  ],
+  "actionItems": [
+    {
+      "id": "action-001",
+      "text": "设计简洁的 ConversationSummaryV1 schema",
+      "owner": "Systems Architect",
+      "status": "open",
+      "sourceMessageIds": ["msg-018"]
+    },
+    {
+      "id": "action-002",
+      "text": "压缩结果必须可审计，保留原始引用",
+      "owner": "Skeptic Critic",
+      "status": "open",
+      "sourceMessageIds": ["msg-017"]
+    },
+    {
+      "id": "action-003",
+      "text": "先实现 ContextFrame 和 ContextBudget",
+      "owner": "Implementation Reviewer",
+      "status": "open",
+      "sourceMessageIds": ["msg-021"]
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "question-001",
+      "question": "是否需要根据会话长度动态调整 token ratio？",
+      "blocking": false,
+      "sourceMessageIds": ["msg-013"]
+    },
+    {
+      "id": "question-002",
+      "question": "是否需要在 v1 保留 UserPreference？",
+      "blocking": false,
+      "sourceMessageIds": ["msg-015"]
+    }
+  ],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "频繁压缩会增加 LLM 调用成本",
+      "confidence": "medium",
+      "sourceMessageIds": ["msg-010"]
+    },
+    {
+      "id": "insight-002",
+      "insight": "ContextCompressor 依赖 LLM，需要 golden transcript 验证",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-021"]
+    }
+  ],
+  "roleStances": [
+    {
+      "roleId": "systems-architect",
+      "roleName": "Systems Architect",
+      "stance": "支持方案，愿意优化",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-005", "msg-009", "msg-018"]
+    },
+    {
+      "roleId": "skeptic-critic",
+      "roleName": "Skeptic Critic",
+      "stance": "初始担忧，最终接受",
+      "confidence": "medium",
+      "unresolvedConcerns": ["token ratio 动态调整"],
+      "sourceMessageIds": ["msg-006", "msg-010", "msg-013", "msg-017"]
+    },
+    {
+      "roleId": "implementation-reviewer",
+      "roleName": "Implementation Reviewer",
+      "stance": "支持方案，建议实现顺序",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-007", "msg-015", "msg-021"]
+    }
+  ],
+  "evidenceRefs": [],
+  "rawTranscriptRefs": [
+    "session-002-architecture-review.md"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "testId": "runtime-002-manual-compact-command",
+  "commandHandled": true,
+  "compressed": true,
+  "fanOutSkipped": true,
+  "requestedBy": {
+    "type": "user",
+    "command": "/compact"
+  },
+  "executedBy": {
+    "type": "moderator",
+    "roleId": "moderator"
+  },
+  "messageContains": "已压缩当前会话上下文"
+}

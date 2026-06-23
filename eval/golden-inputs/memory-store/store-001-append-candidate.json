@@ -1,0 +1,18 @@
+{
+  "testId": "store-001",
+  "description": "验证追加候选记忆",
+  "candidate": {
+    "id": "mem-test-001",
+    "scope": "project",
+    "type": "decision",
+    "content": "使用 TypeScript 作为主要开发语言",
+    "source": {
+      "sessionId": "test-session-001",
+      "messageIds": ["msg-020", "msg-025"]
+    },
+    "confidence": 0.9,
+    "status": "candidate",
+    "tags": ["typescript", "decision"],
+    "createdAt": "2026-06-24T00:00:00.000Z"
+  }
+}

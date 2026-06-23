@@ -1,0 +1,7 @@
+{
+  "testId": "runtime-003-role-cannot-trigger",
+  "compressed": false,
+  "rejected": true,
+  "reason": "Executor not allowed: role cannot execute compression in council mode",
+  "contextMutated": false
+}

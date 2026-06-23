@@ -1,0 +1,147 @@
+{
+  "sessionId": "session-004-evidence-grounded-discussion",
+  "compressedAt": "2026-06-23T00:00:00.000Z",
+  "summaryText": "带证据讨论验证 AI Agent 记忆系统是否能提高用户留存率。Research Librarian 提供 4 个证据，Signal Analyst 分析可信度。结论：记忆系统确实能提高留存率（证据 2 和 4 支持），建议建立证据引用机制，确保可追溯性。",
+  "decisions": [
+    {
+      "id": "decision-001",
+      "statement": "记忆系统确实能提高用户留存率",
+      "rationale": "证据 2 (Anthropic) 和证据 4 (OpenAI) 支持",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-018", "msg-022"]
+    },
+    {
+      "id": "decision-002",
+      "statement": "建立证据引用机制，确保每个声明都有来源支持",
+      "rationale": "提高讨论质量，减少主观臆断",
+      "decidedBy": "Research Librarian",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-019", "msg-023"]
+    },
+    {
+      "id": "decision-003",
+      "statement": "证据必须可追溯，不能是二手信息",
+      "rationale": "确保证据可信度",
+      "decidedBy": "Skeptic Critic",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-020", "msg-024"]
+    }
+  ],
+  "actionItems": [
+    {
+      "id": "action-001",
+      "text": "建立证据引用机制",
+      "owner": "Research Librarian",
+      "status": "open",
+      "sourceMessageIds": ["msg-019"]
+    },
+    {
+      "id": "action-002",
+      "text": "进一步验证记忆系统的具体提升幅度",
+      "owner": "Signal Analyst",
+      "status": "open",
+      "sourceMessageIds": ["msg-021"]
+    },
+    {
+      "id": "action-003",
+      "text": "实现证据可追溯性",
+      "owner": "Skeptic Critic",
+      "status": "open",
+      "sourceMessageIds": ["msg-020"]
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "question-001",
+      "question": "记忆系统具体能提升多少用户留存率？",
+      "blocking": false,
+      "sourceMessageIds": ["msg-021"]
+    },
+    {
+      "id": "question-002",
+      "question": "如何确保我们的记忆系统实现质量？",
+      "blocking": true,
+      "sourceMessageIds": ["msg-025"]
+    }
+  ],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "记忆系统确实能提高用户留存率",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-018"]
+    },
+    {
+      "id": "insight-002",
+      "insight": "学术研究比商业案例更可信",
+      "confidence": "medium",
+      "sourceMessageIds": ["msg-014"]
+    },
+    {
+      "id": "insight-003",
+      "insight": "证据引用可以提高讨论质量",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-019", "msg-023"]
+    }
+  ],
+  "roleStances": [
+    {
+      "roleId": "research-librarian",
+      "roleName": "Research Librarian",
+      "stance": "积极搜索证据，支持证据引用机制",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-005", "msg-012", "msg-019"]
+    },
+    {
+      "roleId": "skeptic-critic",
+      "roleName": "Skeptic Critic",
+      "stance": "质疑证据可信度，要求可追溯性",
+      "confidence": "medium",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-006", "msg-010", "msg-020", "msg-024"]
+    },
+    {
+      "roleId": "signal-analyst",
+      "roleName": "Signal Analyst",
+      "stance": "分析证据可信度，支持结论",
+      "confidence": "high",
+      "unresolvedConcerns": ["提升幅度"],
+      "sourceMessageIds": ["msg-009", "msg-014", "msg-021"]
+    }
+  ],
+  "evidenceRefs": [
+    {
+      "id": "evidence-001",
+      "source": "LangChain 官方博客 (2026-03-15)",
+      "url": "https://blog.langchain.com/memory-systems",
+      "claim": "有记忆系统的 Agent 用户留存率提高 40%",
+      "credibility": "medium"
+    },
+    {
+      "id": "evidence-002",
+      "source": "Anthropic 研究论文 (2026-02-20)",
+      "url": "https://anthropic.com/research/memory",
+      "claim": "记忆系统可以减少 60% 的重复问题",
+      "credibility": "high"
+    },
+    {
+      "id": "evidence-003",
+      "source": "内部调研报告 (2026-01-10)",
+      "url": "internal research report",
+      "claim": "72% 的用户认为记忆系统非常重要",
+      "credibility": "medium"
+    },
+    {
+      "id": "evidence-004",
+      "source": "OpenAI 案例研究 (2026-04-05)",
+      "url": "https://openai.com/case-studies/memory",
+      "claim": "记忆功能使用户会话长度增加 35%",
+      "credibility": "high"
+    }
+  ],
+  "rawTranscriptRefs": [
+    "session-004-evidence-grounded-discussion.md"
+  ]
+}

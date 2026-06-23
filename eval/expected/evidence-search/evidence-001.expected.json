@@ -1,0 +1,8 @@
+{
+  "testId": "evidence-001",
+  "description": "验证基本查询返回 EvidencePacket",
+  "hasPacket": true,
+  "resultCount": 3,
+  "hasClaims": true,
+  "uncertainty": "medium"
+}

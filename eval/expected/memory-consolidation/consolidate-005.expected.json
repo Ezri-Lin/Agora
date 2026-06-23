@@ -1,0 +1,11 @@
+{
+  "testId": "consolidate-005",
+  "description": "验证 dryRun 不修改数据",
+  "action": "supersede",
+  "affectedMemoryIds": ["mem-dry-001"],
+  "oldMemoryStatus": "accepted",
+  "newMemoryStatus": "accepted",
+  "auditEventCount": 1,
+  "dryRun": true,
+  "noFileMutated": true
+}

@@ -1,0 +1,8 @@
+{
+  "testId": "tool-005",
+  "description": "验证审计日志被写入",
+  "status": "executed",
+  "output": { "data": "some data" },
+  "auditEventCount": 2,
+  "auditStatuses": ["planned", "executed"]
+}

@@ -1,0 +1,10 @@
+{
+  "testId": "consolidate-001",
+  "description": "验证 supersede 操作",
+  "action": "supersede",
+  "affectedMemoryIds": ["mem-old-001"],
+  "oldMemoryStatus": "superseded",
+  "newMemoryStatus": "accepted",
+  "auditEventCount": 2,
+  "dryRun": false
+}

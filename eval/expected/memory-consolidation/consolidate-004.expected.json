@@ -1,0 +1,10 @@
+{
+  "testId": "consolidate-004",
+  "description": "验证 deduplicate 操作",
+  "action": "deduplicate",
+  "affectedMemoryIds": ["mem-duplicate-001"],
+  "candidateStatus": "rejected",
+  "originalStatus": "accepted",
+  "auditEventCount": 2,
+  "dryRun": false
+}

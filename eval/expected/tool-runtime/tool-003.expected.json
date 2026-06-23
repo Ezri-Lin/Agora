@@ -1,0 +1,8 @@
+{
+  "testId": "tool-003",
+  "description": "验证命令执行被拒绝",
+  "status": "denied",
+  "error": "Command execution denied in v0.1",
+  "auditEventCount": 2,
+  "auditStatuses": ["planned", "denied"]
+}

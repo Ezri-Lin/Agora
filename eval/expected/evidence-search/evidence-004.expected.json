@@ -1,0 +1,7 @@
+{
+  "testId": "evidence-004",
+  "description": "验证排序逻辑",
+  "hasPacket": true,
+  "firstResultTitle": "TypeScript Best Practices 2026",
+  "isSorted": true
+}

@@ -1,0 +1,80 @@
+{
+  "testId": "retrieve-005",
+  "description": "验证预算限制",
+  "seedMemories": [
+    {
+      "id": "mem-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "决策 1",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": ["decision"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-002",
+      "scope": "project",
+      "type": "decision",
+      "content": "决策 2",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-002"] },
+      "confidence": 0.9,
+      "status": "accepted",
+      "tags": ["decision"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-003",
+      "scope": "project",
+      "type": "decision",
+      "content": "决策 3",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-003"] },
+      "confidence": 0.85,
+      "status": "accepted",
+      "tags": ["decision"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-004",
+      "scope": "project",
+      "type": "decision",
+      "content": "决策 4",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-004"] },
+      "confidence": 0.8,
+      "status": "accepted",
+      "tags": ["decision"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-005",
+      "scope": "project",
+      "type": "decision",
+      "content": "决策 5",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-005"] },
+      "confidence": 0.75,
+      "status": "accepted",
+      "tags": ["decision"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-006",
+      "scope": "project",
+      "type": "decision",
+      "content": "决策 6",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-006"] },
+      "confidence": 0.7,
+      "status": "accepted",
+      "tags": ["decision"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    }
+  ],
+  "query": {
+    "type": ["decision"],
+    "limit": 3
+  },
+  "budget": {
+    "maxItems": 3,
+    "maxContentChars": 100
+  }
+}

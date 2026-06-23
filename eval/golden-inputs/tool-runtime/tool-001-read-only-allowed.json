@@ -1,0 +1,21 @@
+{
+  "testId": "tool-001",
+  "description": "验证 read-only 网络工具被允许",
+  "tool": {
+    "manifest": {
+      "name": "web_search",
+      "description": "Search the web",
+      "riskLevel": "read_only",
+      "sideEffects": ["network_request"],
+      "requiresApproval": false,
+      "inputSchema": { "type": "object", "properties": { "query": { "type": "string" } } }
+    },
+    "executor": "async (args) => ({ results: ['result1', 'result2'] })"
+  },
+  "invocation": {
+    "toolName": "web_search",
+    "args": { "query": "TypeScript best practices" },
+    "reason": "User asked about TypeScript",
+    "requestedBy": { "type": "assistant" }
+  }
+}

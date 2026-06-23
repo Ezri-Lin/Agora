@@ -1,0 +1,136 @@
+{
+  "sessionId": "session-005-role-conflict-resolution",
+  "compressedAt": "2026-06-23T00:00:00.000Z",
+  "summaryText": "多角色冲突讨论是否在 v1 引入 MCP 集成。Product Strategist 支持全面 MCP，Skeptic Critic 强烈反对，Systems Architect 中立。经过深入讨论，达成折中：v1 只做 Internal MCP Adapter，依赖 Tool Runtime Foundation，Phase 2 完成，严格权限控制。",
+  "decisions": [
+    {
+      "id": "decision-001",
+      "statement": "v1 只做 Internal MCP Adapter，不开放 marketplace",
+      "rationale": "平衡产品需求和安全风险",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-020", "msg-025"]
+    },
+    {
+      "id": "decision-002",
+      "statement": "Internal MCP Adapter 依赖 Tool Runtime Foundation",
+      "rationale": "复用权限模型，避免架构混乱",
+      "decidedBy": "Systems Architect",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-022", "msg-026"]
+    },
+    {
+      "id": "decision-003",
+      "statement": "Internal MCP Adapter 在 Phase 2 完成",
+      "rationale": "平衡开发进度和功能完整性",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-023", "msg-027"]
+    },
+    {
+      "id": "decision-004",
+      "statement": "Internal MCP Adapter 必须有严格的权限控制",
+      "rationale": "安全风险控制",
+      "decidedBy": "Skeptic Critic",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-021", "msg-028"]
+    }
+  ],
+  "actionItems": [
+    {
+      "id": "action-001",
+      "text": "设计可复用的 Tool Runtime 权限模型",
+      "owner": "Systems Architect",
+      "status": "open",
+      "sourceMessageIds": ["msg-026"]
+    },
+    {
+      "id": "action-002",
+      "text": "定义 Internal MCP Adapter 的 trusted servers 标准",
+      "owner": "Skeptic Critic",
+      "status": "open",
+      "sourceMessageIds": ["msg-021"]
+    },
+    {
+      "id": "action-003",
+      "text": "在 Phase 2 实现 Internal MCP Adapter",
+      "owner": "Systems Architect",
+      "status": "open",
+      "sourceMessageIds": ["msg-027"]
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "question-001",
+      "question": "如何定义 trusted servers？",
+      "blocking": true,
+      "sourceMessageIds": ["msg-021"]
+    },
+    {
+      "id": "question-002",
+      "question": "Tool Runtime 权限模型的具体设计？",
+      "blocking": true,
+      "sourceMessageIds": ["msg-026"]
+    }
+  ],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "折中方案可以平衡不同立场",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-020", "msg-025"]
+    },
+    {
+      "id": "insight-002",
+      "insight": "MCP 依赖 Tool Runtime，必须先建基础",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-022"]
+    },
+    {
+      "id": "insight-003",
+      "insight": "安全风险必须优先考虑",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-007", "msg-011", "msg-021"]
+    }
+  ],
+  "roleStances": [
+    {
+      "roleId": "product-strategist",
+      "roleName": "Product Strategist",
+      "stance": "初始支持全面 MCP，最终接受折中",
+      "confidence": "medium",
+      "unresolvedConcerns": ["担心延迟"],
+      "sourceMessageIds": ["msg-005", "msg-009", "msg-015", "msg-023"]
+    },
+    {
+      "roleId": "skeptic-critic",
+      "roleName": "Skeptic Critic",
+      "stance": "强烈反对全面 MCP，接受 Internal MCP",
+      "confidence": "high",
+      "unresolvedConcerns": ["trusted servers 定义"],
+      "sourceMessageIds": ["msg-007", "msg-011", "msg-020", "msg-028"]
+    },
+    {
+      "roleId": "systems-architect",
+      "roleName": "Systems Architect",
+      "stance": "中立，支持技术可行方案",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-008", "msg-014", "msg-022", "msg-026"]
+    }
+  ],
+  "conflictResolution": {
+    "conflictPoint": "是否在 v1 引入 MCP 集成",
+    "parties": ["Product Strategist", "Skeptic Critic"],
+    "resolutionProcess": [
+      "深入讨论双方担忧",
+      "寻找共识点",
+      "提出折中方案"
+    ],
+    "finalSolution": "v1 只做 Internal MCP Adapter，依赖 Tool Runtime Foundation，Phase 2 完成，严格权限控制"
+  },
+  "evidenceRefs": [],
+  "rawTranscriptRefs": [
+    "session-005-role-conflict-resolution.md"
+  ]
+}

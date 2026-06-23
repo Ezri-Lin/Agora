@@ -1,0 +1,7 @@
+{
+  "testId": "evidence-002",
+  "description": "验证所有 claims 都有 source binding",
+  "hasPacket": true,
+  "allClaimsSourceBound": true,
+  "bindingRate": 1.0
+}

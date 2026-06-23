@@ -1,0 +1,8 @@
+{
+  "testId": "evidence-004",
+  "description": "验证排序逻辑",
+  "input": {
+    "query": "TypeScript",
+    "limit": 5
+  }
+}

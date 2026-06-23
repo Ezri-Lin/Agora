@@ -1,0 +1,11 @@
+{
+  "testId": "extract-005",
+  "candidates": [],
+  "rejected": [
+    {
+      "content": "这个方案不可行",
+      "reason": "source.messageIds must not be empty"
+    }
+  ],
+  "extractionPassed": false
+}

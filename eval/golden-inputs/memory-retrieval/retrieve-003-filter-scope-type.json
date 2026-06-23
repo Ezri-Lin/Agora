@@ -1,0 +1,43 @@
+{
+  "testId": "retrieve-003",
+  "description": "验证范围和类型过滤",
+  "seedMemories": [
+    {
+      "id": "mem-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "使用 React 作为前端框架",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": ["react", "frontend"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-002",
+      "scope": "global",
+      "type": "preference",
+      "content": "用户喜欢暗色主题",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-002"] },
+      "confidence": 0.9,
+      "status": "accepted",
+      "tags": ["ui", "theme"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-003",
+      "scope": "role_usage",
+      "type": "role_usage",
+      "content": "Skeptic Critic 在技术讨论中表现活跃",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-003"] },
+      "confidence": 0.6,
+      "status": "candidate",
+      "tags": ["role"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    }
+  ],
+  "query": {
+    "scope": ["project"],
+    "type": ["decision"]
+  }
+}

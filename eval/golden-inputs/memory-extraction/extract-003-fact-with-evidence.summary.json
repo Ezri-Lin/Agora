@@ -1,0 +1,19 @@
+{
+  "sessionId": "test-session-003",
+  "compressedAt": "2026-06-24T00:00:00.000Z",
+  "summaryText": "讨论了 AI Agent 记忆系统的价值。",
+  "decisions": [],
+  "actionItems": [],
+  "openQuestions": [],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "根据 Anthropic 研究，记忆系统可以减少 60% 的重复问题",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-030"]
+    }
+  ],
+  "roleStances": [],
+  "evidenceRefs": ["https://anthropic.com/research/memory"],
+  "rawTranscriptRefs": ["test-session-003.md"]
+}

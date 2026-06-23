@@ -1,0 +1,9 @@
+{
+  "testId": "retrieve-001",
+  "description": "验证关键词检索",
+  "returnedCount": 1,
+  "firstMemoryId": "mem-001",
+  "firstMemoryScore": 9,
+  "firstMemoryMatchedBy": ["keyword", "status"],
+  "budgetApplied": false
+}

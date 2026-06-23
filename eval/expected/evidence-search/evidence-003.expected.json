@@ -1,0 +1,8 @@
+{
+  "testId": "evidence-003",
+  "description": "验证空结果路径",
+  "hasPacket": true,
+  "resultCount": 0,
+  "claimCount": 0,
+  "uncertainty": "high"
+}

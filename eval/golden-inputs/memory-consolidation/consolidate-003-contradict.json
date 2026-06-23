@@ -1,0 +1,34 @@
+{
+  "testId": "consolidate-003",
+  "description": "验证 contradict 操作",
+  "seedMemories": [
+    {
+      "id": "mem-a-001",
+      "scope": "project",
+      "type": "fact",
+      "content": "项目使用 PostgreSQL 数据库",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.9,
+      "status": "accepted",
+      "tags": ["database"],
+      "createdAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "mem-b-001",
+      "scope": "project",
+      "type": "fact",
+      "content": "项目决定迁移到 MongoDB",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-002"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": ["database"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    }
+  ],
+  "input": {
+    "id": "mem-a-001",
+    "contradictedBy": "mem-b-001",
+    "reason": "数据库选型变更",
+    "actor": "user"
+  }
+}

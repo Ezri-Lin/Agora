@@ -1,0 +1,19 @@
+{
+  "sessionId": "test-session-005",
+  "compressedAt": "2026-06-24T00:00:00.000Z",
+  "summaryText": "讨论了某个方案的可行性。",
+  "decisions": [],
+  "actionItems": [],
+  "openQuestions": [],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "这个方案不可行",
+      "confidence": "low",
+      "sourceMessageIds": []
+    }
+  ],
+  "roleStances": [],
+  "evidenceRefs": [],
+  "rawTranscriptRefs": ["test-session-005.md"]
+}

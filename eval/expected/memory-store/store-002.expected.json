@@ -1,0 +1,8 @@
+{
+  "testId": "store-002",
+  "description": "验证拒绝无 source.messageIds 的记忆",
+  "passed": true,
+  "candidateRejected": true,
+  "rejectionReason": "Error: Invalid candidate: source.messageIds must not be empty",
+  "noFileMutated": true
+}

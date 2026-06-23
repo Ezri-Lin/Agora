@@ -1,0 +1,19 @@
+{
+  "sessionId": "test-session-002",
+  "compressedAt": "2026-06-24T00:00:00.000Z",
+  "summaryText": "用户讨论了代码风格偏好。",
+  "decisions": [],
+  "actionItems": [],
+  "openQuestions": [],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "用户偏好简洁的代码风格，不喜欢过多的注释",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-010"]
+    }
+  ],
+  "roleStances": [],
+  "evidenceRefs": [],
+  "rawTranscriptRefs": ["test-session-002.md"]
+}

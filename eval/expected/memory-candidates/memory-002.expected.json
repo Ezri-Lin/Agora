@@ -1,0 +1,18 @@
+{
+  "testId": "memory-002-project-decision",
+  "candidates": [
+    {
+      "type": "decision",
+      "scope": "project",
+      "content": "使用 TypeScript 作为主要开发语言",
+      "confidence": 0.95,
+      "status": "accepted",
+      "source": {
+        "sessionId": "test-session-002",
+        "messageIds": ["msg-020", "msg-025"]
+      }
+    }
+  ],
+  "rejected": [],
+  "validationPassed": true
+}

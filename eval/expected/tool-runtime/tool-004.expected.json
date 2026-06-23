@@ -1,0 +1,8 @@
+{
+  "testId": "tool-004",
+  "description": "验证文件写入需要审批",
+  "status": "blocked_approval_required",
+  "error": "Approval required",
+  "auditEventCount": 2,
+  "auditStatuses": ["planned", "blocked_approval_required"]
+}

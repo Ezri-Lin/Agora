@@ -1,0 +1,21 @@
+{
+  "testId": "tool-003",
+  "description": "验证命令执行被拒绝",
+  "tool": {
+    "manifest": {
+      "name": "terminal",
+      "description": "Execute terminal commands",
+      "riskLevel": "high",
+      "sideEffects": ["execute_command"],
+      "requiresApproval": true,
+      "inputSchema": { "type": "object", "properties": { "command": { "type": "string" } } }
+    },
+    "executor": "async (args) => ({ output: 'command executed' })"
+  },
+  "invocation": {
+    "toolName": "terminal",
+    "args": { "command": "ls -la" },
+    "reason": "User wants to list files",
+    "requestedBy": { "type": "assistant" }
+  }
+}

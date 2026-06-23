@@ -1,0 +1,18 @@
+{
+  "testId": "extract-002",
+  "candidates": [
+    {
+      "type": "preference",
+      "scope": "project",
+      "content": "用户偏好简洁的代码风格，不喜欢过多的注释",
+      "confidence": 0.9,
+      "status": "candidate",
+      "source": {
+        "sessionId": "test-session-002",
+        "messageIds": ["msg-010"]
+      }
+    }
+  ],
+  "rejected": [],
+  "extractionPassed": true
+}

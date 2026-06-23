@@ -1,0 +1,42 @@
+{
+  "testId": "retrieve-001",
+  "description": "验证关键词检索",
+  "seedMemories": [
+    {
+      "id": "mem-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "Context Substrate 是核心架构组件",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": ["architecture", "context"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-002",
+      "scope": "project",
+      "type": "insight",
+      "content": "记忆系统可以减少重复问题",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-002"] },
+      "confidence": 0.8,
+      "status": "accepted",
+      "tags": ["memory", "efficiency"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-003",
+      "scope": "global",
+      "type": "preference",
+      "content": "用户偏好简洁的代码风格",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-003"] },
+      "confidence": 0.9,
+      "status": "candidate",
+      "tags": ["style", "preference"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    }
+  ],
+  "query": {
+    "text": "Context Substrate"
+  }
+}

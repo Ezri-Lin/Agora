@@ -1,0 +1,51 @@
+{
+  "testId": "retrieve-004",
+  "description": "验证默认排除终态记忆",
+  "seedMemories": [
+    {
+      "id": "mem-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "使用 TypeScript",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": ["typescript"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-002",
+      "scope": "project",
+      "type": "insight",
+      "content": "旧方案不可行",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-002"] },
+      "confidence": 0.8,
+      "status": "rejected",
+      "tags": ["deprecated"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-003",
+      "scope": "project",
+      "type": "constraint",
+      "content": "旧约束已过期",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-003"] },
+      "confidence": 0.7,
+      "status": "expired",
+      "tags": ["old"],
+      "createdAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "mem-004",
+      "scope": "project",
+      "type": "decision",
+      "content": "已被新决策取代",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-004"] },
+      "confidence": 0.9,
+      "status": "superseded",
+      "tags": ["old"],
+      "createdAt": "2026-06-22T00:00:00.000Z"
+    }
+  ],
+  "query": {}
+}

@@ -1,0 +1,19 @@
+{
+  "testId": "memory-003-fact-with-evidence",
+  "candidates": [
+    {
+      "type": "fact",
+      "scope": "global",
+      "content": "根据 Anthropic 研究，记忆系统可以减少 60% 的重复问题",
+      "confidence": 0.95,
+      "status": "accepted",
+      "source": {
+        "sessionId": "test-session-003",
+        "messageIds": ["msg-030"],
+        "evidenceRefs": ["https://anthropic.com/research/memory"]
+      }
+    }
+  ],
+  "rejected": [],
+  "validationPassed": true
+}

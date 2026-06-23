@@ -1,0 +1,8 @@
+{
+  "testId": "store-005",
+  "description": "验证不能存储原始聊天内容",
+  "passed": true,
+  "candidateRejected": true,
+  "rejectionReason": "Error: Invalid candidate: Raw chat MUST NOT be persisted as memory content",
+  "noFileMutated": true
+}

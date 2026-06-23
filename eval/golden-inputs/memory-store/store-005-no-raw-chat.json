@@ -1,0 +1,18 @@
+{
+  "testId": "store-005",
+  "description": "验证不能存储原始聊天内容",
+  "candidate": {
+    "id": "mem-test-005",
+    "scope": "session",
+    "type": "insight",
+    "content": "User: 你好\nAssistant: 你好！有什么可以帮助你的吗？\nUser: 帮我写一个函数\nAssistant: 好的，请问是什么函数？",
+    "source": {
+      "sessionId": "test-session-005",
+      "messageIds": ["msg-050", "msg-051", "msg-052"]
+    },
+    "confidence": 0.5,
+    "status": "candidate",
+    "tags": [],
+    "createdAt": "2026-06-24T00:00:00.000Z"
+  }
+}

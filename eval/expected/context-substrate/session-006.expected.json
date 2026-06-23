@@ -1,0 +1,160 @@
+{
+  "sessionId": "session-006-long-council-session",
+  "compressedAt": "2026-06-24T00:00:00.000Z",
+  "summaryText": "长会话讨论 Agora 长期发展战略。关键决策：聚焦决策追踪作为差异化方向，MVP 方案为决策日志，优先级 P0/P1/P2，依赖 Context Substrate 和 Memory Pipeline。用户最关心讨论质量，决策追踪是 Agora 独有价值。",
+  "decisions": [
+    {
+      "id": "decision-001",
+      "statement": "聚焦决策追踪作为 Agora 的差异化方向",
+      "rationale": "Agora 独有价值，技术可行，用户有需求",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-058", "msg-060"]
+    },
+    {
+      "id": "decision-002",
+      "statement": "MVP 方案为决策日志",
+      "rationale": "核心功能，2 周可完成",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-059", "msg-061"]
+    },
+    {
+      "id": "decision-003",
+      "statement": "优先级为 P0（决策日志）、P1（决策搜索）、P2（决策分析）",
+      "rationale": "渐进式开发，降低风险",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-062"]
+    },
+    {
+      "id": "decision-004",
+      "statement": "决策追踪依赖 Context Substrate 和 Memory Pipeline",
+      "rationale": "技术基础必须先完成",
+      "decidedBy": "Systems Architect",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-063"]
+    }
+  ],
+  "actionItems": [
+    {
+      "id": "action-001",
+      "text": "立即开始 Context Substrate 实现",
+      "owner": "Systems Architect",
+      "status": "open",
+      "sourceMessageIds": ["msg-064"]
+    },
+    {
+      "id": "action-002",
+      "text": "设计决策日志的数据模型",
+      "owner": "Systems Architect",
+      "status": "open",
+      "sourceMessageIds": ["msg-065"]
+    },
+    {
+      "id": "action-003",
+      "text": "制定用户测试计划",
+      "owner": "UX Researcher",
+      "status": "open",
+      "sourceMessageIds": ["msg-066"]
+    },
+    {
+      "id": "action-004",
+      "text": "每个开发阶段都必须有 eval 验证",
+      "owner": "Skeptic Critic",
+      "status": "open",
+      "sourceMessageIds": ["msg-067"]
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "question-001",
+      "question": "如果新决策和旧决策冲突，如何处理？",
+      "blocking": false,
+      "sourceMessageIds": ["msg-035"]
+    },
+    {
+      "id": "question-002",
+      "question": "某些决策可能不再适用，如何处理？",
+      "blocking": false,
+      "sourceMessageIds": ["msg-036"]
+    },
+    {
+      "id": "question-003",
+      "question": "深度记忆可能涉及隐私风险，如何解决？",
+      "blocking": false,
+      "sourceMessageIds": ["msg-015"]
+    }
+  ],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "用户最关心的是讨论质量，不是记忆深度",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-018"]
+    },
+    {
+      "id": "insight-002",
+      "insight": "决策追踪是 Agora 独有的价值",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-042"]
+    },
+    {
+      "id": "insight-003",
+      "insight": "渐进式开发可以降低风险",
+      "confidence": "medium",
+      "sourceMessageIds": ["msg-055"]
+    }
+  ],
+  "roleStances": [
+    {
+      "roleId": "product-strategist",
+      "roleName": "Product Strategist",
+      "stance": "支持聚焦决策追踪",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-005", "msg-022", "msg-042", "msg-058"]
+    },
+    {
+      "roleId": "skeptic-critic",
+      "roleName": "Skeptic Critic",
+      "stance": "支持但要求严格 eval",
+      "confidence": "medium",
+      "unresolvedConcerns": ["决策冲突检测"],
+      "sourceMessageIds": ["msg-006", "msg-023", "msg-035", "msg-067"]
+    },
+    {
+      "roleId": "ux-researcher",
+      "roleName": "UX Researcher",
+      "stance": "支持并强调用户测试",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-008", "msg-018", "msg-045", "msg-066"]
+    },
+    {
+      "roleId": "systems-architect",
+      "roleName": "Systems Architect",
+      "stance": "支持并准备技术方案",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-010", "msg-025", "msg-050", "msg-063"]
+    }
+  ],
+  "evidenceRefs": [
+    {
+      "id": "evidence-001",
+      "source": "用户调研数据",
+      "claim": "60% 团队决策，25% 个人思考，15% 文档协作",
+      "credibility": "high"
+    },
+    {
+      "id": "evidence-002",
+      "source": "留存率数据",
+      "claim": "留存率只有 30%",
+      "credibility": "high"
+    }
+  ],
+  "rawTranscriptRefs": [
+    "session-006-long-council-session.md"
+  ]
+}

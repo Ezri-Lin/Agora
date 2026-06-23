@@ -1,0 +1,9 @@
+{
+  "testId": "retrieve-003",
+  "description": "验证范围和类型过滤",
+  "returnedCount": 1,
+  "firstMemoryId": "mem-001",
+  "firstMemoryScope": "project",
+  "firstMemoryType": "decision",
+  "budgetApplied": false
+}

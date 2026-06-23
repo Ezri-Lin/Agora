@@ -1,0 +1,22 @@
+{
+  "testId": "consolidate-002",
+  "description": "验证 expire 操作",
+  "seedMemories": [
+    {
+      "id": "mem-expire-001",
+      "scope": "project",
+      "type": "constraint",
+      "content": "截止日期为 2026-06-30",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.9,
+      "status": "accepted",
+      "tags": ["deadline"],
+      "createdAt": "2026-06-20T00:00:00.000Z"
+    }
+  ],
+  "input": {
+    "id": "mem-expire-001",
+    "reason": "截止日期已过",
+    "actor": "system"
+  }
+}

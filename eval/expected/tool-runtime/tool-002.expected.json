@@ -1,0 +1,8 @@
+{
+  "testId": "tool-002",
+  "description": "验证未知工具被拒绝",
+  "status": "denied",
+  "error": "Unknown tool: unknown_tool",
+  "auditEventCount": 2,
+  "auditStatuses": ["planned", "denied"]
+}

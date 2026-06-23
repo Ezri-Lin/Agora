@@ -1,0 +1,18 @@
+{
+  "testId": "memory-001-user-preference",
+  "candidates": [
+    {
+      "type": "preference",
+      "scope": "project",
+      "content": "用户偏好简洁的代码风格，不喜欢过多的注释",
+      "confidence": 0.9,
+      "status": "candidate",
+      "source": {
+        "sessionId": "test-session-001",
+        "messageIds": ["msg-010"]
+      }
+    }
+  ],
+  "rejected": [],
+  "validationPassed": true
+}

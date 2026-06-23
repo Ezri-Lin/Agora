@@ -1,0 +1,28 @@
+{
+  "sessionId": "test-session-004",
+  "compressedAt": "2026-06-24T00:00:00.000Z",
+  "summaryText": "讨论了角色在技术讨论中的表现。",
+  "decisions": [],
+  "actionItems": [],
+  "openQuestions": [],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "Skeptic Critic 在技术讨论中表现活跃，经常提出有价值的问题",
+      "confidence": "medium",
+      "sourceMessageIds": ["msg-040", "msg-045"]
+    }
+  ],
+  "roleStances": [
+    {
+      "roleId": "skeptic_critic",
+      "roleName": "Skeptic Critic",
+      "stance": "积极质疑技术方案",
+      "confidence": "medium",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-040", "msg-045"]
+    }
+  ],
+  "evidenceRefs": [],
+  "rawTranscriptRefs": ["test-session-004.md"]
+}

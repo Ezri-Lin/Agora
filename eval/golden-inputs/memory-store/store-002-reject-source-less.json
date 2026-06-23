@@ -1,0 +1,18 @@
+{
+  "testId": "store-002",
+  "description": "验证拒绝无 source.messageIds 的记忆",
+  "candidate": {
+    "id": "mem-test-002",
+    "scope": "project",
+    "type": "insight",
+    "content": "这个方案不可行",
+    "source": {
+      "sessionId": "test-session-002",
+      "messageIds": []
+    },
+    "confidence": 0.5,
+    "status": "candidate",
+    "tags": [],
+    "createdAt": "2026-06-24T00:00:00.000Z"
+  }
+}

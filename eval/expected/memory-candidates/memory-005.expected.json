@@ -1,0 +1,11 @@
+{
+  "testId": "memory-005-reject-unsupported",
+  "candidates": [],
+  "rejected": [
+    {
+      "content": "这个方案不可行",
+      "reason": "source.messageIds must not be empty"
+    }
+  ],
+  "validationPassed": false
+}

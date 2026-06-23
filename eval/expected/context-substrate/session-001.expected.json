@@ -1,0 +1,113 @@
+{
+  "sessionId": "session-001-product-decision",
+  "compressedAt": "2026-06-23T00:00:00.000Z",
+  "summaryText": "用户询问 Agora 下一个优先级功能：联网搜索还是智能历史压缩。Product Strategist 和 UX Researcher 支持历史压缩，Skeptic Critic 初始反对但最终接受。最终决策：优先做历史压缩，压缩必须保留决策、行动项、未解决问题，联网搜索作为 Phase 2。",
+  "decisions": [
+    {
+      "id": "decision-001",
+      "statement": "优先做历史压缩，而不是联网搜索",
+      "rationale": "用户留存比功能差异化更重要，历史压缩是其他功能的基础",
+      "decidedBy": "user",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-001", "msg-012", "msg-018"]
+    },
+    {
+      "id": "decision-002",
+      "statement": "压缩必须保留决策、行动项、未解决问题",
+      "rationale": "可以牺牲细节，但不能牺牲结论",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-015", "msg-019"]
+    },
+    {
+      "id": "decision-003",
+      "statement": "联网搜索作为 Phase 2 优先级",
+      "rationale": "历史压缩更紧迫",
+      "decidedBy": "user",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-018"]
+    }
+  ],
+  "actionItems": [
+    {
+      "id": "action-001",
+      "text": "建立 golden transcript 来验证压缩质量",
+      "owner": "Product Strategist",
+      "status": "open",
+      "sourceMessageIds": ["msg-016"]
+    },
+    {
+      "id": "action-002",
+      "text": "压缩结果必须可审计，保留原始 transcript 引用",
+      "owner": "Skeptic Critic",
+      "status": "open",
+      "sourceMessageIds": ["msg-017"]
+    },
+    {
+      "id": "action-003",
+      "text": "用户测试会验证压缩后的信息保留率",
+      "owner": "UX Researcher",
+      "status": "open",
+      "sourceMessageIds": ["msg-020"]
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "question-001",
+      "question": "如何确保压缩算法保留决策和行动项？",
+      "blocking": true,
+      "sourceMessageIds": ["msg-014"]
+    }
+  ],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "70% 的用户在长会话后抱怨忘记了之前讨论了什么",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-008"]
+    },
+    {
+      "id": "insight-002",
+      "insight": "历史压缩是其他功能的基础",
+      "confidence": "medium",
+      "sourceMessageIds": ["msg-006"]
+    }
+  ],
+  "roleStances": [
+    {
+      "roleId": "product-strategist",
+      "roleName": "Product Strategist",
+      "stance": "支持历史压缩优先",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-006", "msg-012", "msg-016"]
+    },
+    {
+      "roleId": "skeptic-critic",
+      "roleName": "Skeptic Critic",
+      "stance": "初始反对，最终接受",
+      "confidence": "medium",
+      "unresolvedConcerns": ["压缩质量担忧"],
+      "sourceMessageIds": ["msg-007", "msg-014", "msg-017"]
+    },
+    {
+      "roleId": "ux-researcher",
+      "roleName": "UX Researcher",
+      "stance": "支持历史压缩优先",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-008", "msg-015", "msg-020"]
+    }
+  ],
+  "evidenceRefs": [
+    {
+      "id": "evidence-001",
+      "source": "用户测试数据",
+      "claim": "70% 的用户在长会话后抱怨上下文丢失",
+      "credibility": "high"
+    }
+  ],
+  "rawTranscriptRefs": [
+    "session-001-product-decision.md"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "testId": "consolidate-003",
+  "description": "验证 contradict 操作",
+  "action": "contradict",
+  "affectedMemoryIds": ["mem-a-001"],
+  "memoryStatus": "contradicted",
+  "auditEventCount": 2,
+  "dryRun": false
+}

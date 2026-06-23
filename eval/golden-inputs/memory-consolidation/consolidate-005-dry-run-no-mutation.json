@@ -1,0 +1,35 @@
+{
+  "testId": "consolidate-005",
+  "description": "验证 dryRun 不修改数据",
+  "seedMemories": [
+    {
+      "id": "mem-dry-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "旧决策",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.9,
+      "status": "accepted",
+      "tags": [],
+      "createdAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "mem-dry-002",
+      "scope": "project",
+      "type": "decision",
+      "content": "新决策",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-002"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": [],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    }
+  ],
+  "input": {
+    "oldId": "mem-dry-001",
+    "newId": "mem-dry-002",
+    "reason": "测试 dryRun",
+    "actor": "user",
+    "dryRun": true
+  }
+}

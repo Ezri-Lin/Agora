@@ -1,0 +1,21 @@
+{
+  "testId": "tool-004",
+  "description": "验证文件写入需要审批",
+  "tool": {
+    "manifest": {
+      "name": "file_writer",
+      "description": "Write to local files",
+      "riskLevel": "low",
+      "sideEffects": ["write_local_file"],
+      "requiresApproval": true,
+      "inputSchema": { "type": "object", "properties": { "path": { "type": "string" }, "content": { "type": "string" } } }
+    },
+    "executor": "async (args) => ({ written: true })"
+  },
+  "invocation": {
+    "toolName": "file_writer",
+    "args": { "path": "/tmp/test.txt", "content": "Hello" },
+    "reason": "User wants to save file",
+    "requestedBy": { "type": "assistant" }
+  }
+}

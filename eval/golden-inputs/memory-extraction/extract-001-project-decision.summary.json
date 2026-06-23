@@ -1,0 +1,20 @@
+{
+  "sessionId": "test-session-001",
+  "compressedAt": "2026-06-24T00:00:00.000Z",
+  "summaryText": "团队讨论了技术栈选择，最终决定使用 TypeScript。",
+  "decisions": [
+    {
+      "id": "decision-001",
+      "statement": "使用 TypeScript 作为主要开发语言",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-020", "msg-025"]
+    }
+  ],
+  "actionItems": [],
+  "openQuestions": [],
+  "keyInsights": [],
+  "roleStances": [],
+  "evidenceRefs": [],
+  "rawTranscriptRefs": ["test-session-001.md"]
+}

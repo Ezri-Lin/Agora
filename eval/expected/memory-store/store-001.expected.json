@@ -1,0 +1,8 @@
+{
+  "testId": "store-001",
+  "description": "验证追加候选记忆",
+  "passed": true,
+  "candidatePersisted": true,
+  "auditEventCreated": true,
+  "auditEventType": "candidate_created"
+}

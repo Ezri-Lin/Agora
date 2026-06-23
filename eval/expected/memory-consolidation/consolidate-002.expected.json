@@ -1,0 +1,9 @@
+{
+  "testId": "consolidate-002",
+  "description": "验证 expire 操作",
+  "action": "expire",
+  "affectedMemoryIds": ["mem-expire-001"],
+  "memoryStatus": "expired",
+  "auditEventCount": 2,
+  "dryRun": false
+}

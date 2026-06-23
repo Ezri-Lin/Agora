@@ -1,0 +1,8 @@
+{
+  "testId": "retrieve-004",
+  "description": "验证默认排除终态记忆",
+  "returnedCount": 1,
+  "returnedIds": ["mem-001"],
+  "excludedStatuses": ["rejected", "expired", "superseded"],
+  "budgetApplied": false
+}

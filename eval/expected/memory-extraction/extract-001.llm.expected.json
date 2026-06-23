@@ -1,0 +1,18 @@
+{
+  "testId": "extract-001",
+  "candidates": [
+    {
+      "type": "decision",
+      "scope": "project",
+      "content": "使用 TypeScript 作为主要开发语言",
+      "confidence": 0.9,
+      "status": "accepted",
+      "source": {
+        "sessionId": "test-session-001",
+        "messageIds": ["msg-020", "msg-025"]
+      }
+    }
+  ],
+  "rejected": [],
+  "extractionPassed": true
+}

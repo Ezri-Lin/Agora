@@ -1,0 +1,42 @@
+{
+  "testId": "retrieve-002",
+  "description": "验证状态过滤",
+  "seedMemories": [
+    {
+      "id": "mem-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "使用 TypeScript",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": ["typescript"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-002",
+      "scope": "project",
+      "type": "insight",
+      "content": "测试覆盖率很重要",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-002"] },
+      "confidence": 0.8,
+      "status": "candidate",
+      "tags": ["testing"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    },
+    {
+      "id": "mem-003",
+      "scope": "project",
+      "type": "constraint",
+      "content": "文件不超过 200 行",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-003"] },
+      "confidence": 0.9,
+      "status": "rejected",
+      "tags": ["style"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    }
+  ],
+  "query": {
+    "status": ["accepted"]
+  }
+}

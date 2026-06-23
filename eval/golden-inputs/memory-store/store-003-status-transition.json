@@ -1,0 +1,25 @@
+{
+  "testId": "store-003",
+  "description": "验证状态转换 (candidate → accepted)",
+  "candidate": {
+    "id": "mem-test-003",
+    "scope": "project",
+    "type": "decision",
+    "content": "使用 React 作为前端框架",
+    "source": {
+      "sessionId": "test-session-003",
+      "messageIds": ["msg-030"]
+    },
+    "confidence": 0.95,
+    "status": "candidate",
+    "tags": ["react", "frontend"],
+    "createdAt": "2026-06-24T00:00:00.000Z"
+  },
+  "statusUpdate": {
+    "id": "mem-test-003",
+    "status": "accepted",
+    "reason": "High confidence decision with project scope",
+    "decidedBy": "policy",
+    "decidedAt": "2026-06-24T00:01:00.000Z"
+  }
+}

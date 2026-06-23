@@ -1,0 +1,6 @@
+{
+  "testId": "retrieve-005",
+  "description": "验证预算限制",
+  "returnedCount": 3,
+  "budgetApplied": true
+}

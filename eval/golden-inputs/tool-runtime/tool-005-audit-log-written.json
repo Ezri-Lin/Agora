@@ -1,0 +1,21 @@
+{
+  "testId": "tool-005",
+  "description": "验证审计日志被写入",
+  "tool": {
+    "manifest": {
+      "name": "data_reader",
+      "description": "Read data",
+      "riskLevel": "read_only",
+      "sideEffects": ["read_local_file"],
+      "requiresApproval": false,
+      "inputSchema": { "type": "object", "properties": { "path": { "type": "string" } } }
+    },
+    "executor": "async (args) => ({ data: 'some data' })"
+  },
+  "invocation": {
+    "toolName": "data_reader",
+    "args": { "path": "/tmp/data.json" },
+    "reason": "User wants to read data",
+    "requestedBy": { "type": "assistant" }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "testId": "store-004",
+  "description": "验证审计日志记录所有操作",
+  "candidate": {
+    "id": "mem-test-004",
+    "scope": "project",
+    "type": "insight",
+    "content": "记忆系统可以减少重复问题",
+    "source": {
+      "sessionId": "test-session-004",
+      "messageIds": ["msg-040"]
+    },
+    "confidence": 0.8,
+    "status": "candidate",
+    "tags": ["memory", "insight"],
+    "createdAt": "2026-06-24T00:00:00.000Z"
+  },
+  "statusUpdate": {
+    "id": "mem-test-004",
+    "status": "rejected",
+    "reason": "Low confidence insight without evidence",
+    "decidedBy": "policy",
+    "decidedAt": "2026-06-24T00:01:00.000Z"
+  }
+}

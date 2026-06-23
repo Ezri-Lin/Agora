@@ -1,0 +1,8 @@
+{
+  "testId": "evidence-005",
+  "description": "验证通过 Tool Runtime 的审计日志",
+  "input": {
+    "query": "Context Substrate",
+    "limit": 3
+  }
+}

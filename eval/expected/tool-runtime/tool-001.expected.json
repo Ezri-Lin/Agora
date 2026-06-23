@@ -1,0 +1,8 @@
+{
+  "testId": "tool-001",
+  "description": "验证 read-only 网络工具被允许",
+  "status": "executed",
+  "output": { "results": ["result1", "result2"] },
+  "auditEventCount": 2,
+  "auditStatuses": ["planned", "executed"]
+}

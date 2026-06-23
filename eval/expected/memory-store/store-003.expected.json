@@ -1,0 +1,10 @@
+{
+  "testId": "store-003",
+  "description": "验证状态转换 (candidate → accepted)",
+  "passed": true,
+  "candidatePersisted": true,
+  "statusTransitionRecorded": true,
+  "acceptedRecordCreated": true,
+  "auditEventCreated": true,
+  "auditEventType": "memory_accepted"
+}

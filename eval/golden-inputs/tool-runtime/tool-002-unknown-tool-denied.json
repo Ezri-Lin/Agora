@@ -1,0 +1,11 @@
+{
+  "testId": "tool-002",
+  "description": "验证未知工具被拒绝",
+  "tool": null,
+  "invocation": {
+    "toolName": "unknown_tool",
+    "args": {},
+    "reason": "Trying to use unknown tool",
+    "requestedBy": { "type": "assistant" }
+  }
+}

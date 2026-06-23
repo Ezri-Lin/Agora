@@ -1,0 +1,17 @@
+{
+  "testId": "runtime-001-auto-token-threshold",
+  "compressed": true,
+  "requestedBy": {
+    "type": "system",
+    "reason": "token_budget"
+  },
+  "executedBy": {
+    "type": "moderator",
+    "roleId": "moderator"
+  },
+  "triggerReason": "token_budget",
+  "tokenRatio": 0.85,
+  "retainedRecentMessageCount": 8,
+  "latestUserMessageRetained": true,
+  "latestUserMessageOccurrences": 1
+}

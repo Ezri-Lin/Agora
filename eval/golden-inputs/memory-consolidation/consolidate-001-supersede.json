@@ -1,0 +1,34 @@
+{
+  "testId": "consolidate-001",
+  "description": "验证 supersede 操作",
+  "seedMemories": [
+    {
+      "id": "mem-old-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "使用 React 作为前端框架",
+      "source": { "sessionId": "session-001", "messageIds": ["msg-001"] },
+      "confidence": 0.9,
+      "status": "accepted",
+      "tags": ["react", "frontend"],
+      "createdAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "mem-new-001",
+      "scope": "project",
+      "type": "decision",
+      "content": "使用 Vue 作为前端框架",
+      "source": { "sessionId": "session-002", "messageIds": ["msg-002"] },
+      "confidence": 0.95,
+      "status": "accepted",
+      "tags": ["vue", "frontend"],
+      "createdAt": "2026-06-24T00:00:00.000Z"
+    }
+  ],
+  "input": {
+    "oldId": "mem-old-001",
+    "newId": "mem-new-001",
+    "reason": "项目决定从 React 迁移到 Vue",
+    "actor": "user"
+  }
+}

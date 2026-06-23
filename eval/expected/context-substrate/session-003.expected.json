@@ -1,0 +1,152 @@
+{
+  "sessionId": "session-003-premortem",
+  "compressedAt": "2026-06-23T00:00:00.000Z",
+  "summaryText": "失败预演讨论 Context Substrate 可能失败的原因。识别 6 个风险：压缩质量差、性能问题、成本过高、用户不接受、schema 过度设计、边界情况。制定缓解策略：建立 golden transcript eval、提供透明度、异步压缩、成本控制、最简 schema、配置优化。",
+  "decisions": [
+    {
+      "id": "decision-001",
+      "statement": "提供压缩透明度，显示保留了什么",
+      "rationale": "透明度是用户信任的关键",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-015", "msg-020"]
+    },
+    {
+      "id": "decision-002",
+      "statement": "提供回滚选项",
+      "rationale": "用户不信任压缩结果时可以回滚",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-016", "msg-021"]
+    },
+    {
+      "id": "decision-003",
+      "statement": "设置压缩频率上限",
+      "rationale": "控制 LLM 调用成本",
+      "decidedBy": "Risk Analyst",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-012"]
+    },
+    {
+      "id": "decision-004",
+      "statement": "v1 使用最简 schema",
+      "rationale": "避免过度设计",
+      "decidedBy": "council",
+      "status": "accepted",
+      "sourceMessageIds": ["msg-018", "msg-022"]
+    }
+  ],
+  "actionItems": [
+    {
+      "id": "action-001",
+      "text": "建立 golden transcript eval 验证压缩质量",
+      "owner": "Risk Analyst",
+      "status": "open",
+      "sourceMessageIds": ["msg-015"]
+    },
+    {
+      "id": "action-002",
+      "text": "提供查看原始 transcript 选项",
+      "owner": "Skeptic Critic",
+      "status": "open",
+      "sourceMessageIds": ["msg-017"]
+    },
+    {
+      "id": "action-003",
+      "text": "异步压缩，不阻塞用户输入",
+      "owner": "Implementation Reviewer",
+      "status": "open",
+      "sourceMessageIds": ["msg-016"]
+    },
+    {
+      "id": "action-004",
+      "text": "监控 LLM 调用成本",
+      "owner": "Risk Analyst",
+      "status": "open",
+      "sourceMessageIds": ["msg-012"]
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "question-001",
+      "question": "使用哪个模型做压缩？便宜模型还是高质量模型？",
+      "blocking": true,
+      "sourceMessageIds": ["msg-013"]
+    },
+    {
+      "id": "question-002",
+      "question": "压缩频率上限设置为多少？",
+      "blocking": false,
+      "sourceMessageIds": ["msg-012"]
+    }
+  ],
+  "keyInsights": [
+    {
+      "id": "insight-001",
+      "insight": "透明度是用户信任的关键",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-020", "msg-023"]
+    },
+    {
+      "id": "insight-002",
+      "insight": "频繁压缩会增加 LLM 调用成本",
+      "confidence": "medium",
+      "sourceMessageIds": ["msg-012"]
+    },
+    {
+      "id": "insight-003",
+      "insight": "类似功能失败的原因多是质量差或用户不接受",
+      "confidence": "high",
+      "sourceMessageIds": ["msg-008", "msg-011"]
+    }
+  ],
+  "roleStances": [
+    {
+      "roleId": "risk-analyst",
+      "roleName": "Risk Analyst",
+      "stance": "积极分析风险，提供缓解策略",
+      "confidence": "high",
+      "unresolvedConcerns": ["压缩模型选择"],
+      "sourceMessageIds": ["msg-005", "msg-009", "msg-012", "msg-015"]
+    },
+    {
+      "roleId": "skeptic-critic",
+      "roleName": "Skeptic Critic",
+      "stance": "强调透明度和可审计性",
+      "confidence": "high",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-006", "msg-010", "msg-017", "msg-023"]
+    },
+    {
+      "roleId": "historian",
+      "roleName": "Historian",
+      "stance": "引用历史案例，支持缓解策略",
+      "confidence": "medium",
+      "unresolvedConcerns": [],
+      "sourceMessageIds": ["msg-008", "msg-011", "msg-023"]
+    }
+  ],
+  "evidenceRefs": [
+    {
+      "id": "evidence-001",
+      "source": "Google Wave 案例",
+      "claim": "功能太多，用户不理解导致失败",
+      "credibility": "high"
+    },
+    {
+      "id": "evidence-002",
+      "source": "Slack Threads 案例",
+      "claim": "用户不习惯线程化讨论",
+      "credibility": "high"
+    },
+    {
+      "id": "evidence-003",
+      "source": "Notion AI 案例",
+      "claim": "压缩质量差，用户抱怨丢失信息",
+      "credibility": "high"
+    }
+  ],
+  "rawTranscriptRefs": [
+    "session-003-premortem.md"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "testId": "evidence-003",
+  "description": "验证空结果路径",
+  "input": {
+    "query": "xyznonexistentquery12345",
+    "limit": 5
+  },
+  "mockProvider": {
+    "name": "empty_mock",
+    "results": []
+  }
+}

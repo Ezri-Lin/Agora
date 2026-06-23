@@ -1,0 +1,19 @@
+{
+  "testId": "extract-003",
+  "candidates": [
+    {
+      "type": "insight",
+      "scope": "global",
+      "content": "根据 Anthropic 研究，记忆系统可以减少 60% 的重复问题",
+      "confidence": 0.9,
+      "status": "candidate",
+      "source": {
+        "sessionId": "test-session-003",
+        "messageIds": ["msg-030"],
+        "evidenceRefs": ["https://anthropic.com/research/memory"]
+      }
+    }
+  ],
+  "rejected": [],
+  "extractionPassed": true
+}

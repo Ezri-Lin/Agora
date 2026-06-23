@@ -1,0 +1,8 @@
+{
+  "testId": "runtime-005-compressor-failure-fallback",
+  "compressed": false,
+  "fallbackUsed": true,
+  "conversationContinues": true,
+  "contextMutated": false,
+  "reason": "Compression failed: Mock compressor failure"
+}

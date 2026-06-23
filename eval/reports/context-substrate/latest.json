@@ -1,0 +1,124 @@
+{
+  "timestamp": "2026-06-23T18:09:49.098Z",
+  "passed": true,
+  "aggregate": {
+    "avgDecisionRetention": 1,
+    "avgActionItemRetention": 1,
+    "avgOpenQuestionRetention": 1,
+    "avgRoleStanceConsistency": 1,
+    "avgTokenReduction": 0.9478584729981379,
+    "avgReferenceCoverage": 1,
+    "totalCases": 6,
+    "passedCases": 6,
+    "failedCases": 0
+  },
+  "cases": [
+    {
+      "id": "session-001-product-decision",
+      "contractPassed": true,
+      "compressionPassed": true,
+      "passed": true,
+      "metrics": {
+        "compressionDecisionRetentionRate": 1,
+        "actionItemRetentionRate": 1,
+        "openQuestionRetentionRate": 1,
+        "roleStanceConsistencyScore": 1,
+        "summaryTokenReductionRatio": 0.8138801261829653,
+        "rawTranscriptReferenceCoverage": 1,
+        "tokenReductionApplicable": false,
+        "tokenReductionReason": "Transcript below 800-token compression gate"
+      },
+      "failures": [],
+      "tokenReductionApplicable": false
+    },
+    {
+      "id": "session-002-architecture-review",
+      "contractPassed": true,
+      "compressionPassed": true,
+      "passed": true,
+      "metrics": {
+        "compressionDecisionRetentionRate": 1,
+        "actionItemRetentionRate": 1,
+        "openQuestionRetentionRate": 1,
+        "roleStanceConsistencyScore": 1,
+        "summaryTokenReductionRatio": 0.8652173913043478,
+        "rawTranscriptReferenceCoverage": 1,
+        "tokenReductionApplicable": false,
+        "tokenReductionReason": "Transcript below 800-token compression gate"
+      },
+      "failures": [],
+      "tokenReductionApplicable": false
+    },
+    {
+      "id": "session-003-premortem",
+      "contractPassed": true,
+      "compressionPassed": true,
+      "passed": true,
+      "metrics": {
+        "compressionDecisionRetentionRate": 1,
+        "actionItemRetentionRate": 1,
+        "openQuestionRetentionRate": 1,
+        "roleStanceConsistencyScore": 1,
+        "summaryTokenReductionRatio": 0.8593406593406594,
+        "rawTranscriptReferenceCoverage": 1,
+        "tokenReductionApplicable": false,
+        "tokenReductionReason": "Transcript below 800-token compression gate"
+      },
+      "failures": [],
+      "tokenReductionApplicable": false
+    },
+    {
+      "id": "session-004-evidence-grounded-discussion",
+      "contractPassed": true,
+      "compressionPassed": true,
+      "passed": true,
+      "metrics": {
+        "compressionDecisionRetentionRate": 1,
+        "actionItemRetentionRate": 1,
+        "openQuestionRetentionRate": 1,
+        "roleStanceConsistencyScore": 1,
+        "summaryTokenReductionRatio": 0.960167714884696,
+        "rawTranscriptReferenceCoverage": 1,
+        "tokenReductionApplicable": false,
+        "tokenReductionReason": "Transcript below 800-token compression gate"
+      },
+      "failures": [],
+      "tokenReductionApplicable": false
+    },
+    {
+      "id": "session-005-role-conflict-resolution",
+      "contractPassed": true,
+      "compressionPassed": true,
+      "passed": true,
+      "metrics": {
+        "compressionDecisionRetentionRate": 1,
+        "actionItemRetentionRate": 1,
+        "openQuestionRetentionRate": 1,
+        "roleStanceConsistencyScore": 1,
+        "summaryTokenReductionRatio": 0.8801431127012522,
+        "rawTranscriptReferenceCoverage": 1,
+        "tokenReductionApplicable": false,
+        "tokenReductionReason": "Transcript below 800-token compression gate"
+      },
+      "failures": [],
+      "tokenReductionApplicable": false
+    },
+    {
+      "id": "session-006-long-council-session",
+      "contractPassed": true,
+      "compressionPassed": true,
+      "passed": true,
+      "metrics": {
+        "compressionDecisionRetentionRate": 1,
+        "actionItemRetentionRate": 1,
+        "openQuestionRetentionRate": 1,
+        "roleStanceConsistencyScore": 1,
+        "summaryTokenReductionRatio": 0.9478584729981379,
+        "rawTranscriptReferenceCoverage": 1,
+        "tokenReductionApplicable": true
+      },
+      "failures": [],
+      "tokenReductionApplicable": true
+    }
+  ]
+}
