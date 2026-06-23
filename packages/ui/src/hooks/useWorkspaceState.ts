@@ -69,6 +69,27 @@ export function useWorkspaceState(
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Listen for file changes and refresh docs
+  useEffect(() => {
+    const bridge = getBridge();
+    if (!bridge || !workspace) return;
+
+    const unsubscribe = bridge.workspace.onDocsChanged(async (data) => {
+      console.log("[useWorkspaceState] Docs changed, refreshing...");
+      try {
+        const docs = await bridge.workspace.listDocs(workspace.path);
+        console.log("[useWorkspaceState] Refreshed docs:", docs.length);
+        setAvailableDocs(docs);
+      } catch (err) {
+        console.error("[useWorkspaceState] Failed to refresh docs:", err);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [workspace]);
+
   const openWorkspace = useCallback(async () => {
     const bridge = getBridge();
     if (!bridge) return;

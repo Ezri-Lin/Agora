@@ -70,6 +70,7 @@ export interface AgoraBridge {
     readDoc(workspaceRoot: string, filePath: string): Promise<string | null>;
     getRecent(): Promise<RecentWorkspace[]>;
     removeRecent(path: string): Promise<void>;
+    onDocsChanged(callback: (data: { path: string }) => void): () => void;
   };
   room: {
     list(workspaceRoot: string): Promise<Array<{ id: string; title: string; createdAt: string }>>;

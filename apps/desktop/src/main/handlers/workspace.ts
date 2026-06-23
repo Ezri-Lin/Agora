@@ -1,6 +1,7 @@
 import { ipcMain, dialog, BrowserWindow } from "electron";
 import { join, extname, basename, resolve } from "node:path";
 import { mkdir, writeFile, readFile, readdir, access } from "node:fs/promises";
+import { watch, type FSWatcher } from "node:fs";
 import { assertInWorkspace, assertAllowedFileType, isAllowedExtension } from "./safety.js";
 import { auditLog } from "./audit.js";
 import { assertSenderIsMain } from "./sender.js";
@@ -68,6 +69,54 @@ async function recordWorkspace(path: string, name: string): Promise<void> {
   await writeRecent(filtered.slice(0, 10));
 }
 
+// --- File Watcher ---
+
+let currentWatcher: FSWatcher | null = null;
+let watchedWorkspacePath: string | null = null;
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function startWatching(workspacePath: string, getMainWindow: () => BrowserWindow | null): void {
+  // Stop existing watcher
+  stopWatching();
+
+  try {
+    currentWatcher = watch(workspacePath, { recursive: true }, (eventType, filename) => {
+      if (!filename) return;
+
+      // Ignore hidden files and .agora directory
+      if (filename.startsWith(".") || filename.startsWith(".agora")) return;
+
+      // Debounce: wait 300ms after last change
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const win = getMainWindow();
+        if (win && !win.isDestroyed()) {
+          win.webContents.send("workspace:docsChanged", { path: workspacePath });
+        }
+        auditLog("workspace:docsChanged", { path: workspacePath, filename });
+      }, 300);
+    });
+
+    watchedWorkspacePath = workspacePath;
+    console.log("[workspace] Started watching:", workspacePath);
+  } catch (err) {
+    console.error("[workspace] Failed to start watcher:", err);
+  }
+}
+
+function stopWatching(): void {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  if (currentWatcher) {
+    currentWatcher.close();
+    currentWatcher = null;
+    watchedWorkspacePath = null;
+    console.log("[workspace] Stopped watching");
+  }
+}
+
 // --- Register ---
 
 export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | null): void {
@@ -102,6 +151,10 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
     }
     auditLog("workspace:init", { target: resolved });
     await recordWorkspace(resolved, basename(resolved));
+
+    // Start file watcher
+    startWatching(resolved, getMainWindow);
+
     return { path: resolved, name: basename(resolved) };
   });
 

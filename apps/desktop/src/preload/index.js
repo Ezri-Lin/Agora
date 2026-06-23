@@ -13,6 +13,11 @@ contextBridge.exposeInMainWorld("agora", {
     readDoc: (workspaceRoot, filePath) => ipcRenderer.invoke("workspace:readDoc", workspaceRoot, filePath),
     getRecent: () => ipcRenderer.invoke("workspace:getRecent"),
     removeRecent: (path) => ipcRenderer.invoke("workspace:removeRecent", path),
+    onDocsChanged: (callback) => {
+      const handler = (_e, data) => callback(data);
+      ipcRenderer.on("workspace:docsChanged", handler);
+      return () => ipcRenderer.removeListener("workspace:docsChanged", handler);
+    },
   },
 
   // Room Store
