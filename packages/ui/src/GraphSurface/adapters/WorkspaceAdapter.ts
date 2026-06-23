@@ -18,6 +18,8 @@ interface ParsedDoc {
   name: string;
   wikilinks: string[];
   tags: string[];
+  aliases?: string[];
+  markdownLinks?: string[];
 }
 
 interface GraphColors {
@@ -131,8 +133,28 @@ export function buildCitationCoreGraph(
   // Index by normalized name for wikilink resolution
   const nameToPath = new Map<string, string>();
   for (const doc of docs) {
+    // Full normalized name (extension-stripped + lowercase)
     nameToPath.set(normalize(doc.name), doc.path);
+    // Lowercase with extension
     nameToPath.set(doc.name.toLowerCase(), doc.path);
+    // Basename (last path segment without extension)
+    const basename = doc.path.split("/").pop() ?? doc.name;
+    nameToPath.set(normalize(basename), doc.path);
+    // Path without extension (for folder/note links)
+    const pathNoExt = doc.path.replace(/\.[^.]+$/, "").toLowerCase();
+    nameToPath.set(pathNoExt, doc.path);
+  }
+
+  // Index aliases from frontmatter
+  for (const p of parsed) {
+    if (p.aliases) {
+      for (const alias of p.aliases) {
+        const normalized = alias.toLowerCase().trim();
+        if (normalized && !nameToPath.has(normalized)) {
+          nameToPath.set(normalized, p.path);
+        }
+      }
+    }
   }
 
   // Document nodes

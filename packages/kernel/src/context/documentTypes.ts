@@ -14,6 +14,7 @@ export interface DocumentMap {
   links: string[];
   wikilinks: string[];
   tags: string[];
+  aliases: string[];
   frontmatter?: Record<string, unknown>;
   lastModified?: string;
   contentHash: string;

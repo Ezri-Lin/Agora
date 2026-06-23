@@ -97,6 +97,31 @@ function extractWikilinks(content: string): string[] {
   return [...new Set(wikilinks)];
 }
 
+/** Extract aliases from frontmatter. */
+function extractAliases(frontmatter?: Record<string, unknown>): string[] {
+  if (!frontmatter) return [];
+
+  const aliases: string[] = [];
+
+  // aliases: [Foo, Bar]
+  const fmAliases = frontmatter.aliases;
+  if (typeof fmAliases === "string") {
+    aliases.push(...fmAliases.split(",").map((t) => t.trim()));
+  } else if (Array.isArray(fmAliases)) {
+    aliases.push(...fmAliases.map(String));
+  }
+
+  // alias: Baz (singular form)
+  const fmAlias = frontmatter.alias;
+  if (typeof fmAlias === "string") {
+    aliases.push(...fmAlias.split(",").map((t) => t.trim()));
+  } else if (Array.isArray(fmAlias)) {
+    aliases.push(...fmAlias.map(String));
+  }
+
+  return [...new Set(aliases.filter(Boolean))];
+}
+
 /** Extract tags: #tag or frontmatter tags. */
 function extractTags(content: string, frontmatter?: Record<string, unknown>): string[] {
   const tags: string[] = [];
@@ -314,6 +339,7 @@ export function parseDocument(input: ParseDocumentInput): ParseDocumentOutput {
   const links = kind === "markdown" ? extractLinks(body) : [];
   const wikilinks = kind === "markdown" ? extractWikilinks(body) : [];
   const tags = extractTags(body, frontmatter);
+  const aliases = extractAliases(frontmatter);
 
   const document: DocumentMap = {
     docId,
@@ -324,6 +350,7 @@ export function parseDocument(input: ParseDocumentInput): ParseDocumentOutput {
     links,
     wikilinks,
     tags,
+    aliases,
     frontmatter,
     contentHash,
   };
