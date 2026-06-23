@@ -93,7 +93,7 @@ function startWatching(workspacePath: string, getMainWindow: () => BrowserWindow
         if (win && !win.isDestroyed()) {
           win.webContents.send("workspace:docsChanged", { path: workspacePath });
         }
-        auditLog("workspace:docsChanged", { path: workspacePath, filename });
+        auditLog("workspace:docsChanged", { target: workspacePath, detail: filename });
       }, 300);
     });
 
