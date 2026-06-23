@@ -157,6 +157,27 @@ export function buildCitationCoreGraph(
     }
   }
 
+  // Resolve wikilink target with multiple strategies
+  function resolveWikilink(target: string): string | undefined {
+    const lower = target.toLowerCase();
+    // 1. Exact normalized match
+    const exact = nameToPath.get(lower);
+    if (exact) return exact;
+    // 2. Try without path separators (basename only)
+    const basename = target.split("/").pop() ?? target;
+    const basenameLower = basename.toLowerCase();
+    const basenameMatch = nameToPath.get(basenameLower);
+    if (basenameMatch) return basenameMatch;
+    // 3. Try with .md extension
+    const withExt = nameToPath.get(lower + ".md");
+    if (withExt) return withExt;
+    // 4. Try normalized (strip extension)
+    const normalized = normalize(target);
+    const normalizedMatch = nameToPath.get(normalized);
+    if (normalizedMatch) return normalizedMatch;
+    return undefined;
+  }
+
   // Document nodes
   for (const doc of docs) {
     nodes.push({
@@ -198,7 +219,7 @@ export function buildCitationCoreGraph(
   for (const p of parsed) {
     const srcId = `doc:${p.path}`;
     for (const target of p.wikilinks) {
-      const targetPath = nameToPath.get(target.toLowerCase());
+      const targetPath = resolveWikilink(target);
       if (targetPath) {
         const tgtId = `doc:${targetPath}`;
         edges.push({ id: `e:${srcId}:${tgtId}`, source: srcId, target: tgtId, size: 0.6, color: c.border });
