@@ -117,15 +117,14 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
 
     if (!stage || !runtime || !graph || !nodeLayer || !edgeLayer || !labelLayer) return;
 
-    // DEBUG: confirm render runs
-    if (!(window as any).__gr) { (window as any).__gr = 0; console.log("[GS] render running, ticker:", stage.app.ticker.started); }
-    (window as any).__gr++;
-
     camera.tick();
 
     const vw = stage.app.screen.width;
     const vh = stage.app.screen.height;
     const cam = camera.current;
+
+    // Expose camera zoom for audit panel
+    (window as any).__cameraZoom = cam.scale;
     const positions = runtime.getPositions();
 
     // Deferred fitBounds — wait for d3-force to spread nodes

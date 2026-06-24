@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { GraphAuditSnapshot } from "../GraphSurface/model/graphAudit.js";
 import { OBSIDIAN_PROFILE } from "../GraphSurface/layout/layoutProfile.js";
 
@@ -9,10 +9,29 @@ interface GraphAuditPanelProps {
 export const GraphAuditPanel: React.FC<GraphAuditPanelProps> = ({ snapshot }) => {
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+
+  // Poll zoom scale from window.__cameraZoom
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const z = (window as any).__cameraZoom;
+      if (typeof z === "number") setZoomScale(z);
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
 
   if (!snapshot) return null;
 
   const { nodes, edges, parser } = snapshot;
+
+  // Calculate screen-space node sizes at current zoom
+  const docMinScreen = 3.8 * zoomScale;
+  const docMaxScreen = 16 * zoomScale;
+  const tagMinScreen = 3.2 * zoomScale;
+  const tagMaxScreen = 12 * zoomScale;
+  const ghostMinScreen = 3.2 * zoomScale;
+  const ghostMaxScreen = 12 * zoomScale;
+  const edgeWidthScreen = 1.0 * zoomScale;
 
   const formatAudit = () => `Graph Audit Snapshot
 Nodes: ${nodes.total}
@@ -27,20 +46,24 @@ Wikilinks: ${parser.totalWikilinks} (resolved: ${parser.resolvedWikilinks})
 Tags: ${parser.totalTags}
 Markdown links: ${parser.totalMarkdownLinks}
 
-Visual Defaults
-Node sizing:
-  formula: sqrt(degree+1) * 3
-  doc max: 14px | tag max: 12px | ghost max: 12px
-Node colors:
-  document: #999999 | tag: #44cf6e | ghost: #ff6b6b
-Edge:
-  width: 0.8px | opacity: 0.38
+Zoom: ${zoomScale.toFixed(2)}x
+
+Screen-Space Sizes (at current zoom)
+  document: ${docMinScreen.toFixed(1)}-${docMaxScreen.toFixed(1)}px
+  tag: ${tagMinScreen.toFixed(1)}-${tagMaxScreen.toFixed(1)}px
+  ghost: ${ghostMinScreen.toFixed(1)}-${ghostMaxScreen.toFixed(1)}px
+  edge width: ${edgeWidthScreen.toFixed(2)}px
+
+Visual Defaults (world-space)
+  doc min: 3.8 | doc max: 16
+  tag min: 3.2 | tag max: 12
+  ghost min: 3.2 | ghost max: 12
+  edge width: 1.0 | edge opacity: 0.42
 Layout:
   linkDistance: ${OBSIDIAN_PROFILE.linkDistance}
   linkStrength: ${OBSIDIAN_PROFILE.linkStrength}
   manyBodyStrength: ${OBSIDIAN_PROFILE.manyBodyStrength}
   centerStrength: 0.16
-  collidePadding: ${OBSIDIAN_PROFILE.collidePadding}
 Labels:
   budget: 240 | fontSize: 11-12px`;
 
