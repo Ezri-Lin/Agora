@@ -12,7 +12,7 @@ import type { LayoutProfile } from "./layoutTypes.js";
 export const OBSIDIAN_PROFILE: LayoutProfile = {
   linkDistance: 250,
   linkStrength: 1.0,
-  manyBodyStrength: -120,
+  manyBodyStrength: -200,
   collidePadding: 4,
   velocityDecay: 0.42,
   alphaDecay: 1 - Math.pow(0.001, 1 / 300), // ≈ 0.023
