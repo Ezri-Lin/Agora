@@ -115,8 +115,8 @@ export class D3ForceRuntime implements ForceRuntime {
       .force("collide", forceCollide<SimNode>()
         .radius((d) => d.radius + collidePadding))
       .force("center", forceCenter(0, 0))
-      .force("x", forceX(0).strength(0.16))
-      .force("y", forceY(0).strength(0.16))
+      .force("x", forceX(0).strength(0.5))
+      .force("y", forceY(0).strength(0.5))
       .velocityDecay(velocityDecay)
       .alphaDecay(alphaDecay)
       .on("tick", () => {

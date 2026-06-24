@@ -54,7 +54,7 @@ function normalize(name: string): string {
 }
 
 function obsidianSize(degree: number, min: number, max: number): number {
-  return Math.max(min, Math.min(3 * Math.sqrt(degree + 1), max));
+  return Math.max(min, Math.min(4.2 * Math.sqrt(degree + 1), max));
 }
 
 /** Build fallback star graph (Phase 1: no file reading needed). */
