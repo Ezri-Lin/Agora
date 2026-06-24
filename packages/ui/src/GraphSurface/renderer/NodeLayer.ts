@@ -7,8 +7,10 @@ import { Container, Graphics } from "pixi.js";
 import type { CoreNode, ReadonlyVec2 } from "../model/coreTypes.js";
 import type { ResolvedGraphTheme } from "../theme/ThemeBridge.js";
 
-const HOVER_SCALE = 1.6;
-const GLOW_ALPHA = 0.15;
+const HOVER_SCALE = 1.7;
+const GLOW_ALPHA = 0.20;
+const GLOW_EXTRA_RADIUS = 8;
+const NEIGHBOR_SCALE = 1.08;
 const LERP_SPEED = 0.18;
 
 interface NodeView {
@@ -37,7 +39,7 @@ export class NodeLayer extends Container {
 
       const glow = new Graphics();
       glow.beginFill(0xffffff, GLOW_ALPHA);
-      glow.drawCircle(0, 0, node.size + 6);
+      glow.drawCircle(0, 0, node.size + GLOW_EXTRA_RADIUS);
       glow.endFill();
       glow.visible = false;
       glow.eventMode = "none";
@@ -103,13 +105,18 @@ export class NodeLayer extends Container {
         view.glow.visible = true;
         view.gfx.tint = theme.node.hoverTint;
       } else {
-        view.targetScale = 1;
         view.glow.visible = false;
         view.gfx.tint = view.baseColor;
 
         if (highlightedSet && !isHighlighted) {
+          view.targetScale = 1;
           view.targetAlpha = theme.node.mutedAlpha;
+        } else if (highlightedSet && isHighlighted) {
+          // Neighbor node
+          view.targetScale = NEIGHBOR_SCALE;
+          view.targetAlpha = 0.95;
         } else {
+          view.targetScale = 1;
           view.targetAlpha = 1;
         }
       }

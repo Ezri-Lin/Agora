@@ -80,13 +80,13 @@ export function resolveGraphTheme(palette: ColorPalette): ResolvedGraphTheme {
       defaultTint: hexToPixiTintBlended(graphTokens.nodeFill, 0.9),
       hoverTint: hexToPixiTintBlended(graphTokens.nodeSelectedRing, 0.9),
       selectedRingTint: hexToPixiTint(graphTokens.nodeSelectedRing),
-      mutedAlpha: dark ? 0.28 : 0.22,
+      mutedAlpha: 0.10,
     },
 
     edge: {
       defaultTint: hexToPixiTint(graphTokens.nodeStroke),
       defaultAlpha: dark ? 0.38 : 0.38,
-      highlightAlpha: dark ? 0.6 : 0.45,
+      highlightAlpha: 0.85,
     },
 
     label: {
