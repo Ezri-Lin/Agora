@@ -162,7 +162,7 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
     assertInWorkspace(workspacePath, workspacePath);
     const results: Array<{ path: string; name: string; ext: string }> = [];
     async function scan(dir: string, depth: number) {
-      if (depth > 3) return;
+      if (depth > 6) return;
       const entries = await readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.name.startsWith(".")) continue;
