@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { GraphAuditSnapshot } from "../GraphSurface/model/graphAudit.js";
+import { OBSIDIAN_PROFILE } from "../GraphSurface/layout/layoutProfile.js";
 
 interface GraphAuditPanelProps {
   snapshot: GraphAuditSnapshot | null;
@@ -24,7 +25,24 @@ Files scanned: ${parser.filesScanned}
 Files parsed: ${parser.filesParsed}
 Wikilinks: ${parser.totalWikilinks} (resolved: ${parser.resolvedWikilinks})
 Tags: ${parser.totalTags}
-Markdown links: ${parser.totalMarkdownLinks}`;
+Markdown links: ${parser.totalMarkdownLinks}
+
+Visual Defaults
+Node sizing:
+  formula: sqrt(degree+1) * 3
+  doc max: 14px | tag max: 12px | ghost max: 12px
+Node colors:
+  document: #999999 | tag: #44cf6e | ghost: #ff6b6b
+Edge:
+  width: 0.8px | opacity: 0.38
+Layout:
+  linkDistance: ${OBSIDIAN_PROFILE.linkDistance}
+  linkStrength: ${OBSIDIAN_PROFILE.linkStrength}
+  manyBodyStrength: ${OBSIDIAN_PROFILE.manyBodyStrength}
+  centerStrength: 0.16
+  collidePadding: ${OBSIDIAN_PROFILE.collidePadding}
+Labels:
+  budget: 240 | fontSize: 11-12px`;
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
