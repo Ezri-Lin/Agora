@@ -216,6 +216,7 @@ export function buildCitationCoreGraph(
   }
 
   // Wikilink edges + ghost nodes
+  const unresolvedTargets: string[] = [];
   for (const p of parsed) {
     const srcId = `doc:${p.path}`;
     for (const target of p.wikilinks) {
@@ -224,6 +225,7 @@ export function buildCitationCoreGraph(
         const tgtId = `doc:${targetPath}`;
         edges.push({ id: `e:${srcId}:${tgtId}`, source: srcId, target: tgtId, size: 0.6, color: c.border });
       } else {
+        unresolvedTargets.push(target);
         const ghostId = `ghost:${target}`;
         if (!nodes.some((n) => n.id === ghostId)) {
           nodes.push({
@@ -238,6 +240,14 @@ export function buildCitationCoreGraph(
         edges.push({ id: `e:${srcId}:${ghostId}`, source: srcId, target: ghostId, size: 0.3, color: c.border });
       }
     }
+  }
+
+  // Debug: log unresolved wikilink targets and sample nameToPath keys
+  if (unresolvedTargets.length > 0) {
+    const sampleKeys = Array.from(nameToPath.keys()).slice(0, 20);
+    console.log(`[GraphAudit] Unresolved wikilinks: ${unresolvedTargets.length}/${unresolvedTargets.length + edges.filter(e => e.size === 0.6).length}`);
+    console.log(`[GraphAudit] Sample unresolved:`, unresolvedTargets.slice(0, 10));
+    console.log(`[GraphAudit] Sample nameToPath keys:`, sampleKeys);
   }
 
   // Degree-based sizing
