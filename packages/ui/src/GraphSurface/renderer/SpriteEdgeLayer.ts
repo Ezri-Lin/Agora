@@ -63,7 +63,7 @@ export class SpriteEdgeLayer extends Container implements EdgeLayer {
 
       // Redraw line at graph positions (v7 API)
       view.gfx.clear();
-      view.gfx.lineStyle(0.8, view.color);
+      view.gfx.lineStyle(1.0, view.color);
       view.gfx.moveTo(sp.x, sp.y);
       view.gfx.lineTo(tp.x, tp.y);
       view.gfx.visible = view.visible;

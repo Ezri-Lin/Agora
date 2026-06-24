@@ -77,15 +77,15 @@ export function resolveGraphTheme(palette: ColorPalette): ResolvedGraphTheme {
     backgroundAlpha: 0,
 
     node: {
-      defaultTint: hexToPixiTintBlended(graphTokens.nodeFill, 0.9),
+      defaultTint: hexToPixiTint(dark ? graphTokens.nodeFill : "#6f7478"),
       hoverTint: hexToPixiTintBlended(graphTokens.nodeSelectedRing, 0.9),
       selectedRingTint: hexToPixiTint(graphTokens.nodeSelectedRing),
       mutedAlpha: 0.10,
     },
 
     edge: {
-      defaultTint: hexToPixiTint(graphTokens.nodeStroke),
-      defaultAlpha: dark ? 0.38 : 0.38,
+      defaultTint: hexToPixiTint(dark ? graphTokens.nodeStroke : "#8c9298"),
+      defaultAlpha: dark ? 0.42 : 0.42,
       highlightAlpha: 0.85,
     },
 

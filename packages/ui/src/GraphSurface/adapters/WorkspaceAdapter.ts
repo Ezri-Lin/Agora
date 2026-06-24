@@ -258,8 +258,9 @@ export function buildCitationCoreGraph(
   }
   for (const node of nodes) {
     const degree = degreeMap.get(node.id) ?? 0;
-    const max = node.kind === "tag" || node.kind === "ghost" ? 12 : 14;
-    (node as { size: number }).size = obsidianSize(degree, 3, max);
+    const min = node.kind === "document" ? 3.8 : 3.2;
+    const max = node.kind === "tag" || node.kind === "ghost" ? 12 : 16;
+    (node as { size: number }).size = obsidianSize(degree, min, max);
   }
 
   return buildCoreGraph(nodes, edges);
