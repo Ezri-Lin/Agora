@@ -11,7 +11,7 @@ import { getLabelVisibility, getLabelPriority } from "./LabelVisibilityPolicy.js
 import type { LabelVisibilityInput } from "./LabelVisibilityPolicy.js";
 
 const LERP_SPEED = 0.18;
-const NORMAL_BUDGET = 240;
+const NORMAL_BUDGET = 400;
 const LABEL_OFFSET = 6;
 
 interface LabelView {
@@ -74,7 +74,7 @@ export class LabelLayer extends Container {
         const style = new TextStyle({
           fontFamily: "system-ui, -apple-system, sans-serif",
           fontSize: vis.fontSize,
-          fontWeight: "500",
+          fontWeight: "400",
           fill: theme.label.tint,
         });
         const text = new Text(node.label, style);

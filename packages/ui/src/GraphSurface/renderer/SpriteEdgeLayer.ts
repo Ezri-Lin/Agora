@@ -9,6 +9,7 @@ import type { ResolvedGraphTheme } from "../theme/ThemeBridge.js";
 import type { EdgeLayer } from "./EdgeLayer.js";
 
 const LERP_SPEED = 0.8;
+const MIN_SCREEN_EDGE_WIDTH = 0.9;
 
 interface EdgeView {
   id: string;
@@ -37,14 +38,28 @@ export class SpriteEdgeLayer extends Container implements EdgeLayer {
       gfx.eventMode = "none";
       this.addChild(gfx);
 
+      // Determine edge opacity based on kind (size proxy)
+      // wikilink: 0.6, tag: 0.3, ghost: 0.3, fallback: 0.4
+      let baseAlpha = theme.edge.defaultAlpha;
+      if (edge.size === 0.6) {
+        // wikilink edge - full opacity
+        baseAlpha = theme.edge.defaultAlpha;
+      } else if (edge.size === 0.3) {
+        // tag or ghost edge - lower opacity
+        baseAlpha = theme.edge.defaultAlpha * 0.5;
+      } else if (edge.size <= 0.4) {
+        // fallback edge - lowest opacity
+        baseAlpha = theme.edge.defaultAlpha * 0.3;
+      }
+
       const view: EdgeView = {
         id: edge.id,
         gfx,
         sourceId: edge.source,
         targetId: edge.target,
         color: theme.edge.defaultTint,
-        currentAlpha: theme.edge.defaultAlpha,
-        targetAlpha: theme.edge.defaultAlpha,
+        currentAlpha: baseAlpha,
+        targetAlpha: baseAlpha,
         visible: true,
       };
       this.views.push(view);

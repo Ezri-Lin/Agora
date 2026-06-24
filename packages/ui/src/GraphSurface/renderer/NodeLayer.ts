@@ -12,6 +12,7 @@ const GLOW_ALPHA = 0.20;
 const GLOW_EXTRA_RADIUS = 8;
 const NEIGHBOR_SCALE = 1.08;
 const LERP_SPEED = 0.18;
+const MIN_SCREEN_RADIUS = 3.8;
 
 interface NodeView {
   id: string;

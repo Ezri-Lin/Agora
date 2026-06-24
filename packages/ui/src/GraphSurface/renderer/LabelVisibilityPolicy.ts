@@ -37,8 +37,8 @@ export function getLabelVisibility(input: LabelVisibilityInput): LabelVisibility
 
   // Importance boost: high-weight nodes reveal earlier
   const importanceBoost = Math.min((input.nodeWeight ?? 0) / 8, 1);
-  const revealStart = 0.8 - importanceBoost * 0.2;
-  const revealEnd = 2.0 - importanceBoost * 0.35;
+  const revealStart = 0.5 - importanceBoost * 0.2;
+  const revealEnd = 1.5 - importanceBoost * 0.35;
 
   const alpha = smoothstep(revealStart, revealEnd, input.cameraScale);
 
