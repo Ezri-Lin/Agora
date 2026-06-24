@@ -10,7 +10,7 @@ import type { LayoutProfile } from "./layoutTypes.js";
 
 /** Compact layout matching Obsidian's dense circular clustering. */
 export const OBSIDIAN_PROFILE: LayoutProfile = {
-  linkDistance: 50,
+  linkDistance: 100,
   linkStrength: 0.7,
   manyBodyStrength: -120,
   collidePadding: 4,

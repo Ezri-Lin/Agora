@@ -11,7 +11,7 @@ import { getLabelVisibility, getLabelPriority } from "./LabelVisibilityPolicy.js
 import type { LabelVisibilityInput } from "./LabelVisibilityPolicy.js";
 
 const LERP_SPEED = 0.18;
-const NORMAL_BUDGET = 160;
+const NORMAL_BUDGET = 240;
 const LABEL_OFFSET = 6;
 
 interface LabelView {

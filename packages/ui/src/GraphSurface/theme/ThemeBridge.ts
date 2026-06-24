@@ -85,7 +85,7 @@ export function resolveGraphTheme(palette: ColorPalette): ResolvedGraphTheme {
 
     edge: {
       defaultTint: hexToPixiTint(graphTokens.nodeStroke),
-      defaultAlpha: dark ? 0.38 : 0.24,
+      defaultAlpha: dark ? 0.38 : 0.38,
       highlightAlpha: dark ? 0.6 : 0.45,
     },
 

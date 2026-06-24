@@ -37,7 +37,7 @@ const DEFAULT_COLORS: GraphColors = {
   border: "#3f3f3f",
   nodeFill: "#999999",
   nodeTag: "#44cf6e",
-  nodeMuted: "#666666",
+  nodeMuted: "#ff6b6b",
   nodeGreen: "#4a8c5c",
   nodeYellow: "#b8a642",
   nodeGray: "#999999",
@@ -258,7 +258,7 @@ export function buildCitationCoreGraph(
   }
   for (const node of nodes) {
     const degree = degreeMap.get(node.id) ?? 0;
-    const max = node.kind === "tag" || node.kind === "ghost" ? 6 : 12;
+    const max = node.kind === "tag" || node.kind === "ghost" ? 12 : 14;
     (node as { size: number }).size = obsidianSize(degree, 3, max);
   }
 
