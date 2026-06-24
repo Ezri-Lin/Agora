@@ -15,6 +15,7 @@ export interface CoreNode {
   readonly size: number;
   readonly color: string;
   readonly weight?: number;
+  readonly cluster?: string; // optional layout cluster id (e.g. top-level folder)
   readonly initialPosition?: ReadonlyVec2;
   readonly data?: unknown;
 }

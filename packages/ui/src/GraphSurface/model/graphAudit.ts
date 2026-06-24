@@ -33,10 +33,18 @@ export interface GraphAuditParserMetrics {
   unresolvedWikilinks: number;
 }
 
+export interface GraphAuditClusterStats {
+  total: number;
+  largest: number;
+  unclustered: number;
+  topClusters: Array<{ id: string; count: number }>;
+}
+
 export interface GraphAuditSnapshot {
   nodes: GraphAuditNodeCounts;
   edges: GraphAuditEdgeCounts;
   parser: GraphAuditParserMetrics;
+  clusters: GraphAuditClusterStats;
 }
 
 import type { CoreGraph } from "./coreTypes.js";
@@ -115,6 +123,22 @@ export function auditGraph(
   }
 
   // Temporary graph-derived estimate until parser exposes explicit resolved/unresolved counts.
+
+  // Cluster stats
+  const clusterMap = new Map<string, number>();
+  let unclustered = 0;
+  for (const node of graph.nodes) {
+    if (node.cluster) {
+      clusterMap.set(node.cluster, (clusterMap.get(node.cluster) ?? 0) + 1);
+    } else {
+      unclustered++;
+    }
+  }
+  const topClusters = [...clusterMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([id, count]) => ({ id, count }));
+
   return {
     nodes,
     edges,
@@ -122,6 +146,12 @@ export function auditGraph(
       ...parser,
       resolvedWikilinks: edges.wikilink,
       unresolvedWikilinks: edges.ghost,
+    },
+    clusters: {
+      total: clusterMap.size,
+      largest: Math.max(...clusterMap.values(), 0),
+      unclustered,
+      topClusters,
     },
   };
 }

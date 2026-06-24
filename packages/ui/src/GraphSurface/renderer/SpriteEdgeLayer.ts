@@ -17,6 +17,7 @@ interface EdgeView {
   sourceId: string;
   targetId: string;
   color: number;
+  baseAlpha: number;
   currentAlpha: number;
   targetAlpha: number;
   visible: boolean;
@@ -38,18 +39,16 @@ export class SpriteEdgeLayer extends Container implements EdgeLayer {
       gfx.eventMode = "none";
       this.addChild(gfx);
 
-      // Determine edge opacity based on kind (size proxy)
-      // wikilink: 0.6, tag: 0.3, ghost: 0.3, fallback: 0.4
-      let baseAlpha = theme.edge.defaultAlpha;
+      // Edge-kind-based opacity (size is proxy: 0.6=wikilink, 0.3=tag, 0.2=ghost)
+      let baseAlpha: number;
       if (edge.size === 0.6) {
-        // wikilink edge - full opacity
-        baseAlpha = theme.edge.defaultAlpha;
+        baseAlpha = theme.edge.defaultAlpha;           // 0.42 wikilink
       } else if (edge.size === 0.3) {
-        // tag or ghost edge - lower opacity
-        baseAlpha = theme.edge.defaultAlpha * 0.5;
-      } else if (edge.size <= 0.4) {
-        // fallback edge - lowest opacity
-        baseAlpha = theme.edge.defaultAlpha * 0.3;
+        baseAlpha = theme.edge.defaultAlpha * 0.24;    // ~0.10 tag
+      } else if (edge.size === 0.2) {
+        baseAlpha = theme.edge.defaultAlpha * 0.19;    // ~0.08 ghost
+      } else {
+        baseAlpha = theme.edge.defaultAlpha * 0.08;    // ~0.03 fallback
       }
 
       const view: EdgeView = {
@@ -58,6 +57,7 @@ export class SpriteEdgeLayer extends Container implements EdgeLayer {
         sourceId: edge.source,
         targetId: edge.target,
         color: theme.edge.defaultTint,
+        baseAlpha,
         currentAlpha: baseAlpha,
         targetAlpha: baseAlpha,
         visible: true,
@@ -93,7 +93,7 @@ export class SpriteEdgeLayer extends Container implements EdgeLayer {
     for (const view of this.views) {
       if (!highlightedSet || !hoveredId) {
         view.visible = true;
-        view.targetAlpha = theme.edge.defaultAlpha;
+        view.targetAlpha = view.baseAlpha;
       } else {
         const connected =
           highlightedSet.has(view.sourceId) && highlightedSet.has(view.targetId);

@@ -57,6 +57,17 @@ function obsidianSize(degree: number, min: number, max: number): number {
   return Math.max(min, Math.min(1.8 * Math.sqrt(degree + 1), max));
 }
 
+/**
+ * Extract top-level folder cluster from a document path.
+ * "folder/sub/note.md" → "folder" (depth=1)
+ * "note.md" → undefined (root-level file)
+ */
+function extractFolderCluster(path: string, depth = 1): string | undefined {
+  const parts = path.split("/").filter(Boolean);
+  if (parts.length <= 1) return undefined;
+  return parts.slice(0, depth).join("/");
+}
+
 /** Build fallback star graph (Phase 1: no file reading needed). */
 export function buildFallbackCoreGraph(
   docs: ScannedDoc[],
@@ -80,6 +91,7 @@ export function buildFallbackCoreGraph(
   // Document nodes
   for (const doc of docs) {
     const id = `doc:${doc.path}`;
+    const cluster = extractFolderCluster(doc.path);
     nodes.push({
       id,
       label: doc.name,
@@ -87,6 +99,7 @@ export function buildFallbackCoreGraph(
       size: 5,
       color: c.nodeGreen,
       weight: 1,
+      ...(cluster ? { cluster } : {}),
     });
     edges.push({ id: `e:ws:${id}`, source: "workspace", target: id, size: c.edgeWidth, color: c.border });
   }
@@ -180,6 +193,7 @@ export function buildCitationCoreGraph(
 
   // Document nodes
   for (const doc of docs) {
+    const cluster = extractFolderCluster(doc.path);
     nodes.push({
       id: `doc:${doc.path}`,
       label: doc.name,
@@ -187,6 +201,7 @@ export function buildCitationCoreGraph(
       size: 4,
       color: c.nodeFill,
       weight: 1,
+      ...(cluster ? { cluster } : {}),
     });
   }
 
@@ -228,6 +243,7 @@ export function buildCitationCoreGraph(
         unresolvedTargets.push(target);
         const ghostId = `ghost:${target}`;
         if (!nodes.some((n) => n.id === ghostId)) {
+          const ghostCluster = extractFolderCluster(p.path);
           nodes.push({
             id: ghostId,
             label: target,
@@ -235,9 +251,10 @@ export function buildCitationCoreGraph(
             size: 3,
             color: c.nodeMuted,
             weight: 1,
+            ...(ghostCluster ? { cluster: ghostCluster } : {}),
           });
         }
-        edges.push({ id: `e:${srcId}:${ghostId}`, source: srcId, target: ghostId, size: 0.3, color: c.border });
+        edges.push({ id: `e:${srcId}:${ghostId}`, source: srcId, target: ghostId, size: 0.2, color: c.border });
       }
     }
   }

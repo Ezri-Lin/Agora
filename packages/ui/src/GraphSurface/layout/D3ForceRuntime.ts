@@ -20,14 +20,19 @@ import type { CoreGraph, CoreEdge, ReadonlyVec2 } from "../model/coreTypes.js";
 import type { ForceRuntime, LayoutProfile, ReleaseOptions } from "./ForceRuntime.js";
 import { computeCentroid, getNeighbors } from "../model/graphSelectors.js";
 import { OBSIDIAN_PROFILE } from "./layoutProfile.js";
+import { forceCluster } from "./ClusterForce.js";
+import { forceLeafOrbit } from "./LeafOrbitForce.js";
 
 interface SimNode extends SimulationNodeDatum {
   id: string;
   radius: number;
+  cluster?: string;
+  degree?: number;
 }
 
 interface SimLink extends SimulationLinkDatum<SimNode> {
   weight?: number;
+  edgeKind?: string;
 }
 
 export class D3ForceRuntime implements ForceRuntime {
@@ -53,6 +58,14 @@ export class D3ForceRuntime implements ForceRuntime {
     const centroid = prevPositions.size > 0
       ? computeCentroid(prevPositions)
       : { x: 0, y: 0 };
+
+    // Compute node degrees
+    const degreeMap = new Map<string, number>();
+    for (const node of graph.nodes) degreeMap.set(node.id, 0);
+    for (const edge of graph.edges) {
+      degreeMap.set(edge.source, (degreeMap.get(edge.source) ?? 0) + 1);
+      degreeMap.set(edge.target, (degreeMap.get(edge.target) ?? 0) + 1);
+    }
 
     // Build sim nodes: preserve existing positions, spawn new near neighbors
     const simNodes: SimNode[] = [];
@@ -83,17 +96,34 @@ export class D3ForceRuntime implements ForceRuntime {
         id: node.id,
         radius: node.size + this.profile.collidePadding,
         x, y,
+        degree: degreeMap.get(node.id) ?? 0,
+        ...(node.cluster ? { cluster: node.cluster } : {}),
       };
       simNodes.push(simNode);
       newNodeMap.set(node.id, simNode);
     }
 
+    // Build node kind lookup for edge kind inference and force parameters
+    const nodeKindMap = new Map<string, string>();
+    for (const node of graph.nodes) nodeKindMap.set(node.id, node.kind);
+
     // Build sim links — use string IDs (matched by forceLink.id accessor)
-    const simLinks: SimLink[] = graph.edges.map((e) => ({
-      source: e.source,
-      target: e.target,
-      weight: e.weight,
-    }));
+    // Infer edge kind from node kinds for edge-kind-based layout weighting
+    const simLinks: SimLink[] = graph.edges.map((e) => {
+      const srcKind = nodeKindMap.get(e.source) ?? "";
+      const tgtKind = nodeKindMap.get(e.target) ?? "";
+      let edgeKind = "other";
+      if (srcKind === "workspace" || tgtKind === "workspace") edgeKind = "fallback";
+      else if (srcKind === "tag" || tgtKind === "tag") edgeKind = "tag";
+      else if (srcKind === "ghost" || tgtKind === "ghost") edgeKind = "ghost";
+      else if (srcKind === "document" && tgtKind === "document") edgeKind = "wikilink";
+      return {
+        source: e.source,
+        target: e.target,
+        weight: e.weight,
+        edgeKind,
+      };
+    });
 
     this.nodeMap = newNodeMap;
     this.edgeList = simLinks;
@@ -102,21 +132,54 @@ export class D3ForceRuntime implements ForceRuntime {
     if (this.sim) this.sim.stop();
 
     // Create new simulation
-    const { linkDistance, linkStrength, manyBodyStrength, collidePadding,
+    const { linkStrength, collidePadding,
       velocityDecay, alphaDecay, dragAlphaTarget } = this.profile;
+
+    // Edge-kind-based layout parameters
+    const p = this.profile;
+    const baseLinkStrength = p.linkStrength;
+    const edgeStrengthMultipliers: Record<string, number> = {
+      wikilink: 1.0,
+      tag: 0.10,
+      ghost: 0.08,
+      fallback: 0,
+      other: 0.15,
+    };
+    const edgeDistances: Record<string, number> = {
+      wikilink: p.linkDistance,
+      tag: p.tagLinkDistance ?? 30,
+      ghost: p.ghostLinkDistance ?? 28,
+      fallback: 0,
+      other: 50,
+    };
 
     this.sim = forceSimulation(simNodes)
       .force("link", forceLink<SimNode, SimLink>(simLinks)
         .id((d) => d.id)
-        .distance(linkDistance)
-        .strength(linkStrength))
+        .distance((link) => {
+          const kind = (link as SimLink).edgeKind ?? "other";
+          return edgeDistances[kind] ?? edgeDistances.other;
+        })
+        .strength((link) => {
+          const kind = (link as SimLink).edgeKind ?? "other";
+          const mult = edgeStrengthMultipliers[kind] ?? edgeStrengthMultipliers.other;
+          return baseLinkStrength * mult;
+        }))
       .force("charge", forceManyBody<SimNode>()
-        .strength(manyBodyStrength))
+        .strength((d) => {
+          const kind = nodeKindMap.get(d.id) ?? "";
+          const deg = d.degree ?? 0;
+          if (kind === "tag") return -25;
+          if (kind === "ghost") return -20;
+          if (deg <= 1) return p.leafManyBodyStrength ?? -25;
+          if (deg >= 8) return p.hubManyBodyStrength ?? -130;
+          return p.manyBodyStrength;
+        }))
       .force("collide", forceCollide<SimNode>()
         .radius((d) => d.radius + collidePadding))
       .force("center", forceCenter(0, 0))
-      .force("x", forceX(0).strength(0.5))
-      .force("y", forceY(0).strength(0.5))
+      .force("x", forceX(0).strength(0.03))
+      .force("y", forceY(0).strength(0.03))
       .velocityDecay(velocityDecay)
       .alphaDecay(alphaDecay)
       .on("tick", () => {
@@ -126,6 +189,27 @@ export class D3ForceRuntime implements ForceRuntime {
       .on("end", () => {
         this.settled = true;
       });
+
+    // Register cluster force behind feature flag
+    const clusterStrength = p.clusterStrength ?? 0;
+    const hasClusteredNodes = graph.nodes.some((node) => node.cluster);
+
+    if (p.clusterEnabled && clusterStrength > 0 && hasClusteredNodes) {
+      this.sim.force("cluster", forceCluster(clusterStrength));
+    } else {
+      this.sim.force("cluster", null);
+    }
+
+    // Register leaf orbit force
+    if (p.leafOrbitEnabled) {
+      this.sim.force("leafOrbit", forceLeafOrbit(
+        simLinks,
+        p.leafOrbitStrength ?? 0.06,
+        p.leafOrbitMaxNudge ?? 2.0,
+      ));
+    } else {
+      this.sim.force("leafOrbit", null);
+    }
 
     // Keep alphaTarget at 0 by default (simulation stops naturally)
     this.sim.alphaTarget(0);

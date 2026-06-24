@@ -22,7 +22,7 @@ export const GraphAuditPanel: React.FC<GraphAuditPanelProps> = ({ snapshot }) =>
 
   if (!snapshot) return null;
 
-  const { nodes, edges, parser } = snapshot;
+  const { nodes, edges, parser, clusters } = snapshot;
 
   // Calculate screen-space node sizes at current zoom
   const docMinScreen = 3.8 * zoomScale;
@@ -137,6 +137,14 @@ Labels:
             <div>Files parsed: {parser.filesParsed}</div>
             <div>Wikilinks: {parser.totalWikilinks} (resolved: {parser.resolvedWikilinks})</div>
             <div>Tags: {parser.totalTags}</div>
+          </div>
+          <div style={{ borderTop: "1px solid #444", marginTop: 4, paddingTop: 4 }}>
+            <div>Clusters: {clusters.total} (largest: {clusters.largest}, unclustered: {clusters.unclustered})</div>
+            {clusters.topClusters.length > 0 && (
+              <div style={{ paddingLeft: 8, fontSize: 10 }}>
+                {clusters.topClusters.slice(0, 5).map((c) => `${c.id}(${c.count})`).join(" ")}
+              </div>
+            )}
           </div>
         </>
       )}

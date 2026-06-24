@@ -14,6 +14,24 @@ export interface LayoutProfile {
   velocityDecay: number;
   alphaDecay: number;
   dragAlphaTarget: number;
+
+  // Cluster force (optional, feature-flagged)
+  clusterEnabled?: boolean;
+  clusterStrength?: number;
+
+  // Leaf orbit force (optional)
+  leafOrbitEnabled?: boolean;
+  leafOrbitStrength?: number;
+  leafOrbitMaxNudge?: number;
+
+  // Degree-aware link distance overrides (optional)
+  hubLeafLinkDistance?: number;
+  tagLinkDistance?: number;
+  ghostLinkDistance?: number;
+
+  // Degree-aware manyBody overrides (optional)
+  leafManyBodyStrength?: number;
+  hubManyBodyStrength?: number;
 }
 
 export interface ReleaseOptions {
