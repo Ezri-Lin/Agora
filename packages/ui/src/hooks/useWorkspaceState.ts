@@ -38,10 +38,27 @@ export function useWorkspaceState(
   const [contextDebug, setContextDebug] = useState<ContextDebug | undefined>();
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadWorkspaceAtPath = useCallback(async (path: string) => {
+    const bridge = getBridge();
+    if (!bridge) return;
+
+    const ws = await bridge.workspace.init(path);
+    const docs = await bridge.workspace.listDocs(ws.path);
+    console.log("[useWorkspaceState] Found", docs.length, "docs:", docs.slice(0, 5).map(d => d.name));
+    setWorkspace(ws);
+    setAvailableDocs(docs);
+    setSelectedRefs([]);
+    setContextDebug(undefined);
+    onWorkspaceLoaded?.(ws.path);
+  }, [onWorkspaceLoaded]);
+
   // Auto-load most recent workspace on mount
   useEffect(() => {
     const bridge = getBridge();
-    if (!bridge) return;
+    if (!bridge) {
+      setIsLoading(false);
+      return;
+    }
     bridge.getLLMConfig(); // still load config
     bridge.workspace.getRecent().then(async (recent) => {
       setRecentWorkspaces(recent);
@@ -53,14 +70,11 @@ export function useWorkspaceState(
       const last = recent[0]!;
       console.log("[useWorkspaceState] Loading workspace:", last.path);
       try {
-        const ws = await bridge.workspace.init(last.path);
-        setWorkspace(ws);
-        const docs = await bridge.workspace.listDocs(last.path);
-        console.log("[useWorkspaceState] Found", docs.length, "docs:", docs.slice(0, 5).map(d => d.name));
-        setAvailableDocs(docs);
-        onWorkspaceLoaded?.(last.path);
+        await loadWorkspaceAtPath(last.path);
       } catch (err) {
         console.error("[useWorkspaceState] Failed to load workspace:", err);
+        setWorkspace(null);
+        setAvailableDocs([]);
       } finally {
         setIsLoading(false);
       }
@@ -95,30 +109,21 @@ export function useWorkspaceState(
     if (!bridge) return;
     const path = await bridge.workspace.openDialog();
     if (!path) return;
-    const ws = await bridge.workspace.init(path);
-    setWorkspace(ws);
-    const docs = await bridge.workspace.listDocs(path);
-    setAvailableDocs(docs);
-    setSelectedRefs([]);
-    setContextDebug(undefined);
-    onWorkspaceLoaded?.(path);
-  }, [onWorkspaceLoaded]);
+    try {
+      await loadWorkspaceAtPath(path);
+    } catch (err) {
+      console.error("[useWorkspaceState] Failed to open workspace:", err);
+    }
+  }, [loadWorkspaceAtPath]);
 
   const openRecent = useCallback(async (path: string) => {
-    const bridge = getBridge();
-    if (!bridge) return;
     try {
-      const ws = await bridge.workspace.init(path);
-      setWorkspace(ws);
-      const docs = await bridge.workspace.listDocs(path);
-      setAvailableDocs(docs);
-      setSelectedRefs([]);
-      setContextDebug(undefined);
-      onWorkspaceLoaded?.(path);
-    } catch {
+      await loadWorkspaceAtPath(path);
+    } catch (err) {
+      console.error("[useWorkspaceState] Failed to open recent workspace:", err);
       // Workspace may have been deleted
     }
-  }, [onWorkspaceLoaded]);
+  }, [loadWorkspaceAtPath]);
 
   const addRef = useCallback((doc: ScannedDoc) => {
     setSelectedRefs((prev) => {

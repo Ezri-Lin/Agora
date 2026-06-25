@@ -11,7 +11,32 @@ export interface CameraState {
   scale: number;
 }
 
+export interface CameraPadding {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 const DEFAULT_EASE = 0.8;
+
+function normalizePadding(padding: number | Partial<CameraPadding>): CameraPadding {
+  if (typeof padding === "number") {
+    return {
+      top: padding,
+      right: padding,
+      bottom: padding,
+      left: padding,
+    };
+  }
+
+  return {
+    top: padding.top ?? 40,
+    right: padding.right ?? 40,
+    bottom: padding.bottom ?? 40,
+    left: padding.left ?? 40,
+  };
+}
 
 export class CameraController {
   current: CameraState = { x: 0, y: 0, scale: 1 };
@@ -135,18 +160,24 @@ export class CameraController {
     maxY: number,
     viewportW: number,
     viewportH: number,
-    padding = 40,
+    padding: number | Partial<CameraPadding> = 40,
   ): void {
     const rangeX = (maxX - minX) || 1;
     const rangeY = (maxY - minY) || 1;
-    const scale = Math.min(
-      (viewportW - padding * 2) / rangeX,
-      (viewportH - padding * 2) / rangeY,
-    );
+    const safePadding = normalizePadding(padding);
+    const availableW = Math.max(1, viewportW - safePadding.left - safePadding.right);
+    const availableH = Math.max(1, viewportH - safePadding.top - safePadding.bottom);
+    const scale = Math.min(availableW / rangeX, availableH / rangeY);
+    const boundedScale = Math.max(0.05, Math.min(20, scale));
+    const graphCenterX = (minX + maxX) / 2;
+    const graphCenterY = (minY + maxY) / 2;
+    const contentCenterX = safePadding.left + availableW / 2;
+    const contentCenterY = safePadding.top + availableH / 2;
+
     this.setTarget(
-      (minX + maxX) / 2,
-      (minY + maxY) / 2,
-      Math.max(0.05, Math.min(20, scale)),
+      graphCenterX - (contentCenterX - viewportW / 2) / boundedScale,
+      graphCenterY - (contentCenterY - viewportH / 2) / boundedScale,
+      boundedScale,
     );
     this.snap();
   }

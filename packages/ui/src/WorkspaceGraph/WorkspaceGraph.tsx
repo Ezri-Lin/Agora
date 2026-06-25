@@ -14,6 +14,10 @@ import { buildGraphViewModel } from "../GraphSurface/model/coreTypes.js";
 import { buildFallbackCoreGraph, buildCitationCoreGraph } from "../GraphSurface/adapters/WorkspaceAdapter.js";
 import { auditGraph } from "../GraphSurface/model/graphAudit.js";
 import type { GraphAuditParserMetrics, GraphAuditSnapshot } from "../GraphSurface/model/graphAudit.js";
+import {
+  OBSIDIAN_DEFAULT_GRAPH_VIEW_OPTIONS,
+  filterGraphForView,
+} from "../GraphSurface/model/graphViewOptions.js";
 import { GraphAuditPanel } from "./GraphAuditPanel.js";
 
 interface RoomEntry {
@@ -121,13 +125,22 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
     return () => { cancelled = true; };
   }, [docs, workspacePath]);
 
-  const coreGraph = citationGraph ?? fallback;
+  const rawGraph = citationGraph ?? fallback;
+  const coreGraph = useMemo(
+    () => filterGraphForView(rawGraph, OBSIDIAN_DEFAULT_GRAPH_VIEW_OPTIONS),
+    [rawGraph],
+  );
   const viewModel: CoreGraphViewModel = useMemo(
     () => buildGraphViewModel(coreGraph),
     [coreGraph],
   );
 
   const auditSnapshot: GraphAuditSnapshot | null = useMemo(() => {
+    if (!citationGraph) return null;
+    return auditGraph(coreGraph, parserMetrics);
+  }, [citationGraph, coreGraph, parserMetrics]);
+
+  const rawAuditSnapshot: GraphAuditSnapshot | null = useMemo(() => {
     if (!citationGraph) return null;
     return auditGraph(citationGraph, parserMetrics);
   }, [citationGraph, parserMetrics]);
@@ -157,7 +170,7 @@ export const WorkspaceGraph: React.FC<WorkspaceGraphProps> = ({ docs, rooms, wor
       )}
       <GraphSurface viewModel={viewModel} />
       {process.env.NODE_ENV === "development" && auditSnapshot && (
-        <GraphAuditPanel snapshot={auditSnapshot} />
+        <GraphAuditPanel snapshot={auditSnapshot} rawSnapshot={rawAuditSnapshot} />
       )}
     </div>
   );

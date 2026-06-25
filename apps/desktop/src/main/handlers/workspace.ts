@@ -152,9 +152,6 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
     auditLog("workspace:init", { target: resolved });
     await recordWorkspace(resolved, basename(resolved));
 
-    // Start file watcher
-    startWatching(resolved, getMainWindow);
-
     return { path: resolved, name: basename(resolved) };
   });
 
@@ -175,6 +172,9 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
       }
     }
     await scan(workspacePath, 0);
+    if (watchedWorkspacePath !== workspacePath) {
+      startWatching(workspacePath, getMainWindow);
+    }
     return results;
   });
 

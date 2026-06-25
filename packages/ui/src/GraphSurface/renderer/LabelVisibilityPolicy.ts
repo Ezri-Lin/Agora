@@ -31,21 +31,17 @@ export function getLabelVisibility(input: LabelVisibilityInput): LabelVisibility
 
   // Workspace root: visible earlier than normal nodes
   if (input.isWorkspaceRoot) {
-    const alpha = smoothstep(0.8, 1.4, input.cameraScale);
-    return { visible: alpha > 0.02, targetAlpha: alpha, fontSize: 11 };
+    const alpha = smoothstep(1.4, 2.1, input.cameraScale);
+    return { visible: alpha > 0.05, targetAlpha: alpha, fontSize: 11 };
   }
 
-  // Importance boost: high-weight nodes reveal earlier
-  const importanceBoost = Math.min((input.nodeWeight ?? 0) / 8, 1);
-  const revealStart = 1.2 - importanceBoost * 0.3;
-  const revealEnd = 1.8 - importanceBoost * 0.35;
-
-  const alpha = smoothstep(revealStart, revealEnd, input.cameraScale);
+  const textFadeMultiplier = 2.25;
+  const alpha = Math.max(0, Math.min(1, Math.log2(input.cameraScale) + 1 - textFadeMultiplier));
 
   return {
-    visible: alpha > 0.02,
+    visible: alpha > 0.05,
     targetAlpha: alpha,
-    fontSize: 11,
+    fontSize: 10,
   };
 }
 

@@ -1,21 +1,28 @@
 import React, { useEffect, useState } from "react";
 import type { GraphAuditSnapshot } from "../GraphSurface/model/graphAudit.js";
 import { OBSIDIAN_PROFILE } from "../GraphSurface/layout/layoutProfile.js";
+import type { LayoutMetrics } from "../GraphSurface/model/layoutMetrics.js";
 
 interface GraphAuditPanelProps {
   snapshot: GraphAuditSnapshot | null;
+  rawSnapshot?: GraphAuditSnapshot | null;
 }
 
-export const GraphAuditPanel: React.FC<GraphAuditPanelProps> = ({ snapshot }) => {
+export const GraphAuditPanel: React.FC<GraphAuditPanelProps> = ({ snapshot, rawSnapshot }) => {
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
+  const [layoutMetrics, setLayoutMetrics] = useState<LayoutMetrics | null>(null);
 
   // Poll zoom scale from window.__cameraZoom
   useEffect(() => {
     const interval = setInterval(() => {
       const z = (window as any).__cameraZoom;
       if (typeof z === "number") setZoomScale(z);
+      const metrics = (window as any).__graphLayoutMetrics;
+      if (metrics && typeof metrics.nodeCount === "number") {
+        setLayoutMetrics(metrics);
+      }
     }, 200);
     return () => clearInterval(interval);
   }, []);
@@ -23,23 +30,23 @@ export const GraphAuditPanel: React.FC<GraphAuditPanelProps> = ({ snapshot }) =>
   if (!snapshot) return null;
 
   const { nodes, edges, parser, clusters } = snapshot;
+  const rawNodes = rawSnapshot?.nodes;
+  const rawEdges = rawSnapshot?.edges;
 
-  // Calculate screen-space node sizes at current zoom
-  const docMinScreen = 3.8 * zoomScale;
-  const docMaxScreen = 16 * zoomScale;
-  const tagMinScreen = 3.2 * zoomScale;
-  const tagMaxScreen = 12 * zoomScale;
-  const ghostMinScreen = 3.2 * zoomScale;
-  const ghostMaxScreen = 12 * zoomScale;
+  const nodeScale = Math.sqrt(1 / Math.max(zoomScale, 0.001));
   const edgeWidthScreen = 1.0 * zoomScale;
 
   const formatAudit = () => `Graph Audit Snapshot
-Nodes: ${nodes.total}
+Visible Nodes: ${nodes.total}
   document: ${nodes.document} | tag: ${nodes.tag} | ghost: ${nodes.ghost}
   workspace: ${nodes.workspace} | room: ${nodes.room}
-Edges: ${edges.total}
+Visible Edges: ${edges.total}
   wikilink: ${edges.wikilink} | tag: ${edges.tag} | ghost: ${edges.ghost}
   fallback: ${edges.fallback}
+Raw Nodes: ${rawNodes?.total ?? nodes.total}
+  document: ${rawNodes?.document ?? nodes.document} | tag: ${rawNodes?.tag ?? nodes.tag} | ghost: ${rawNodes?.ghost ?? nodes.ghost}
+Raw Edges: ${rawEdges?.total ?? edges.total}
+  wikilink: ${rawEdges?.wikilink ?? edges.wikilink} | tag: ${rawEdges?.tag ?? edges.tag} | ghost: ${rawEdges?.ghost ?? edges.ghost}
 Files scanned: ${parser.filesScanned}
 Files parsed: ${parser.filesParsed}
 Wikilinks: ${parser.totalWikilinks} (resolved: ${parser.resolvedWikilinks})
@@ -48,24 +55,21 @@ Markdown links: ${parser.totalMarkdownLinks}
 
 Zoom: ${zoomScale.toFixed(2)}x
 
-Screen-Space Sizes (at current zoom)
-  document: ${docMinScreen.toFixed(1)}-${docMaxScreen.toFixed(1)}px
-  tag: ${tagMinScreen.toFixed(1)}-${tagMaxScreen.toFixed(1)}px
-  ghost: ${ghostMinScreen.toFixed(1)}-${ghostMaxScreen.toFixed(1)}px
+Render LOD
+  nodeScale: ${nodeScale.toFixed(2)}x
   edge width: ${edgeWidthScreen.toFixed(2)}px
 
-Visual Defaults (world-space)
-  doc min: 3.8 | doc max: 16
-  tag min: 3.2 | tag max: 12
-  ghost min: 3.2 | ghost max: 12
-  edge width: 1.0 | edge opacity: 0.42
 Layout:
   linkDistance: ${OBSIDIAN_PROFILE.linkDistance}
   linkStrength: ${OBSIDIAN_PROFILE.linkStrength}
   manyBodyStrength: ${OBSIDIAN_PROFILE.manyBodyStrength}
-  centerStrength: 0.16
+  collisionRadius: ${OBSIDIAN_PROFILE.collisionRadius ?? 60}
+  centerStrength: ${OBSIDIAN_PROFILE.centerStrength ?? 0.1}
 Labels:
-  budget: 240 | fontSize: 11-12px`;
+  delayed log fade | fontSize: 10-12px
+Metrics:
+  nnMean: ${layoutMetrics?.nearestNeighborMean.toFixed(1) ?? "n/a"}
+  nnCV: ${layoutMetrics?.nearestNeighborCoefficientOfVariation.toFixed(2) ?? "n/a"}`;
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -115,7 +119,7 @@ Labels:
       {expanded && (
         <>
           <div style={{ borderBottom: "1px solid #444", marginBottom: 4, paddingBottom: 4 }}>
-            <div>Nodes: {nodes.total}</div>
+            <div>Visible Nodes: {nodes.total}</div>
             <div style={{ paddingLeft: 8 }}>
               document: {nodes.document} | tag: {nodes.tag} | ghost: {nodes.ghost}
             </div>
@@ -124,7 +128,7 @@ Labels:
             </div>
           </div>
           <div style={{ borderBottom: "1px solid #444", marginBottom: 4, paddingBottom: 4 }}>
-            <div>Edges: {edges.total}</div>
+            <div>Visible Edges: {edges.total}</div>
             <div style={{ paddingLeft: 8 }}>
               wikilink: {edges.wikilink} | tag: {edges.tag} | ghost: {edges.ghost}
             </div>
@@ -132,6 +136,17 @@ Labels:
               fallback: {edges.fallback}
             </div>
           </div>
+          {rawSnapshot && (
+            <div style={{ borderBottom: "1px solid #444", marginBottom: 4, paddingBottom: 4 }}>
+              <div>Raw: {rawSnapshot.nodes.total} nodes / {rawSnapshot.edges.total} edges</div>
+              <div style={{ paddingLeft: 8 }}>
+                tag: {rawSnapshot.nodes.tag} | ghost: {rawSnapshot.nodes.ghost}
+              </div>
+              <div style={{ paddingLeft: 8 }}>
+                tag edges: {rawSnapshot.edges.tag} | ghost edges: {rawSnapshot.edges.ghost}
+              </div>
+            </div>
+          )}
           <div>
             <div>Files scanned: {parser.filesScanned}</div>
             <div>Files parsed: {parser.filesParsed}</div>
@@ -144,6 +159,15 @@ Labels:
               <div style={{ paddingLeft: 8, fontSize: 10 }}>
                 {clusters.topClusters.slice(0, 5).map((c) => `${c.id}(${c.count})`).join(" ")}
               </div>
+            )}
+          </div>
+          <div style={{ borderTop: "1px solid #444", marginTop: 4, paddingTop: 4 }}>
+            <div>Zoom: {zoomScale.toFixed(2)}x | nodeScale: {nodeScale.toFixed(2)}x</div>
+            {layoutMetrics && (
+              <>
+                <div>NN mean: {layoutMetrics.nearestNeighborMean.toFixed(1)}</div>
+                <div>NN cv: {layoutMetrics.nearestNeighborCoefficientOfVariation.toFixed(2)}</div>
+              </>
             )}
           </div>
         </>

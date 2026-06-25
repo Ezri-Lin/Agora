@@ -12,16 +12,28 @@ const GLOW_ALPHA = 0.20;
 const GLOW_EXTRA_RADIUS = 8;
 const NEIGHBOR_SCALE = 1.08;
 const LERP_SPEED = 0.18;
-const MIN_SCREEN_RADIUS = 3.8;
+
+function semanticZoomAlpha(kind: string, zoom: number): number {
+  if (kind === "ghost") {
+    return zoom < 0.65 ? 0.45 : 0.75;
+  }
+
+  return 1;
+}
 
 interface NodeView {
   id: string;
+  kind: string;
+  worldSize: number;
   gfx: Graphics;
   glow: Graphics;
   currentAlpha: number;
   targetAlpha: number;
   currentScale: number;
   targetScale: number;
+  screenScale: number;
+  zoomAlpha: number;
+  forceFullAlpha: boolean;
   baseColor: number;
 }
 
@@ -57,12 +69,17 @@ export class NodeLayer extends Container {
 
       this.viewMap.set(node.id, {
         id: node.id,
+        kind: node.kind,
+        worldSize: node.size,
         gfx,
         glow,
         currentAlpha: 1,
         targetAlpha: 1,
         currentScale: 1,
         targetScale: 1,
+        screenScale: 1,
+        zoomAlpha: 1,
+        forceFullAlpha: false,
         baseColor: color,
       });
     }
@@ -99,6 +116,7 @@ export class NodeLayer extends Container {
 
       const isHovered = node.id === hoveredId;
       const isHighlighted = highlightedSet ? highlightedSet.has(node.id) : true;
+      view.forceFullAlpha = isHovered || (highlightedSet ? isHighlighted : false);
 
       if (isHovered) {
         view.targetScale = HOVER_SCALE;
@@ -125,6 +143,15 @@ export class NodeLayer extends Container {
     this.settled = false;
   }
 
+  /** Apply screen-space minimum size — call each frame with camera zoom. */
+  applyZoom(zoom: number): void {
+    const nodeScale = Math.sqrt(1 / Math.max(zoom, 0.001));
+    for (const view of this.viewMap.values()) {
+      view.screenScale = nodeScale;
+      view.zoomAlpha = semanticZoomAlpha(view.kind, zoom);
+    }
+  }
+
   /** Animate alpha/scale toward targets. Returns true if settled. */
   animate(): boolean {
     let allSettled = true;
@@ -133,24 +160,22 @@ export class NodeLayer extends Container {
       const da = view.targetAlpha - view.currentAlpha;
       if (Math.abs(da) > 0.005) {
         view.currentAlpha += da * LERP_SPEED;
-        view.gfx.alpha = view.currentAlpha;
         allSettled = false;
       } else {
         view.currentAlpha = view.targetAlpha;
-        view.gfx.alpha = view.targetAlpha;
       }
 
       const ds = view.targetScale - view.currentScale;
       if (Math.abs(ds) > 0.005) {
         view.currentScale += ds * LERP_SPEED;
-        view.gfx.scale.set(view.currentScale);
-        view.glow.scale.set(view.currentScale);
         allSettled = false;
       } else {
         view.currentScale = view.targetScale;
-        view.gfx.scale.set(view.targetScale);
-        view.glow.scale.set(view.targetScale);
       }
+      const finalScale = view.currentScale * view.screenScale;
+      view.gfx.scale.set(finalScale);
+      view.glow.scale.set(finalScale);
+      view.gfx.alpha = view.currentAlpha * (view.forceFullAlpha ? 1 : view.zoomAlpha);
     }
 
     this.settled = allSettled;

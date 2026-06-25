@@ -27,6 +27,39 @@ import { HitTestIndex } from "./interaction/HitTestIndex.js";
 import { SelectionController } from "./interaction/SelectionController.js";
 import { useGraphInteraction } from "./useGraphInteraction.js";
 import type { LayoutProfile } from "./layout/layoutTypes.js";
+import type { NodeMeta } from "./renderer/SpriteEdgeLayer.js";
+import { computeGraphFitBounds } from "./model/fitBounds.js";
+import { computeGraphFitPadding } from "./renderer/graphFitPadding.js";
+import { computeLayoutMetrics } from "./model/layoutMetrics.js";
+
+/** Compute docDocDegree and node metadata for hub-spoke edge classification. */
+function computeNodeMeta(graph: CoreGraph): Map<string, NodeMeta> {
+  const nodeKind = new Map<string, string>();
+  for (const node of graph.nodes) nodeKind.set(node.id, node.kind);
+
+  const docDocDegree = new Map<string, number>();
+  for (const node of graph.nodes) {
+    if (node.kind === "document") docDocDegree.set(node.id, 0);
+  }
+  for (const edge of graph.edges) {
+    const sk = nodeKind.get(edge.source) ?? "";
+    const tk = nodeKind.get(edge.target) ?? "";
+    if (sk === "document" && tk === "document") {
+      docDocDegree.set(edge.source, (docDocDegree.get(edge.source) ?? 0) + 1);
+      docDocDegree.set(edge.target, (docDocDegree.get(edge.target) ?? 0) + 1);
+    }
+  }
+
+  const meta = new Map<string, NodeMeta>();
+  for (const node of graph.nodes) {
+    meta.set(node.id, {
+      kind: node.kind,
+      size: node.size,
+      docDocDegree: docDocDegree.get(node.id) ?? 0,
+    });
+  }
+  return meta;
+}
 
 export interface GraphSurfaceProps {
   viewModel: CoreGraphViewModel | null;
@@ -67,6 +100,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const needsFitRef = useRef(false);
   const fitTickRef = useRef(0);
+  const layoutMetricsTickRef = useRef(0);
   const hasFittedRef = useRef(false);
   const layersReadyRef = useRef(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -75,6 +109,10 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
     const observer = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
       { threshold: 0 },
@@ -127,21 +165,32 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
     (window as any).__cameraZoom = cam.scale;
     const positions = runtime.getPositions();
 
-    // Deferred fitBounds — wait for d3-force to spread nodes
+    if (process.env.NODE_ENV === "development") {
+      layoutMetricsTickRef.current++;
+      if (layoutMetricsTickRef.current % 15 === 0) {
+        (window as any).__graphLayoutMetrics = computeLayoutMetrics(positions);
+      }
+    }
+
+    // Deferred fitBounds — wait for d3-force to spread nodes.
+    // Fit the largest document component so weak tails do not shrink the graph.
     if (needsFitRef.current && !hasFittedRef.current) {
       fitTickRef.current++;
       if (fitTickRef.current >= 30) {
         needsFitRef.current = false;
         hasFittedRef.current = true;
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        for (const pos of positions.values()) {
-          if (pos.x < minX) minX = pos.x;
-          if (pos.x > maxX) maxX = pos.x;
-          if (pos.y < minY) minY = pos.y;
-          if (pos.y > maxY) maxY = pos.y;
-        }
-        if (minX < maxX) {
-          camera.fitBounds(minX, minY, maxX, maxY, vw, vh);
+
+        const bounds = computeGraphFitBounds(graph, positions);
+        if (bounds && bounds.minX < bounds.maxX) {
+          camera.fitBounds(
+            bounds.minX,
+            bounds.minY,
+            bounds.maxX,
+            bounds.maxY,
+            vw,
+            vh,
+            computeGraphFitPadding(vw, vh),
+          );
         }
       }
     }
@@ -155,7 +204,8 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
 
     // Update positions in graph coords (hanger handles camera transform)
     nodeLayer.updatePositions(graph.nodes, positions);
-    edgeLayer.updatePositions(positions);
+    nodeLayer.applyZoom(cam.scale);
+    edgeLayer.updatePositions(positions, cam.scale);
 
     const sel = selectionRef.current;
     labelLayer.update(
@@ -230,6 +280,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
         const theme = themeRef.current;
         nodeLayer.build(graph.nodes, theme);
         edgeLayer.build(graph.edges, theme);
+        edgeLayer.setNodeMeta?.(computeNodeMeta(graph));
         const vm = viewModel;
         if (vm) flightLayer.setEdges(vm.flightEdges, themeRef.current);
       }
@@ -308,6 +359,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
       if (nodeLayer && edgeLayer) {
         nodeLayer.build(graph.nodes, theme);
         edgeLayer.build(graph.edges, theme);
+        edgeLayer.setNodeMeta?.(computeNodeMeta(graph));
         flightLayerRef.current?.setEdges(viewModel.flightEdges, themeRef.current);
       }
     }
@@ -333,6 +385,7 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
     if (nodeLayer && edgeLayer) {
       nodeLayer.build(graph.nodes, themeRef.current);
       edgeLayer.build(graph.edges, themeRef.current);
+      edgeLayer.setNodeMeta?.(computeNodeMeta(graph));
     }
     flightLayerRef.current?.updateTheme(themeRef.current);
     renderLoopRef.current?.wake();
@@ -343,9 +396,28 @@ export const GraphSurface: React.FC<GraphSurfaceProps> = ({
   return (
     <div
       ref={containerRef}
+      role="img"
+      aria-label="Workspace Graph Canvas"
       className={className}
       style={{ position: "relative", width: "100%", height: "100%", touchAction: "none", ...style }}
     >
+      <div
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: "hidden",
+          clipPath: "inset(50%)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        {viewModel?.graph.nodes.map((node) => (
+          <span key={node.id}>{node.label}</span>
+        ))}
+      </div>
       <div
         ref={tooltipRef}
         style={{
