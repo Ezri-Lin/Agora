@@ -14,6 +14,9 @@ import { formatSessionBriefForPrompt } from "../compact/formatSessionBriefForPro
 import type { MessageCompact, SessionRunningBrief } from "../compact/types.js";
 import type { PersonaContract } from "@agora/shared";
 import type { ContextPackage } from "../context/ContextCompiler.js";
+import type { CouncilToolEnvironment, RoleToolTrace } from "./councilToolTypes.js";
+import { resolveRoleToolPolicy, filterToolsByPolicy } from "./councilToolTypes.js";
+import type { AgentMessage } from "../agentOrchestrator/types.js";
 
 // Module-level abort controllers — keyed by `${roundId}_${roleId}`
 const roleAbortControllers = new Map<string, AbortController>();
@@ -42,24 +45,27 @@ interface RunRolePhaseInput {
   getContractForRole?: (roleId: string) => PersonaContract | undefined;
   contextPackage?: ContextPackage;
   sessionRunningBrief?: SessionRunningBrief;
+  toolEnvironment?: CouncilToolEnvironment;
 }
 
 export interface RolePhaseResult {
   roleMessages: CouncilMessage[];
   failedRoles: string[];
   messageCompacts: MessageCompact[];
+  toolTraces?: RoleToolTrace[];
 }
 
 export async function runRolePhase(input: RunRolePhaseInput): Promise<RolePhaseResult> {
   const {
     finalRoles, roundId, room, topic, userMessage, recentMessages,
     analysis, rolePack, llm, onEvent, getContractForRole,
-    contextPackage, sessionRunningBrief,
+    contextPackage, sessionRunningBrief, toolEnvironment,
   } = input;
 
   const roleMessages: CouncilMessage[] = [];
   const failedRoles: string[] = [];
   const messageCompacts: MessageCompact[] = [];
+  const toolTraces: RoleToolTrace[] = [];
 
   // Register abort controllers
   for (const role of finalRoles) {
@@ -92,26 +98,76 @@ export async function runRolePhase(input: RunRolePhaseInput): Promise<RolePhaseR
     let partialThinking = "";
 
     try {
-      const input = {
-        roomId: room.id, role, sharedContext: rolePrompt,
-        roomSummary: analysis, recentMessages: [...recentMessages, userMessage],
-      };
+      let result: { content: string; thinking?: string; toolCalls?: any[] };
 
-      let result;
-      if (onEvent && llm.callRoleStream) {
-        result = await llm.callRoleStream(
-          input,
-          (delta, thinkingDelta) => {
-            partialContent += delta ?? "";
-            partialThinking += thinkingDelta ?? "";
-            onEvent({ type: "role_chunk", roleId: role.id, delta, thinking: thinkingDelta });
-          },
+      // Tool-enabled path
+      if (toolEnvironment) {
+        const rolePolicy = resolveRoleToolPolicy(role.id, toolEnvironment);
+        const allowedTools = filterToolsByPolicy(toolEnvironment.tools, rolePolicy);
+
+        // 构建 agent messages (复用现有 context)
+        const agentMessages: AgentMessage[] = [
+          ...recentMessages.map((m) => ({
+            role: m.senderType === "user" ? "user" as const : "assistant" as const,
+            content: m.content,
+          })),
+          { role: "user" as const, content: userMessage.content },
+        ];
+
+        const orchestratorResult = await toolEnvironment.orchestrator.execute({
+          systemPrompt: rolePrompt,
+          messages: agentMessages,
+          tools: allowedTools,
           signal,
-        );
-      } else {
-        result = await llm.callRole(input, signal);
+        });
+
+        result = {
+          content: orchestratorResult.finalResponse ?? "",
+          thinking: undefined,
+          toolCalls: orchestratorResult.messages
+            .filter((m) => m.role === "assistant" && m.toolCalls)
+            .flatMap((m) => m.toolCalls ?? []),
+        };
+
+        // 记录 tool trace
+        toolTraces.push({
+          roleId: role.id,
+          calls: orchestratorResult.messages
+            .filter((m) => m.role === "tool")
+            .map((m) => ({
+              toolCallId: m.toolCallId ?? "",
+              toolName: m.toolName ?? "",
+              ok: true,
+              resultBytes: m.content?.length ?? 0,
+            })),
+          completionReason: orchestratorResult.completionReason,
+          turnsUsed: orchestratorResult.turnsUsed,
+          totalToolCalls: orchestratorResult.toolCallsExecuted,
+        });
+
         partialContent = result.content;
-        partialThinking = result.thinking ?? "";
+      } else {
+        // Legacy path (无 toolEnvironment)
+        const llmInput = {
+          roomId: room.id, role, sharedContext: rolePrompt,
+          roomSummary: analysis, recentMessages: [...recentMessages, userMessage],
+        };
+
+        if (onEvent && llm.callRoleStream) {
+          result = await llm.callRoleStream(
+            llmInput,
+            (delta, thinkingDelta) => {
+              partialContent += delta ?? "";
+              partialThinking += thinkingDelta ?? "";
+              onEvent({ type: "role_chunk", roleId: role.id, delta, thinking: thinkingDelta });
+            },
+            signal,
+          );
+        } else {
+          result = await llm.callRole(llmInput, signal);
+          partialContent = result.content;
+          partialThinking = result.thinking ?? "";
+        }
       }
 
       const parsedSummary = extractGraphSummary(result.content);
@@ -179,5 +235,5 @@ export async function runRolePhase(input: RunRolePhaseInput): Promise<RolePhaseR
     }
   }));
 
-  return { roleMessages, failedRoles, messageCompacts };
+  return { roleMessages, failedRoles, messageCompacts, toolTraces };
 }
