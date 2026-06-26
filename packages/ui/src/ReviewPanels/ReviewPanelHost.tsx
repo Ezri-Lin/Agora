@@ -26,6 +26,9 @@ export interface ReviewPanelHostProps {
   onCloseMemoryReviewPanel: () => void;
   onCloseSessionSummaryPanel: () => void;
   onOpenMemoryReviewPanel: () => void;
+  // 新增: Memory Review 数据源
+  memoryCandidates?: import("../MemoryReview/types.js").MemoryCandidateViewModel[];
+  onMemorySave?: (selectedCandidates: import("../MemoryReview/types.js").MemoryCandidateViewModel[]) => void;
 }
 
 const EMPTY_SUMMARY: SessionSummaryViewModel = {
@@ -48,6 +51,8 @@ export const ReviewPanelHost: React.FC<ReviewPanelHostProps> = ({
   onCloseMemoryReviewPanel,
   onCloseSessionSummaryPanel,
   onOpenMemoryReviewPanel,
+  memoryCandidates = [],
+  onMemorySave,
 }) => {
   const { colors } = useTheme();
 
@@ -84,8 +89,8 @@ export const ReviewPanelHost: React.FC<ReviewPanelHostProps> = ({
           onClose={onCloseMemoryReviewPanel}
         >
           <MemoryCandidateReviewPanel
-            candidates={[]}
-            onSave={() => {}}
+            candidates={memoryCandidates}
+            onSave={onMemorySave ?? (() => {})}
             onDismiss={onCloseMemoryReviewPanel}
           />
         </PanelFrame>

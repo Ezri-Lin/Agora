@@ -15,6 +15,11 @@ export interface MemoryCandidateViewModel {
   sourcePersonaId?: string;
   tags?: string[];
   selectedByDefault?: boolean;
+  // 新增: provenance
+  provenanceExcerpt?: string;
+  provenanceStatus?: "complete" | "partial" | "missing_legacy" | "none";
+  sourceCount?: number;
+  confidence?: number;
 }
 
 export interface MemoryCandidateReviewPanelProps {
