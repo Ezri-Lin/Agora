@@ -10,6 +10,7 @@ out/
 .env
 .env.*
 .agora/
+.claude/
 AGENTS.md
 docs/Ledgers/
 docs/superpowers/
